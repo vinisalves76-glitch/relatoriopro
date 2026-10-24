@@ -14,13 +14,28 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 
 .auth-gate{position:fixed;inset:0;z-index:9999;background:#f2f4f7;display:grid;place-items:center;padding:20px}
 .auth-card{width:min(100%,440px);background:white;border:1px solid #dfe3e8;border-radius:14px;padding:26px;box-shadow:0 10px 35px #20242b18}
-#authGate.auth-gate{grid-template-columns:minmax(0,1fr);gap:0;padding:0;overflow:hidden;place-items:stretch;background:#20242b}
-#authGate .auth-card{position:relative;z-index:2;width:min(100%,470px);max-width:470px;align-self:center;justify-self:start;margin:clamp(22px,5vw,72px);padding:clamp(26px,3.5vw,46px);border:1px solid #ffffff30;border-radius:20px;box-shadow:0 24px 80px #0007;min-height:auto;display:flex;flex-direction:column;justify-content:center;background:#fff}
+#authGate.auth-gate{grid-template-columns:minmax(0,1fr);gap:0;padding:0;overflow:hidden;place-items:stretch;background:#111720}
+#authGate .auth-card{position:relative;z-index:2;width:min( calc(100% - 48px), 440px);max-width:440px;align-self:center;justify-self:start;margin:clamp(20px,6.2vw,96px);padding:clamp(26px,3vw,40px);border:1px solid #ffffff24;border-radius:17px;box-shadow:0 24px 80px #0008;min-height:auto;display:flex;flex-direction:column;justify-content:center;background:rgba(10,16,24,.91);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#f8fafc}
+#authGate .auth-brand{display:block;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #ffffff20}
+#authGate .auth-brand .mark{display:none}
+#authGate .auth-brand strong{display:block!important;font-size:27px!important;letter-spacing:.04em;color:#fff}
+#authGate .auth-brand .sub{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#d5d9df!important;margin-top:5px}
+#authGate .auth-card h1{font-size:23px;line-height:1.25;margin:0 0 8px;color:#fff}
+#authGate .auth-card p{font-size:13px;color:#c4cbd4;line-height:1.6;margin:0 0 15px}
+#authGate .auth-card label{color:#e3e7ec;margin-top:15px;font-size:12px}
+#authGate .auth-card input{background:#18212c;border:1px solid #364252;border-radius:9px;padding:13px 14px;color:#fff;outline:none;transition:border-color .18s,box-shadow .18s}
+#authGate .auth-card input::placeholder{color:#8f9aaa}
+#authGate .auth-card input:focus{border-color:#f2b705;box-shadow:0 0 0 3px #f2b70525}
+#authGate .auth-card .auth-actions{margin-top:22px}
+#authGate .auth-card .primary{background:linear-gradient(135deg,#ffd02f,#f0ad00);color:#171a1f;border-radius:9px;padding:14px 16px;font-size:15px;box-shadow:0 7px 20px #e4a90025;transition:filter .18s,transform .18s}
+#authGate .auth-card .primary:hover{filter:brightness(1.05);transform:translateY(-1px)}
+#authGate .auth-error{color:#ffb4b4}
+#authGate .auth-muted{font-size:11px;color:#9da8b6;line-height:1.5;margin-top:19px;padding-top:15px;border-top:1px solid #ffffff1a}
 .auth-video-panel{position:absolute;inset:0;min-width:0;min-height:100vh;overflow:hidden;background:#171a1f}
 .auth-video-panel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.auth-video-panel:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#111720d9 0%,#111720a8 38%,#11172035 72%,#11172055 100%);pointer-events:none}
+.auth-video-panel:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,13,20,.68) 0%,rgba(8,13,20,.43) 35%,rgba(8,13,20,.08) 70%,rgba(8,13,20,.2) 100%);pointer-events:none}
 .auth-video-caption{display:none}
-@media(max-width:760px){#authGate.auth-gate{grid-template-columns:1fr;overflow:auto;min-height:100dvh}#authGate .auth-card{width:calc(100% - 32px);max-width:470px;margin:16px auto;padding:28px 24px;grid-row:auto}#authGate .auth-video-panel{position:fixed;inset:0;min-height:100dvh}.auth-video-panel:after{background:linear-gradient(90deg,#111720d9,#11172080),linear-gradient(0deg,#11172055,transparent)}}
+@media(max-width:760px){#authGate.auth-gate{grid-template-columns:1fr;overflow:auto;min-height:100dvh}#authGate .auth-card{width:calc(100% - 32px);max-width:440px;margin:22px auto;padding:27px 23px;grid-row:auto}#authGate .auth-video-panel{position:fixed;inset:0;min-height:100dvh}.auth-video-panel:after{background:linear-gradient(180deg,rgba(8,13,20,.35),rgba(8,13,20,.72)),linear-gradient(90deg,rgba(8,13,20,.35),transparent)}}
 .auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.auth-brand .mark{display:inline-block}
 .auth-card h1{font-size:22px;margin:0 0 8px}.auth-card p{font-size:13px;color:#68717d;line-height:1.5}
 .auth-card label{margin-top:12px}.auth-card .auth-actions{display:grid;gap:9px;margin-top:18px}.auth-error{font-size:12px;color:#a32222;min-height:18px;margin-top:10px}.auth-muted{font-size:12px;color:#68717d;margin-top:12px}
@@ -30,9 +45,9 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 <body>
 <div class="auth-gate" id="authGate">
   <section class="auth-card" aria-labelledby="authTitle">
-    <div class="auth-brand"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub" style="color:#68717d">IRMEN | Soluções técnicas SANY</div></div></div>
-    <h1 id="authTitle">Acesso ao RelatorioPro</h1>
-    <p>Entre com sua conta para acessar os relatórios.</p>
+    <div class="auth-brand"><strong>IRMEN</strong><div class="sub">Soluções técnicas SANY</div></div>
+    <h1 id="authTitle">RelatorioPro</h1>
+    <p>Tecnologia e praticidade para um serviço mais eficiente.</p>
     <form id="authForm">
       <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="username" required placeholder="nome@empresa.com">
       <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
