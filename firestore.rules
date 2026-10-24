@@ -15,6 +15,10 @@ service cloud.firestore {
    allow delete:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.delete'));
    match /photos/{photoId}{allow read:if isSystemAdmin()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.view'));allow create,update:if isMaster()||(signedIn()&&request.auth.uid==userId&&(hasPermission('reports.create')||hasPermission('reports.edit')));allow delete:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.delete'));}
   }
+  match /users/{userId}/agenda/{appointmentId}{
+   allow read:if isSystemAdmin()||(signedIn()&&request.auth.uid==userId&&profileExists(request.auth.uid)&&profile(request.auth.uid).active==true);
+   allow create,update,delete:if isSystemAdmin();
+  }
   match /users/{userId}/settings/{settingId}{allow read:if isMaster()||(signedIn()&&request.auth.uid==userId&&(hasPermission('model.view')||hasPermission('model.edit')));allow create,update,delete:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('model.edit'));}
  }
 }
