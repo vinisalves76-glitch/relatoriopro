@@ -220,12 +220,12 @@ function renderSaved(){
  list.forEach(r=>{
   const card=document.createElement('div');card.className='saved';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=r.client||'Cliente não informado';const meta=document.createElement('small');meta.textContent=(r.type||'Relatório')+' | '+fmtDate(r.date)+' | '+(r.equipment||'Equipamento não informado');
   info.append(title,meta);const actions=document.createElement('div');actions.className='actions';
-  [['Abrir / editar','primary',()=>loadReport(r.id)],['Imprimir','light',async()=>{await loadReport(r.id);setTimeout(()=>window.print(),150)}],['Excluir','danger',async()=>{if(confirm('Excluir este relatório do Firestore?')){try{const ps=await getDocs(collection(reportRef(r.id),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
+  [['Abrir relatório','primary',()=>loadReport(r.id,r.ownerUid)],['Imprimir','light',async()=>{await loadReport(r.id,r.ownerUid);setTimeout(()=>window.print(),150)}],['Excluir','danger',async()=>{if(confirm('Excluir este relatório do Firestore?')){try{const ps=await getDocs(collection(reportRef(r.id),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
   card.append(info,actions);box.appendChild(card)
  })
 }
-async function loadReport(id){
- const snap=await getDoc(reportRef(id));if(!snap.exists()){alert('Este relatório não foi encontrado no Firestore.');return}
+async function loadReport(id,ownerUid=activeUser?.uid){
+ const snap=await getDoc(reportRef(id,ownerUid));if(!snap.exists()){alert('Este relatório não foi encontrado no Firestore.');return}
  const r={id:snap.id,...snap.data()};restoring=true;setFields(r);photos=await loadPhotos(id);editingId=id;
  const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);
  renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
