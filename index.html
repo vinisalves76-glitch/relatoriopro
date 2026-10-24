@@ -42,7 +42,28 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 <div class="field"><label>Nome da empresa</label><input id="mCompany" value="IRMEN"></div><div class="field"><label>Subtítulo</label><input id="mSubtitle" value="Soluções técnicas SANY"></div><div class="field"><label>Texto do rodapé</label><input id="mFooter" value="IRMEN | Relatório técnico"></div><div class="field"><label>Aviso de confidencialidade</label><input id="mConf" value="Documento destinado ao uso técnico e profissional."></div><div class="field"><label>Cor de destaque</label><input id="mColor" type="color" value="#e4a900"></div><div class="field"><label>Logotipo</label><input id="mLogo" type="file" accept="image/*"><div class="logo-preview" id="logoPreview">Nenhum logotipo selecionado</div><button class="light" id="removeLogo" style="margin-top:8px">Remover logotipo</button></div></div><div class="actions" style="margin-top:16px"><button class="primary" id="applyModel">Salvar e aplicar modelo</button><button class="light" id="resetModel">Restaurar padrão</button></div><div class="status" id="modelStatus"></div></div></section>
 <section class="page" id="saved"><h1>Relatórios salvos</h1><p class="muted">Pesquise, abra, imprima ou exclua relatórios guardados neste navegador.</p><div class="panel"><div class="grid"><div class="field"><label>Pesquisar</label><input id="search" placeholder="Número, cliente, equipamento ou responsável"></div><div class="field"><label>Tipo</label><select id="filter"><option value="">Todos os tipos</option><option>Relatório de campo</option><option>Relatório de manutenção</option><option>Relatório de entrega técnica</option><option>Relatório de treinamento</option><option>Relatório de inspeção</option><option>Relatório de diagnóstico</option><option>Relatório de garantia</option><option>Outro</option></select></div></div></div><div id="savedList"></div></section>
 </main>
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+
+// Configuração do aplicativo Web Firebase — RelatorioPro IRMEN
+const firebaseConfig = {
+  apiKey: "AIzaSyArvp8v1S5qs758dxbapwZGvf2eqbnZsQI",
+  authDomain: "relatoriopro-63368.firebaseapp.com",
+  projectId: "relatoriopro-63368",
+  storageBucket: "relatoriopro-63368.firebasestorage.app",
+  messagingSenderId: "1027762547199",
+  appId: "1:1027762547199:web:a05b12cb5e53c4a94e5fca"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
+
+// Disponibiliza as instâncias para futuras funções de integração sem expor segredos.
+console.info("Firebase inicializado para o projeto:", firebaseApp.options.projectId);
+
 const DRAFT='relatoriopro-draft',REPORTS='relatoriopro-reports',MODEL='relatoriopro-model';
 const $=id=>document.getElementById(id);
 const fields=['type','date','responsible','client','branch','equipment','location','objective','observations','activities','results','conclusion'];
