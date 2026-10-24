@@ -95,7 +95,7 @@ const fields=['type','date','responsible','client','branch','equipment','locatio
 const defaultModel={company:'IRMEN',subtitle:'Soluções técnicas SANY',footer:'IRMEN | Relatório técnico',conf:'Documento destinado ao uso técnico e profissional.',color:'#e4a900',logo:''};
 let photos=[],editingId=null,logoData='',restoring=false,activeUser=null,reportCache=[],modelCache={...defaultModel},gptPendingResult=null;
 
-function userReportsRef(){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return collection(db,'users',activeUser.uid,'reports')}
+function userReportsRef(){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return isSystemAdmin()?collectionGroup(db,'reports'):collection(db,'users',activeUser.uid,'reports')}
 function reportRef(id){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return doc(db,'users',activeUser.uid,'reports',id)}
 function modelRef(){if(!activeUser)throw new Error('Faça login para acessar o modelo.');return doc(db,'users',activeUser.uid,'settings','model')}
 function setAuthError(message){$('authError').textContent=message||''}
