@@ -16,7 +16,8 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 .auth-card{width:min(100%,440px);background:white;border:1px solid #dfe3e8;border-radius:14px;padding:26px;box-shadow:0 10px 35px #20242b18}
 #authGate.auth-gate{grid-template-columns:minmax(0,1fr);gap:0;padding:0;overflow:hidden;place-items:stretch;background:#111720}
 #authGate .auth-card{position:relative;z-index:2;width:min( calc(100% - 48px), 440px);max-width:440px;align-self:center;justify-self:start;margin:clamp(20px,6.2vw,96px);padding:clamp(26px,3vw,40px);border:1px solid #ffffff24;border-radius:17px;box-shadow:0 24px 80px #0008;min-height:auto;display:flex;flex-direction:column;justify-content:center;background:rgba(10,16,24,.91);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#f8fafc}
-#authGate .auth-brand{display:block;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #ffffff20}
+#authGate .auth-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #ffffff20}
+#authGate .auth-brand>strong{width:100%;text-align:center}
 #authGate .auth-brand .mark{display:none}
 #authGate .auth-brand strong{display:block!important;font-size:27px!important;letter-spacing:.04em;color:#fff}
 #authGate .auth-brand .sub{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#d5d9df!important;margin-top:5px}
@@ -46,7 +47,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 <body>
 <div class="auth-gate" id="authGate">
   <section class="auth-card" aria-labelledby="authTitle">
-    <div class="auth-brand"><strong>IRMEN</strong><div class="auth-sany" aria-label="SANY">SANY</div></div>
+    <div class="auth-brand"><strong>IRMEN</strong></div>
     <h1 id="authTitle">RelatorioPro</h1>
     <p>Tecnologia e praticidade para um serviço mais eficiente.</p>
     <form id="authForm">
