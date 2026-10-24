@@ -28,7 +28,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
     <form id="authForm">
       <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="username" required placeholder="nome@empresa.com">
       <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
-      <div class="auth-actions"><button class="primary" id="authSubmit" type="submit">Entrar</button><button class="light" id="registerBtn" type="button">Criar conta</button><button class="light" id="resetPasswordBtn" type="button">Recuperar senha</button></div>
+      <div class="auth-actions"><button class="primary" id="authSubmit" type="submit">Entrar</button></div>
       <div class="auth-error" id="authError" role="alert" aria-live="polite"></div>
     </form>
     <div class="auth-muted">Os relatórios ficam vinculados à conta autenticada. Não usamos o armazenamento local do navegador para guardar relatórios.</div>
@@ -121,22 +121,8 @@ $('authForm').addEventListener('submit',async e=>{
  catch(error){setAuthError(friendlyAuthError(error))}
  finally{$('authSubmit').disabled=false}
 });
-$('registerBtn').hidden=true;$('registerBtn').insertAdjacentHTML('afterend','<div class="auth-muted">Novos acessos são criados pelo mestre do sistema.</div>');
-$('registerBtn').addEventListener('click',async()=>{
- setAuthError('');
- const email=$('authEmail').value.trim(),password=$('authPassword').value;
- if(!email||!password){setAuthError('Preencha o e-mail e a senha para criar a conta.');return}
- $('registerBtn').disabled=true;
- try{await createUserWithEmailAndPassword(auth,email,password)}
- catch(error){setAuthError(friendlyAuthError(error))}
- finally{$('registerBtn').disabled=false}
-});
-$('resetPasswordBtn').addEventListener('click',async()=>{
- setAuthError('');const email=$('authEmail').value.trim();
- if(!email){setAuthError('Informe seu e-mail para receber o link de recuperação.');return}
- try{await sendPasswordResetEmail(auth,email);setAuthError('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.')}
- catch(error){setAuthError(friendlyAuthError(error))}
-});
+let manualLoginRequested=false;
+$('authForm').addEventListener('submit',async e=>{e.preventDefault();manualLoginRequested=true;setAuthError('');$('authSubmit').disabled=true;try{await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);}catch(error){manualLoginRequested=false;setAuthError(friendlyAuthError(error));}finally{$('authSubmit').disabled=false}});
 
 function isMaster(){return !!activeUser&&activeUser.uid===MASTER_UID}
 function can(p){return isMaster()||!!(currentProfile&&currentProfile.active!==false&&currentProfile.permissions?.includes(p))}
@@ -302,7 +288,7 @@ async function initializeUser(user){
  restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado ao Firestore. Permissões carregadas.';if(isMaster())loadUsers()
  }catch(error){console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
 }
-onAuthStateChanged(auth,user=>{initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
+onAuthStateChanged(auth,user=>{if(user&&!manualLoginRequested){signOut(auth).catch(console.error);$('appShell').hidden=true;$('authGate').hidden=false;return}if(!user){activeUser=null;currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
 </script>
 </div>
 </body>
