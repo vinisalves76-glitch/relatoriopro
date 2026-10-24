@@ -1,9 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // Cada usuário só pode ler e alterar os documentos dentro do próprio UID.
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
+ match /databases/{database}/documents {
+  function signedIn(){return request.auth != null;}
+  function isMaster(){return signedIn() && request.auth.uid == 'sQYjYwjn2vOKtXty7NOT9CO43Mk1';}
+  function profileExists(uid){return exists(/databases/$(database)/documents/userProfiles/$(uid));}
+  function hasPermission(permission){return signedIn() && profileExists(request.auth.uid) && get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.active == true && permission in get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.permissions;}
+  match /userProfiles/{userId}{allow read:if signedIn()&&(request.auth.uid==userId||isMaster());allow create:if isMaster();allow update,delete:if isMaster()&&userId!='sQYjYwjn2vOKtXty7NOT9CO43Mk1';}
+  match /users/{userId}/reports/{reportId}{
+   allow read:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.view'));
+   allow create:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.create'));
+   allow update:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.edit'));
+   allow delete:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.delete'));
+   match /photos/{photoId}{allow read:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.view'));allow create,update:if isMaster()||(signedIn()&&request.auth.uid==userId&&(hasPermission('reports.create')||hasPermission('reports.edit')));allow delete:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('reports.delete'));}
   }
+  match /users/{userId}/settings/{settingId}{allow read:if isMaster()||(signedIn()&&request.auth.uid==userId&&(hasPermission('model.view')||hasPermission('model.edit')));allow create,update,delete:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('model.edit'));}
+ }
 }
