@@ -99,7 +99,7 @@ const MASTER_UID='sQYjYwjn2vOKtXty7NOT9CO43Mk1';
 const creatorAuth=getAuth(initializeApp(firebaseConfig,'relatoriopro-user-creator'));
 const profilesRef=collection(db,'userProfiles');
 const PERMISSIONS=[['reports.view','Visualizar relatórios'],['reports.create','Criar relatórios'],['reports.edit','Editar relatórios'],['reports.delete','Excluir relatórios'],['reports.print','Imprimir / PDF'],['model.view','Ver modelo visual'],['model.edit','Editar modelo visual']];
-const ROLE_DEFAULTS={auxiliar_administrativo:PERMISSIONS.map(p=>p[0]),gerente:PERMISSIONS.map(p=>p[0]),coordenador:PERMISSIONS.map(p=>p[0]),instrutor_tecnico:['reports.create'],consultor_tecnico:['reports.create']};
+const ROLE_DEFAULTS={auxiliar_administrativo:PERMISSIONS.map(p=>p[0]),gerente:PERMISSIONS.map(p=>p[0]),coordenador:PERMISSIONS.map(p=>p[0]),instrutor_tecnico:['reports.view','reports.create','reports.print'],consultor_tecnico:['reports.view','reports.create','reports.print']};
 let currentProfile=null,userProfilesCache=[];
 
 const REPORTS='relatoriopro-reports';
@@ -232,7 +232,7 @@ function renderSaved(){
  list.forEach(r=>{
   const card=document.createElement('div');card.className='saved';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=r.client||'Cliente não informado';const meta=document.createElement('small');meta.textContent=(r.type||'Relatório')+' | '+fmtDate(r.date)+' | '+(r.equipment||'Equipamento não informado');
   info.append(title,meta);const actions=document.createElement('div');actions.className='actions';
-  [['Abrir relatório','primary',()=>loadReport(r.id,r.ownerUid)],['Imprimir','light',async()=>{await loadReport(r.id,r.ownerUid);setTimeout(()=>window.print(),150)}],...(isSystemAdmin()?[]:[['Excluir','danger',async()=>{if(confirm('Deseja excluir este relatório?')){try{const ps=await getDocs(collection(reportRef(r.id,r.ownerUid),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id,r.ownerUid));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]])].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
+  [['Abrir relatório','primary',()=>loadReport(r.id,r.ownerUid)],['Imprimir','light',async()=>{await loadReport(r.id,r.ownerUid);setTimeout(()=>window.print(),150)}],...(can('reports.delete')?[['Excluir','danger',async()=>{if(confirm('Deseja excluir este relatório?')){try{const ps=await getDocs(collection(reportRef(r.id,r.ownerUid),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id,r.ownerUid));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]]:[])].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
   card.append(info,actions);box.appendChild(card)
  })
 }
