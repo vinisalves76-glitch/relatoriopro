@@ -66,6 +66,7 @@ module.exports = async function handler(req, res) {
           "x-goog-api-key": apiKey,
           "Content-Type": "application/json"
         },
+        signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: "user", parts: [{ text: user }] }],
@@ -125,6 +126,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ result: safeResult });
   } catch (error) {
     console.error("Gemini assistant request failed", error && error.message);
-    return res.status(502).json({ error: "Não foi possível conectar ao Gemini. Tente novamente em instantes." });
+    const timedOut = error && (error.name === "TimeoutError" || error.name === "AbortError");
+    return res.status(502).json({ error: timedOut ? "O Gemini demorou mais de 30 segundos para responder. Tente novamente." : "Não foi possível conectar ao Gemini. Tente novamente em instantes." });
   }
 };
