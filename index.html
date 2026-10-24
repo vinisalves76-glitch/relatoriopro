@@ -36,7 +36,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 </div>
 <div id="appShell" hidden>
 <header><div class="logohead"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button><button class="primary" id="saveTop">Salvar relatório</button><button class="light" id="printTop">Imprimir / PDF</button></div></header>
-<nav class="tabs"><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved">Relatórios salvos</button></nav>
+<nav class="tabs"><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div></nav>
 <main>
 <section class="page active" id="editor"><h1>Relatório técnico</h1><p class="muted">Preencha os dados do atendimento, adicione fotos e confira a prévia antes de imprimir.</p><div class="layout"><div>
 <div class="panel"><h3>1. Identificação</h3><div class="grid">
@@ -63,6 +63,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 <section class="page" id="model"><h1>Modelo e identidade visual</h1><p class="muted">Personalize a identidade visual que será aplicada ao relatório atual e aos novos relatórios.</p><div class="panel"><div class="note">A identidade visual salva será usada no relatório atual, nos novos relatórios e também nos relatórios já salvos neste navegador.</div><div class="grid">
 <div class="field"><label>Nome da empresa</label><input id="mCompany" value="IRMEN"></div><div class="field"><label>Subtítulo</label><input id="mSubtitle" value="Soluções técnicas SANY"></div><div class="field"><label>Texto do rodapé</label><input id="mFooter" value="IRMEN | Relatório técnico"></div><div class="field"><label>Aviso de confidencialidade</label><input id="mConf" value="Documento destinado ao uso técnico e profissional."></div><div class="field"><label>Cor de destaque</label><input id="mColor" type="color" value="#e4a900"></div><div class="field"><label>Logotipo</label><input id="mLogo" type="file" accept="image/*"><div class="logo-preview" id="logoPreview">Nenhum logotipo selecionado</div><button class="light" id="removeLogo" style="margin-top:8px">Remover logotipo</button></div></div><div class="actions" style="margin-top:16px"><button class="primary" id="applyModel">Salvar e aplicar modelo</button><button class="light" id="resetModel">Restaurar padrão</button></div><div class="status" id="modelStatus"></div></div></section>
 <section class="page" id="saved"><h1>Relatórios salvos</h1><p class="muted">Pesquise, abra, imprima ou exclua relatórios guardados neste navegador.</p><div class="panel"><div class="grid"><div class="field"><label>Pesquisar</label><input id="search" placeholder="Número, cliente, equipamento ou responsável"></div><div class="field"><label>Tipo</label><select id="filter"><option value="">Todos os tipos</option><option>Relatório de campo</option><option>Relatório de manutenção</option><option>Relatório de entrega técnica</option><option>Relatório de treinamento</option><option>Relatório de inspeção</option><option>Relatório de diagnóstico</option><option>Relatório de garantia</option><option>Outro</option></select></div></div></div><div id="savedList"></div></section>
+<section class="page" id="users"><h1>Usuários e controle de acessos</h1><p class="muted">Crie contas, defina cargos e libere funções específicas.</p><div class="panel"><h3>Criar usuário</h3><form id="userCreateForm"><div class="grid"><div class="field"><label>Nome completo</label><input id="newUserName" required></div><div class="field"><label>E-mail corporativo</label><input id="newUserEmail" type="email" required></div><div class="field"><label>Senha inicial</label><input id="newUserPassword" type="password" minlength="6" required></div><div class="field"><label>Cargo</label><select id="newUserRole"><option value="tecnico">Técnico de campo</option><option value="mecanico">Mecânico</option><option value="instrutor">Instrutor técnico</option><option value="consulta">Consulta</option><option value="administrador">Administrador</option></select></div></div><div class="panel"><h3>Permissões</h3><div class="grid" id="permissionChoices"><label><input type="checkbox" value="reports.view" checked> Visualizar relatórios</label><label><input type="checkbox" value="reports.create" checked> Criar relatórios</label><label><input type="checkbox" value="reports.edit" checked> Editar relatórios</label><label><input type="checkbox" value="reports.delete"> Excluir relatórios</label><label><input type="checkbox" value="reports.print" checked> Imprimir / PDF</label><label><input type="checkbox" value="model.view"> Ver modelo visual</label><label><input type="checkbox" value="model.edit"> Editar modelo visual</label></div></div><button class="primary" id="createUserBtn" type="submit">Criar usuário</button><div class="status" id="userCreateStatus"></div></form></div><div class="panel"><h3>Usuários cadastrados</h3><div id="usersList"><div class="empty">Carregando usuários...</div></div></div></section>
 </main>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
@@ -80,6 +81,12 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
+const MASTER_UID='sQYjYwjn2vOKtXty7NOT9CO43Mk1';
+const creatorAuth=getAuth(initializeApp(firebaseConfig,'relatoriopro-user-creator'));
+const profilesRef=collection(db,'userProfiles');
+const PERMISSIONS=[['reports.view','Visualizar relatórios'],['reports.create','Criar relatórios'],['reports.edit','Editar relatórios'],['reports.delete','Excluir relatórios'],['reports.print','Imprimir / PDF'],['model.view','Ver modelo visual'],['model.edit','Editar modelo visual']];
+const ROLE_DEFAULTS={administrador:PERMISSIONS.map(p=>p[0]),instrutor:['reports.view','reports.create','reports.edit','reports.print','model.view'],tecnico:['reports.view','reports.create','reports.edit','reports.print'],mecanico:['reports.view','reports.print'],consulta:['reports.view','reports.print']};
+let currentProfile=null,userProfilesCache=[];
 
 const REPORTS='relatoriopro-reports';
 const MODEL='relatoriopro-model';
@@ -114,6 +121,7 @@ $('authForm').addEventListener('submit',async e=>{
  catch(error){setAuthError(friendlyAuthError(error))}
  finally{$('authSubmit').disabled=false}
 });
+$('registerBtn').hidden=true;$('registerBtn').insertAdjacentHTML('afterend','<div class="auth-muted">Novos acessos são criados pelo mestre do sistema.</div>');
 $('registerBtn').addEventListener('click',async()=>{
  setAuthError('');
  const email=$('authEmail').value.trim(),password=$('authPassword').value;
@@ -130,6 +138,14 @@ $('resetPasswordBtn').addEventListener('click',async()=>{
  catch(error){setAuthError(friendlyAuthError(error))}
 });
 
+function isMaster(){return !!activeUser&&activeUser.uid===MASTER_UID}
+function can(p){return isMaster()||!!(currentProfile&&currentProfile.active!==false&&currentProfile.permissions?.includes(p))}
+function requirePermission(p){if(can(p))return true;alert('Seu perfil não tem permissão para esta ação.');return false}
+function applyAccessControl(){const admin=isMaster();$('usersTab').hidden=!admin;$('sessionInfo').textContent=(currentProfile?.name||activeUser?.email||'Usuário')+' | Cargo: '+(currentProfile?.roleLabel||currentProfile?.role||'')+(admin?' | Mestre':'');document.querySelectorAll('.tab[data-permission]').forEach(t=>t.hidden=!can(t.dataset.permission));document.querySelector('.tab[data-page="model"]').hidden=!can('model.view');$('model').style.display=can('model.view')?'':'none';$('users').style.display=admin?'':'none';$('newTop').hidden=!can('reports.create');$('saveTop').hidden=!(can('reports.create')||can('reports.edit'));$('printTop').hidden=!can('reports.print');$('saveBtn').hidden=!(can('reports.create')||can('reports.edit'));$('printBtn').hidden=!can('reports.print');$('clearBtn').hidden=!can('reports.create');$('gptAssistant').hidden=!(can('reports.create')||can('reports.edit'))}
+function applyRoleDefaults(){const a=ROLE_DEFAULTS[$('newUserRole').value]||ROLE_DEFAULTS.tecnico;document.querySelectorAll('#permissionChoices input').forEach(c=>c.checked=a.includes(c.value))}
+$('newUserRole').addEventListener('change',applyRoleDefaults);
+async function loadUsers(){if(!isMaster())return;const box=$('usersList');try{const s=await getDocs(profilesRef);userProfilesCache=s.docs.map(d=>({uid:d.id,...d.data()}));box.innerHTML='';if(!userProfilesCache.length){box.innerHTML='<div class="empty">Nenhum usuário cadastrado.</div>';return}userProfilesCache.forEach(u=>{const card=document.createElement('div');card.className='panel';const title=document.createElement('h3');title.textContent=(u.name||'Usuário')+' — '+(u.email||u.uid);card.appendChild(title);const status=document.createElement('p');status.className='muted';status.textContent='Cargo: '+(u.roleLabel||u.role||'')+' | '+(u.active===false?'Desativado':'Ativo')+(u.uid===MASTER_UID?' | Mestre protegido':'');card.appendChild(status);if(u.uid!==MASTER_UID){const perms=document.createElement('div');perms.className='grid';const checks=[];PERMISSIONS.forEach(([key,label])=>{const l=document.createElement('label');const c=document.createElement('input');c.type='checkbox';c.checked=(u.permissions||[]).includes(key);c.value=key;c.style.width='auto';l.append(c,document.createTextNode(' '+label));perms.appendChild(l);checks.push(c)});card.appendChild(perms);const active=document.createElement('input');active.type='checkbox';active.checked=u.active!==false;active.style.width='auto';const lab=document.createElement('label');lab.append(active,document.createTextNode(' Acesso ativo'));card.appendChild(lab);const save=document.createElement('button');save.className='primary';save.textContent='Salvar permissões';save.onclick=async()=>{try{await setDoc(doc(db,'userProfiles',u.uid),{permissions:checks.filter(c=>c.checked).map(c=>c.value),active:active.checked,updatedAt:new Date().toISOString()},{merge:true});await loadUsers();alert('Permissões atualizadas. Peça ao usuário para entrar novamente.')}catch(e){alert(friendlyAuthError(e))}};card.appendChild(save)}box.appendChild(card)})}catch(e){box.textContent='Erro ao carregar usuários: '+friendlyAuthError(e)}}
+$('userCreateForm').addEventListener('submit',async e=>{e.preventDefault();if(!isMaster())return;const b=$('createUserBtn'),s=$('userCreateStatus');b.disabled=true;s.textContent='Criando usuário...';try{const email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,name=$('newUserName').value.trim(),role=$('newUserRole').value,permissions=[...document.querySelectorAll('#permissionChoices input:checked')].map(c=>c.value);const cr=await createUserWithEmailAndPassword(creatorAuth,email,password);await setDoc(doc(db,'userProfiles',cr.user.uid),{uid:cr.user.uid,email,name,role,roleLabel:$('newUserRole').selectedOptions[0].text,permissions,active:true,createdAt:new Date().toISOString(),createdBy:activeUser.uid});await signOut(creatorAuth);$('userCreateForm').reset();applyRoleDefaults();s.textContent='Usuário criado com sucesso.';await loadUsers()}catch(e){s.textContent='Falha: '+friendlyAuthError(e)}finally{b.disabled=false}});
 function getFields(){const o={};fields.forEach(k=>o[k]=$(k).value);return o}
 function setFields(o){fields.forEach(k=>$(k).value=o&&o[k]!=null?o[k]:'')}
 function val(id){return $(id).value}
@@ -178,6 +194,8 @@ async function loadPhotos(reportId){
 }
 async function saveReport(){
  if(!activeUser){alert('Faça login antes de salvar.');return}
+ if(editingId&&!can('reports.edit')){requirePermission('reports.edit');return}
+ if(!editingId&&!can('reports.create')){requirePermission('reports.create');return}
  const button=$('saveBtn');button.disabled=true;$('draftStatus').textContent='Salvando no Firestore...';
  try{
   const id=editingId||('rpt-'+Date.now().toString(36));
@@ -225,17 +243,19 @@ async function loadReport(id){
  const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);
  renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
 }
-function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='editor')preview()}
+function showPage(id){if(id==='users'&&!isMaster()){alert('Apenas o mestre pode gerenciar usuários.');return}if(id==='model'&&!can('model.view')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='users')loadUsers();if(id==='editor')preview()}
 function newReport(){
+ if(!requirePermission('reports.create'))return;
  if((Object.values(getFields()).some(v=>String(v||'').trim())||photos.length)&&!confirm('Iniciar novo relatório? Salve antes se precisar manter o conteúdo atual.'))return;
  restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;setModel(modelCache);renderPhotos();preview();restoring=false;draft();showPage('editor')
 }
-function printNow(){preview();window.print()}
+function printNow(){if(!requirePermission('reports.print'))return;preview();window.print()}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPage(t.dataset.page)));
 fields.forEach(id=>{ $(id).addEventListener('input',()=>{preview();schedule()});$(id).addEventListener('change',()=>{preview();schedule()})});
 $('saveBtn').onclick=saveReport;$('saveTop').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('printTop').onclick=printNow;$('refresh').onclick=preview;
 $('clearBtn').onclick=()=>{if(!confirm('Limpar campos e fotos do formulário?'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();restoring=false;draft()};
 $('applyModel').onclick=async()=>{
+ if(!requirePermission('model.edit'))return;
  const m=getModel();$('modelStatus').textContent='Salvando identidade visual no Firestore...';
  try{await setDoc(modelRef(),{...m,updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp()});modelCache=m;applyModelDOM(m);preview();$('modelStatus').textContent='Identidade visual salva no Firestore e aplicada aos novos relatórios.'}
  catch(error){$('modelStatus').textContent='Não foi possível salvar o modelo: '+friendlyAuthError(error)}
@@ -272,19 +292,15 @@ $('search').addEventListener('input',renderSaved);$('filter').addEventListener('
 $('newTop').insertAdjacentHTML('afterend','<button class="light" id="logoutBtn" type="button">Sair</button>');
 $('logoutBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){alert(friendlyAuthError(e))}});
 async function initializeUser(user){
- activeUser=user;
- if(!user){$('appShell').hidden=true;$('authGate').hidden=false;return}
- $('authGate').hidden=true;$('appShell').hidden=false;
- $('draftStatus').textContent='Conectando ao Firestore...';
- try{
-  const [modelSnap,reportsSnap]=await Promise.all([getDoc(modelRef()),getDocs(userReportsRef())]);
-  modelCache=modelSnap.exists()?modelSnap.data():{...defaultModel};
-  if(!modelSnap.exists())await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()});
-  setModel(modelCache);
-  reportCache=reportsSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
-  setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();
-  $('draftStatus').textContent='Conectado ao Firestore. Os dados são salvos na nuvem quando você clica em Salvar relatório.';
- }catch(error){console.error(error);$('draftStatus').textContent='Erro ao conectar ao Firestore: '+friendlyAuthError(error);alert('O login foi realizado, mas não foi possível acessar o Firestore. '+friendlyAuthError(error))}
+ activeUser=user;if(!user){currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}
+ try{const ps=await getDoc(doc(db,'userProfiles',user.uid));
+ if(user.uid===MASTER_UID){currentProfile={uid:user.uid,name:'Mestre do sistema',email:user.email||'',role:'mestre',roleLabel:'Mestre do sistema',permissions:PERMISSIONS.map(p=>p[0]),active:true};if(!ps.exists())await setDoc(doc(db,'userProfiles',user.uid),{...currentProfile,createdAt:new Date().toISOString()})}
+ else{if(!ps.exists()){await signOut(auth);throw new Error('Login autenticado, mas sem perfil autorizado. Solicite cadastro ao mestre.')}currentProfile={uid:ps.id,...ps.data()};if(currentProfile.active===false){await signOut(auth);throw new Error('Seu acesso está desativado. Procure o mestre do sistema.')}}
+ $('authGate').hidden=true;$('appShell').hidden=false;applyAccessControl();
+ if(can('model.view')||can('model.edit')){const ms=await getDoc(modelRef());modelCache=ms.exists()?ms.data():{...defaultModel};if(!ms.exists()&&can('model.edit'))await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()})}else modelCache={...defaultModel};
+ setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado ao Firestore. Permissões carregadas.';if(isMaster())loadUsers()
+ }catch(error){console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
 }
 onAuthStateChanged(auth,user=>{initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
 </script>
