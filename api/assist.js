@@ -57,7 +57,7 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
     const upstream = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent",
       {
@@ -94,12 +94,12 @@ module.exports = async function handler(req, res) {
       console.error("Gemini API error", upstream.status, data.error && data.error.message);
       return res.status(502).json({
         error: upstream.status === 400 || upstream.status === 404
-          ? "O Gemini recusou a solicitação. Confira o modelo configurado e se ele está disponível para sua chave."
+          ? "O Gemini recusou a solicitação: " + String(data.error && data.error.message || "erro de modelo ou parâmetros").slice(0, 240)
           : upstream.status === 401 || upstream.status === 403
-            ? "A chave Gemini foi recusada. Confira GEMINI_API_KEY nas variáveis de ambiente da Vercel e as permissões da chave."
+            ? "A chave Gemini foi recusada: " + String(data.error && data.error.message || "verifique a chave e as permissões").slice(0, 240)
             : upstream.status === 429
-              ? "O Gemini atingiu o limite de uso ou de solicitações da API. Confira as cotas e o faturamento no Google AI Studio."
-              : "O Gemini não conseguiu processar o pedido. Tente novamente."
+              ? "O Gemini atingiu o limite de uso: " + String(data.error && data.error.message || "confira cotas e faturamento no Google AI Studio").slice(0, 240)
+              : "Falha na API Gemini: " + String(data.error && data.error.message || "tente novamente").slice(0, 240)
       });
     }
 
