@@ -10,9 +10,31 @@
 header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid var(--brand);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.logohead{display:flex;align-items:center;gap:12px}.mark{background:var(--brand);color:#20242b;padding:13px;border-radius:8px;font-weight:900}.sub{font-size:12px;color:#c7cbd1;margin-top:4px}.actions,.tabs,.row{display:flex;gap:8px;flex-wrap:wrap}.tabs{background:white;padding:10px 20px 0;border-bottom:1px solid var(--line)}.tab{background:transparent;color:#626b75;border-radius:7px 7px 0 0}.tab.active{background:var(--bg);border-bottom:3px solid var(--brand);color:var(--ink)}main{max-width:1500px;margin:auto;padding:20px}.page{display:none}.page.active{display:block}h1{font-size:23px;margin:0 0 7px}.muted{font-size:13px;color:var(--muted);line-height:1.5}.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,.95fr);gap:18px;align-items:start}.panel{background:white;border:1px solid var(--line);border-radius:10px;padding:18px;margin:15px 0;box-shadow:0 2px 8px #1d29390a}.panel h3{font-size:16px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{min-width:0}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;color:#4f5966;margin-bottom:6px}input,select,textarea{width:100%;min-width:0;border:1px solid #d5dae1;border-radius:7px;padding:10px;background:white;color:var(--ink)}textarea{resize:vertical;min-height:85px;line-height:1.5}.previewbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0}.previewwrap{background:#e9ecf0;padding:8px;overflow:auto;border-radius:9px}.paper{background:white;max-width:794px;min-height:1123px;margin:auto;padding:38px 40px;box-shadow:0 3px 15px #0001;font-size:11px;line-height:1.5;overflow-wrap:anywhere}.rhead{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:3px solid var(--brand);padding-bottom:15px}.rhead img{max-width:130px;max-height:60px;object-fit:contain}.company{font-size:19px;font-weight:900}.rsub{font-size:10px;color:#626b75}.tag{border:1px solid #d9dde2;padding:6px;border-radius:4px;font-size:9px;text-align:center}.rtitle{text-align:center;font-size:19px;font-weight:900;text-transform:uppercase;margin:16px 0 3px}.rnumber{text-align:center;color:#59616b;font-size:10px;margin-bottom:18px}.sect{margin-top:16px}.secttitle{font-size:11px;font-weight:900;text-transform:uppercase;background:#f0f2f4;border-left:4px solid var(--brand);padding:7px 9px;margin-bottom:8px}.rtable{width:100%;border-collapse:collapse;table-layout:fixed}.rtable td,.rtable th{border:1px solid #d9dde2;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}.rtable th{background:#f7f8f9;width:20%}.rtext{white-space:pre-wrap}.rphotos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rphoto{margin:0;break-inside:avoid}.rphoto img{width:100%;height:auto;max-height:240px;object-fit:contain;border:1px solid #ddd}.rphoto figcaption{font-size:9px;color:#555;margin-top:4px}.rfoot{border-top:1px solid #ddd;margin-top:25px;padding-top:8px;font-size:8px;color:#68717d;display:flex;justify-content:space-between;gap:10px}.conf{text-align:center;color:#68717d;font-size:8px;margin-top:10px}.photoitem,.saved{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:9px;border-radius:8px;margin-top:10px;flex-wrap:wrap}.photoitem img{width:78px;height:62px;object-fit:cover}.photoitem input{flex:1;min-width:140px}.saved{justify-content:space-between;background:white;padding:14px}.saved small{display:block;color:var(--muted);margin-top:5px}.empty{padding:22px;text-align:center;border:1px dashed #cbd1d9;border-radius:8px;color:var(--muted);font-size:13px}.logo-preview{width:150px;height:85px;border:1px dashed #cbd1d9;border-radius:8px;display:grid;place-items:center;padding:8px;margin-top:8px;color:var(--muted);font-size:12px}.logo-preview img{max-width:100%;max-height:100%;object-fit:contain}.note{background:#fff8e4;border:1px solid #f1dfa5;padding:12px;border-radius:8px;color:#64501a;font-size:12px;margin-bottom:15px}.status{font-size:11px;color:var(--muted);margin-top:8px}
 @media(max-width:1000px){.layout{grid-template-columns:1fr}.paper{max-width:100%}}@media(max-width:600px){main{padding:12px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.paper{padding:22px 16px}.rtitle{font-size:16px}.rphotos{grid-template-columns:1fr}.rhead{align-items:flex-start}header{padding:14px}}
 @page{size:A4;margin:12mm}@media print{body *{visibility:hidden!important}#preview,#preview *{visibility:visible!important}#preview{position:absolute;left:0;top:0;width:100%;max-width:none;min-height:0;margin:0;padding:0;box-shadow:none;font-size:10pt;overflow:visible}.sect,.rtable,.rphoto,.rhead{break-inside:avoid}.rphotos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.auth-gate{position:fixed;inset:0;z-index:9999;background:#f2f4f7;display:grid;place-items:center;padding:20px}
+.auth-card{width:min(100%,440px);background:white;border:1px solid #dfe3e8;border-radius:14px;padding:26px;box-shadow:0 10px 35px #20242b18}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.auth-brand .mark{display:inline-block}
+.auth-card h1{font-size:22px;margin:0 0 8px}.auth-card p{font-size:13px;color:#68717d;line-height:1.5}
+.auth-card label{margin-top:12px}.auth-card .auth-actions{display:grid;gap:9px;margin-top:18px}.auth-error{font-size:12px;color:#a32222;min-height:18px;margin-top:10px}.auth-muted{font-size:12px;color:#68717d;margin-top:12px}
+#appShell[hidden],#authGate[hidden]{display:none!important}
 </style>
 </head>
 <body>
+<div class="auth-gate" id="authGate">
+  <section class="auth-card" aria-labelledby="authTitle">
+    <div class="auth-brand"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub" style="color:#68717d">IRMEN | Soluções técnicas SANY</div></div></div>
+    <h1 id="authTitle">Acesso ao RelatorioPro</h1>
+    <p>Entre com sua conta para acessar os relatórios armazenados no Firestore.</p>
+    <form id="authForm">
+      <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="username" required placeholder="nome@empresa.com">
+      <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
+      <div class="auth-actions"><button class="primary" id="authSubmit" type="submit">Entrar</button><button class="light" id="registerBtn" type="button">Criar conta</button><button class="light" id="resetPasswordBtn" type="button">Recuperar senha</button></div>
+      <div class="auth-error" id="authError" role="alert" aria-live="polite"></div>
+    </form>
+    <div class="auth-muted">Os relatórios ficam vinculados à conta autenticada. Não usamos o armazenamento local do navegador para guardar relatórios.</div>
+  </section>
+</div>
+<div id="appShell" hidden>
 <header><div class="logohead"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button><button class="primary" id="saveTop">Salvar relatório</button><button class="light" id="printTop">Imprimir / PDF</button></div></header>
 <nav class="tabs"><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved">Relatórios salvos</button></nav>
 <main>
@@ -44,10 +66,9 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 </main>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
 
-// Configuração do aplicativo Web Firebase — RelatorioPro IRMEN
 const firebaseConfig = {
   apiKey: "AIzaSyArvp8v1S5qs758dxbapwZGvf2eqbnZsQI",
   authDomain: "relatoriopro-63368.firebaseapp.com",
@@ -56,86 +77,217 @@ const firebaseConfig = {
   messagingSenderId: "1027762547199",
   appId: "1:1027762547199:web:a05b12cb5e53c4a94e5fca"
 };
-
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
 
-// Disponibiliza as instâncias para futuras funções de integração sem expor segredos.
-console.info("Firebase inicializado para o projeto:", firebaseApp.options.projectId);
-
-const DRAFT='relatoriopro-draft',REPORTS='relatoriopro-reports',MODEL='relatoriopro-model';
+const REPORTS='relatoriopro-reports';
+const MODEL='relatoriopro-model';
 const $=id=>document.getElementById(id);
 const fields=['type','date','responsible','client','branch','equipment','location','objective','observations','activities','results','conclusion'];
 const defaultModel={company:'IRMEN',subtitle:'Soluções técnicas SANY',footer:'IRMEN | Relatório técnico',conf:'Documento destinado ao uso técnico e profissional.',color:'#e4a900',logo:''};
-let photos=[],editingId=null,logoData='',restoring=false,timer=null;
-function read(key,fallback){try{const x=localStorage.getItem(key);return x?JSON.parse(x):fallback}catch(e){return fallback}}
-function write(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){alert('Não foi possível salvar. O armazenamento local pode estar cheio; reduza o tamanho das fotos.');return false}}
-function getModel(){return {company:$('mCompany').value.trim(),subtitle:$('mSubtitle').value.trim(),footer:$('mFooter').value.trim(),conf:$('mConf').value.trim(),color:$('mColor').value||'#e4a900',logo:logoData}}
-function setModel(m){m={...defaultModel,...(m||{})};$('mCompany').value=m.company;$('mSubtitle').value=m.subtitle;$('mFooter').value=m.footer;$('mConf').value=m.conf;$('mColor').value=m.color;logoData=m.logo||'';applyModelDOM(m)}
-function applyModelDOM(m){m={...defaultModel,...(m||{})};document.documentElement.style.setProperty('--brand',m.color);const setText=(id,value)=>{const el=$(id);if(el)el.textContent=value??''};setText('pvCompany',m.company);setText('pvSubtitle',m.subtitle);setText('pFooter',m.footer);setText('pFooterRight',m.company);setText('pConf',m.conf);const area=$('previewBrand');if(area){area.innerHTML='';if(m.logo){const img=document.createElement('img');img.src=m.logo;img.alt='Logotipo';area.appendChild(img)}if(String(m.company||'').trim()){const c=document.createElement('div');c.className='company';c.textContent=m.company;area.appendChild(c)}if(String(m.subtitle||'').trim()){const s=document.createElement('div');s.className='rsub';s.textContent=m.subtitle;area.appendChild(s)}}const logoPreview=$('logoPreview');if(logoPreview){logoPreview.innerHTML='';if(m.logo){const img=document.createElement('img');img.src=m.logo;img.alt='Prévia do logotipo';logoPreview.appendChild(img)}else logoPreview.textContent='Nenhum logotipo selecionado'}}
-function val(id){return $(id).value}
-function getFields(){const o={};fields.forEach(k=>o[k]=val(k));return o}
+let photos=[],editingId=null,logoData='',restoring=false,activeUser=null,reportCache=[],modelCache={...defaultModel},gptPendingResult=null;
+
+function userReportsRef(){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return collection(db,'users',activeUser.uid,'reports')}
+function reportRef(id){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return doc(db,'users',activeUser.uid,'reports',id)}
+function modelRef(){if(!activeUser)throw new Error('Faça login para acessar o modelo.');return doc(db,'users',activeUser.uid,'settings','model')}
+function setAuthError(message){$('authError').textContent=message||''}
+function friendlyAuthError(error){
+ const codes={
+ 'auth/invalid-credential':'E-mail ou senha incorretos.',
+ 'auth/user-not-found':'Conta não encontrada. Crie uma conta ou confira o e-mail.',
+ 'auth/wrong-password':'Senha incorreta.',
+ 'auth/email-already-in-use':'Este e-mail já possui uma conta.',
+ 'auth/weak-password':'A senha deve ter pelo menos 6 caracteres.',
+ 'auth/invalid-email':'Informe um endereço de e-mail válido.',
+ 'auth/too-many-requests':'Muitas tentativas. Aguarde e tente novamente.',
+ 'auth/network-request-failed':'Falha de conexão. Verifique a internet.',
+ 'auth/operation-not-allowed':'O login por e-mail/senha ainda não está habilitado no Firebase Authentication.',
+ 'permission-denied':'O Firestore negou o acesso. Confira se as regras de segurança foram publicadas.',
+ 'unavailable':'O Firebase está temporariamente indisponível. Tente novamente.'
+ };
+ return codes[error?.code] || error?.message || 'Ocorreu um erro. Tente novamente.';
+}
+$('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();setAuthError('');$('authSubmit').disabled=true;
+ try{await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value); }
+ catch(error){setAuthError(friendlyAuthError(error))}
+ finally{$('authSubmit').disabled=false}
+});
+$('registerBtn').addEventListener('click',async()=>{
+ setAuthError('');
+ const email=$('authEmail').value.trim(),password=$('authPassword').value;
+ if(!email||!password){setAuthError('Preencha o e-mail e a senha para criar a conta.');return}
+ $('registerBtn').disabled=true;
+ try{await createUserWithEmailAndPassword(auth,email,password)}
+ catch(error){setAuthError(friendlyAuthError(error))}
+ finally{$('registerBtn').disabled=false}
+});
+$('resetPasswordBtn').addEventListener('click',async()=>{
+ setAuthError('');const email=$('authEmail').value.trim();
+ if(!email){setAuthError('Informe seu e-mail para receber o link de recuperação.');return}
+ try{await sendPasswordResetEmail(auth,email);setAuthError('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.')}
+ catch(error){setAuthError(friendlyAuthError(error))}
+});
+
+function getFields(){const o={};fields.forEach(k=>o[k]=$(k).value);return o}
 function setFields(o){fields.forEach(k=>$(k).value=o&&o[k]!=null?o[k]:'')}
+function val(id){return $(id).value}
 function fmtDate(v){if(!v)return '—';const a=v.split('-');return a.length===3?a[2]+'/'+a[1]+'/'+a[0]:v}
 function text(id,v,empty='—'){$(id).textContent=v&&String(v).trim()?v:empty}
-function preview(){text('pvType',val('type')||'Relatório técnico');text('pClient',val('client'));text('pDate',fmtDate(val('date')));text('pEquipment',val('equipment'));text('pResponsible',val('responsible'));text('pLocation',val('location'));text('pBranch',val('branch'));[['pObjective','objective'],['pObservations','observations'],['pActivities','activities'],['pResults','results'],['pConclusion','conclusion']].forEach(([a,b])=>text(a,val(b),''));const area=$('pPhotos');area.innerHTML='';if(!photos.length){area.textContent='Nenhuma foto adicionada.';area.className='rphotos muted'}else{area.className='rphotos';photos.forEach(p=>{const f=document.createElement('figure');f.className='rphoto';const i=document.createElement('img');i.src=p.data;i.alt=p.caption||'Foto';f.appendChild(i);if(p.caption){const c=document.createElement('figcaption');c.textContent=p.caption;f.appendChild(c)}area.appendChild(f)})}}
-function draft(){if(restoring)return;const ok=write(DRAFT,{fields:getFields(),photos,editingId,model:getModel(),savedAt:new Date().toISOString()});if(ok)$('draftStatus').textContent='Rascunho salvo automaticamente às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
-function schedule(){if(restoring)return;clearTimeout(timer);timer=setTimeout(draft,500)}
-function renderPhotos(){const box=$('photoList');box.innerHTML='';if(!photos.length){box.innerHTML='<div class="empty">Nenhuma foto adicionada.</div>';return}photos.forEach((p,i)=>{const row=document.createElement('div');row.className='photoitem';const img=document.createElement('img');img.src=p.data;img.alt='Foto';const input=document.createElement('input');input.value=p.caption||'';input.placeholder='Legenda da foto';input.addEventListener('input',()=>{photos[i].caption=input.value;preview();schedule()});const del=document.createElement('button');del.className='danger';del.textContent='Remover';del.onclick=()=>{photos.splice(i,1);renderPhotos();preview();schedule()};row.append(img,input,del);box.appendChild(row)})}
-function imageData(file){return new Promise((resolve,reject)=>{if(!file)return reject(Error('Selecione um arquivo.'));if(!file.type.startsWith('image/'))return reject(Error('O arquivo selecionado não é uma imagem reconhecida.'));if(file.size>15*1024*1024)return reject(Error('O arquivo tem mais de 15 MB. Reduza o tamanho e tente novamente.'));const r=new FileReader();r.onerror=()=>reject(Error('Não foi possível ler o arquivo. Tente salvar a logo como PNG ou JPG.'));r.onload=()=>{const data=String(r.result||'');if(file.type==='image/svg+xml'){resolve(data);return}const img=new Image();img.onerror=()=>reject(Error('Este formato não é compatível com o navegador. Converta a logo para PNG ou JPG e tente novamente.'));img.onload=()=>{try{const scale=Math.min(1,1200/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');if(!ctx)throw Error('Não foi possível preparar a imagem.');ctx.drawImage(img,0,0,canvas.width,canvas.height);let out=canvas.toDataURL('image/webp',.82);if(!out||out==='data:,')out=canvas.toDataURL('image/png');resolve(out)}catch(err){reject(Error('Falha ao processar a imagem. Tente usar um arquivo PNG ou JPG menor.'))}};img.src=data};r.readAsDataURL(file)})}
-$('photoFiles').addEventListener('change',async e=>{const files=[...e.target.files];let count=0;$('photoStatus').textContent='Preparando imagens...';for(const f of files){try{photos.push({data:await imageData(f),caption:f.name.replace(/\.[^.]+$/,'')});count++}catch(err){console.error(err)}}renderPhotos();preview();draft();$('photoStatus').textContent=count+' imagem(ns) adicionada(s).';e.target.value=''});
-function saveReport(){const r={...getFields(),id:editingId||('rpt-'+Date.now().toString(36)),photos:photos.map(p=>({...p})),model:getModel(),updatedAt:new Date().toISOString()};const list=read(REPORTS,[]);const i=list.findIndex(x=>x.id===r.id);if(i>=0)list[i]=r;else list.unshift(r);if(!write(REPORTS,list))return;editingId=r.id;draft();renderSaved();alert('Relatório salvo neste navegador.')}
-function renderSaved(){const q=val('search').toLowerCase().trim(),type=val('filter'),box=$('savedList');box.innerHTML='';const list=read(REPORTS,[]).filter(r=>(!type||r.type===type)&&(!q||[r.client,r.equipment,r.responsible,r.location].join(' ').toLowerCase().includes(q)));if(!list.length){box.innerHTML='<div class="empty">Nenhum relatório encontrado.</div>';return}list.forEach(r=>{const card=document.createElement('div');card.className='saved';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=(r.client||'Cliente não informado');const meta=document.createElement('small');meta.textContent=(r.type||'Relatório')+' | '+fmtDate(r.date)+' | '+(r.equipment||'Equipamento não informado')+' | '+(r.photos||[]).length+' foto(s)';info.append(title,meta);const actions=document.createElement('div');actions.className='actions';[['Abrir / editar','primary',()=>loadReport(r.id)],['Imprimir','light',()=>{loadReport(r.id);setTimeout(()=>window.print(),150)}],['Excluir','danger',()=>{if(confirm('Excluir este relatório?')){write(REPORTS,read(REPORTS,[]).filter(x=>x.id!==r.id));renderSaved()}}]].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});card.append(info,actions);box.appendChild(card)})}
-function loadReport(id){const r=read(REPORTS,[]).find(x=>x.id===id);if(!r)return;restoring=true;setFields(r);photos=Array.isArray(r.photos)?r.photos:[];editingId=r.id;setModel(read(MODEL,defaultModel));renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})}
-function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')renderSaved();if(id==='editor')preview()}
-function newReport(){if((Object.values(getFields()).some(v=>String(v||'').trim())||photos.length)&&!confirm('Iniciar novo relatório? Salve antes se precisar manter o conteúdo atual.'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;setModel(read(MODEL,defaultModel));renderPhotos();preview();restoring=false;draft();showPage('editor')}
+function getModel(){return {company:$('mCompany').value.trim(),subtitle:$('mSubtitle').value.trim(),footer:$('mFooter').value.trim(),conf:$('mConf').value.trim(),color:$('mColor').value||'#e4a900',logo:logoData}}
+function applyModelDOM(m){
+ m={...defaultModel,...(m||{})};document.documentElement.style.setProperty('--brand',m.color);
+ const setText=(id,value)=>{const el=$(id);if(el)el.textContent=value??''};
+ setText('pvCompany',m.company);setText('pvSubtitle',m.subtitle);setText('pFooter',m.footer);setText('pFooterRight',m.company);setText('pConf',m.conf);
+ const area=$('previewBrand');if(area){area.innerHTML='';if(m.logo){const img=document.createElement('img');img.src=m.logo;img.alt='Logotipo';area.appendChild(img)}if(String(m.company||'').trim()){const c=document.createElement('div');c.className='company';c.textContent=m.company;area.appendChild(c)}if(String(m.subtitle||'').trim()){const s=document.createElement('div');s.className='rsub';s.textContent=m.subtitle;area.appendChild(s)}}
+ const logoPreview=$('logoPreview');if(logoPreview){logoPreview.innerHTML='';if(m.logo){const img=document.createElement('img');img.src=m.logo;img.alt='Prévia do logotipo';logoPreview.appendChild(img)}else logoPreview.textContent='Nenhum logotipo selecionado'}
+}
+function setModel(m){m={...defaultModel,...(m||{})};$('mCompany').value=m.company;$('mSubtitle').value=m.subtitle;$('mFooter').value=m.footer;$('mConf').value=m.conf;$('mColor').value=m.color;logoData=m.logo||'';modelCache=m;applyModelDOM(m)}
+function preview(){
+ text('pvType',val('type')||'Relatório técnico');text('pClient',val('client'));text('pDate',fmtDate(val('date')));text('pEquipment',val('equipment'));text('pResponsible',val('responsible'));text('pLocation',val('location'));text('pBranch',val('branch'));
+ [['pObjective','objective'],['pObservations','observations'],['pActivities','activities'],['pResults','results'],['pConclusion','conclusion']].forEach(([a,b])=>text(a,val(b),''));const area=$('pPhotos');area.innerHTML='';
+ if(!photos.length){area.textContent='Nenhuma foto adicionada.';area.className='rphotos muted'}else{area.className='rphotos';photos.forEach(p=>{const f=document.createElement('figure');f.className='rphoto';const i=document.createElement('img');i.src=p.data;i.alt=p.caption||'Foto';f.appendChild(i);if(p.caption){const c=document.createElement('figcaption');c.textContent=p.caption;f.appendChild(c)}area.appendChild(f)})}
+}
+function draft(){if(restoring)return;$('draftStatus').textContent='Alterações no formulário ainda não salvas no Firestore.'}
+function schedule(){draft()}
+function renderPhotos(){
+ const box=$('photoList');box.innerHTML='';if(!photos.length){box.innerHTML='<div class="empty">Nenhuma foto adicionada.</div>';return}
+ photos.forEach((p,i)=>{const row=document.createElement('div');row.className='photoitem';const img=document.createElement('img');img.src=p.data;img.alt='Foto';const input=document.createElement('input');input.value=p.caption||'';input.placeholder='Legenda da foto';input.addEventListener('input',()=>{photos[i].caption=input.value;preview();schedule()});const del=document.createElement('button');del.className='danger';del.textContent='Remover';del.onclick=()=>{photos.splice(i,1);renderPhotos();preview();schedule()};row.append(img,input,del);box.appendChild(row)})
+}
+function imageData(file){
+ return new Promise((resolve,reject)=>{
+  if(!file)return reject(Error('Selecione um arquivo.'));
+  if(!file.type.startsWith('image/'))return reject(Error('O arquivo selecionado não é uma imagem reconhecida.'));
+  if(file.size>15*1024*1024)return reject(Error('O arquivo tem mais de 15 MB. Reduza o tamanho e tente novamente.'));
+  const r=new FileReader();r.onerror=()=>reject(Error('Não foi possível ler o arquivo.'));
+  r.onload=()=>{const data=String(r.result||'');const img=new Image();img.onerror=()=>reject(Error('Formato de imagem incompatível. Use PNG ou JPG.'));
+   img.onload=()=>{try{const scale=Math.min(1,800/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');if(!ctx)throw Error('Não foi possível preparar a imagem.');ctx.drawImage(img,0,0,canvas.width,canvas.height);const out=canvas.toDataURL('image/webp',.65);if(out.length>650000)throw Error('A imagem comprimida ainda está muito grande. Escolha uma foto menor.');resolve(out)}catch(err){reject(err)}};
+   img.src=data;
+  };r.readAsDataURL(file)
+ })
+}
+$('photoFiles').addEventListener('change',async e=>{
+ const files=[...e.target.files];let count=0;$('photoStatus').textContent='Preparando imagens...';
+ for(const f of files){try{photos.push({data:await imageData(f),caption:f.name.replace(/\.[^.]+$/,'')});count++}catch(err){$('photoStatus').textContent=err.message||'Falha ao processar uma imagem.'}}
+ renderPhotos();preview();draft();if(count)$('photoStatus').textContent=count+' imagem(ns) adicionada(s). Salve o relatório para enviar as fotos ao Firestore.';e.target.value=''
+});
+async function loadPhotos(reportId){
+ const snap=await getDocs(collection(reportRef(reportId),'photos'));
+ return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+}
+async function saveReport(){
+ if(!activeUser){alert('Faça login antes de salvar.');return}
+ const button=$('saveBtn');button.disabled=true;$('draftStatus').textContent='Salvando no Firestore...';
+ try{
+  const id=editingId||('rpt-'+Date.now().toString(36));
+  const r={...getFields(),id,model:getModel(),updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp(),ownerUid:activeUser.uid};
+  await setDoc(reportRef(id),r,{merge:true});
+  const photoCollection=collection(reportRef(id),'photos');
+  const oldPhotos=await getDocs(photoCollection);
+  const keepIds=new Set(photos.filter(p=>p.id).map(p=>p.id));
+  await Promise.all(oldPhotos.docs.filter(d=>!keepIds.has(d.id)).map(d=>deleteDoc(d.ref)));
+  for(let i=0;i<photos.length;i++){
+   const p=photos[i],photoId=p.id||('photo-'+i+'-'+Date.now().toString(36));
+   await setDoc(doc(photoCollection,photoId),{data:p.data,caption:p.caption||'',order:i,updatedAt:new Date().toISOString()});
+   p.id=photoId;
+  }
+  editingId=id;
+  await loadSavedReports();
+  $('draftStatus').textContent='Relatório e fotos salvos no Firestore com sucesso.';
+  alert('Relatório salvo no Firestore.');
+ }catch(error){console.error(error);$('draftStatus').textContent='Falha ao salvar no Firestore: '+friendlyAuthError(error);alert('Não foi possível salvar no Firestore. '+friendlyAuthError(error))}
+ finally{button.disabled=false}
+}
+async function loadSavedReports(){
+ const box=$('savedList');box.innerHTML='<div class="empty">Carregando relatórios do Firestore...</div>';
+ try{
+  const snap=await getDocs(userReportsRef());
+  reportCache=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  renderSaved();
+ }catch(error){console.error(error);box.innerHTML='<div class="empty">Erro ao consultar o Firestore: '+escapeHtml(friendlyAuthError(error))+'</div>'}
+}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderSaved(){
+ const q=val('search').toLowerCase().trim(),type=val('filter'),box=$('savedList');box.innerHTML='';
+ const list=reportCache.filter(r=>(!type||r.type===type)&&(!q||[r.client,r.equipment,r.responsible,r.location,r.id].join(' ').toLowerCase().includes(q)));
+ if(!list.length){box.innerHTML='<div class="empty">Nenhum relatório encontrado no Firestore.</div>';return}
+ list.forEach(r=>{
+  const card=document.createElement('div');card.className='saved';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=r.client||'Cliente não informado';const meta=document.createElement('small');meta.textContent=(r.type||'Relatório')+' | '+fmtDate(r.date)+' | '+(r.equipment||'Equipamento não informado');
+  info.append(title,meta);const actions=document.createElement('div');actions.className='actions';
+  [['Abrir / editar','primary',()=>loadReport(r.id)],['Imprimir','light',async()=>{await loadReport(r.id);setTimeout(()=>window.print(),150)}],['Excluir','danger',async()=>{if(confirm('Excluir este relatório do Firestore?')){try{const ps=await getDocs(collection(reportRef(r.id),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
+  card.append(info,actions);box.appendChild(card)
+ })
+}
+async function loadReport(id){
+ const snap=await getDoc(reportRef(id));if(!snap.exists()){alert('Este relatório não foi encontrado no Firestore.');return}
+ const r={id:snap.id,...snap.data()};restoring=true;setFields(r);photos=await loadPhotos(id);editingId=id;
+ const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);
+ renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
+}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='editor')preview()}
+function newReport(){
+ if((Object.values(getFields()).some(v=>String(v||'').trim())||photos.length)&&!confirm('Iniciar novo relatório? Salve antes se precisar manter o conteúdo atual.'))return;
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;setModel(modelCache);renderPhotos();preview();restoring=false;draft();showPage('editor')
+}
 function printNow(){preview();window.print()}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPage(t.dataset.page)));
 fields.forEach(id=>{ $(id).addEventListener('input',()=>{preview();schedule()});$(id).addEventListener('change',()=>{preview();schedule()})});
-$('saveBtn').onclick=saveReport;$('saveTop').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('printTop').onclick=printNow;$('refresh').onclick=preview;$('clearBtn').onclick=()=>{if(!confirm('Limpar campos e fotos do formulário?'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();restoring=false;draft()};
-$('applyModel').onclick=()=>{const m=getModel();if(!write(MODEL,m)){ $('modelStatus').textContent='Não foi possível salvar o modelo. Libere espaço no armazenamento do navegador e tente novamente.';return}const reports=read(REPORTS,[]).map(r=>({...r,model:m}));if(!write(REPORTS,reports)){ $('modelStatus').textContent='A identidade foi salva, mas não foi possível atualizar os relatórios já salvos porque o armazenamento do navegador está cheio.';return}applyModelDOM(m);preview();draft();$('modelStatus').textContent='Identidade visual salva e aplicada ao relatório atual, aos novos relatórios e aos relatórios já salvos neste navegador.'};
+$('saveBtn').onclick=saveReport;$('saveTop').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('printTop').onclick=printNow;$('refresh').onclick=preview;
+$('clearBtn').onclick=()=>{if(!confirm('Limpar campos e fotos do formulário?'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();restoring=false;draft()};
+$('applyModel').onclick=async()=>{
+ const m=getModel();$('modelStatus').textContent='Salvando identidade visual no Firestore...';
+ try{await setDoc(modelRef(),{...m,updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp()});modelCache=m;applyModelDOM(m);preview();$('modelStatus').textContent='Identidade visual salva no Firestore e aplicada aos novos relatórios.'}
+ catch(error){$('modelStatus').textContent='Não foi possível salvar o modelo: '+friendlyAuthError(error)}
+};
 $('resetModel').onclick=()=>{if(confirm('Restaurar identidade visual padrão?')){setModel(defaultModel);$('applyModel').click()}};
-$('mLogo').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{logoData=await imageData(f);applyModelDOM(getModel());$('modelStatus').textContent='Logotipo carregado. Clique em Salvar e aplicar modelo.'}catch(err){$('modelStatus').textContent=err&&err.message?err.message:'Falha ao carregar o logotipo.';alert($('modelStatus').textContent)}e.target.value=''});
+$('mLogo').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{logoData=await imageData(f);applyModelDOM(getModel());$('modelStatus').textContent='Logotipo carregado. Clique em Salvar e aplicar modelo.'}catch(err){$('modelStatus').textContent=err.message||'Falha ao carregar o logotipo.'}e.target.value=''});
 $('removeLogo').onclick=()=>{logoData='';applyModelDOM(getModel());$('modelStatus').textContent='Logotipo removido. Clique em Salvar e aplicar modelo.'};
-let gptPendingResult=null;
-function buildGPTPayload(mode){const fieldsData={objective:$('objective').value.trim(),observations:$('observations').value.trim(),activities:$('activities').value.trim(),results:$('results').value.trim(),conclusion:$('conclusion').value.trim()};return {mode,client:$('client').value.trim(),equipment:$('equipment').value.trim(),type:$('type').value,fields:fieldsData}}
+
+function buildGPTPayload(mode){return {mode,client:$('client').value.trim(),equipment:$('equipment').value.trim(),type:$('type').value,fields:{objective:$('objective').value.trim(),observations:$('observations').value.trim(),activities:$('activities').value.trim(),results:$('results').value.trim(),conclusion:$('conclusion').value.trim()}}}
 function sendToGPT(mode){
-  const status=$('gptStatus'),buttons=[$('improveWithGPT'),$('suggestStructure')];
-  buttons.forEach(b=>b.disabled=true);
-  $('gptResultWrap').style.display='none';
-  try{
-    const data=buildGPTPayload(mode);
-    const result={...data.fields};
-    if(mode==='structure'){
-      if(!result.objective)result.objective='Objetivo: descrever a finalidade da visita, inspeção ou manutenção realizada.';
-      if(!result.observations)result.observations='Registrar as condições encontradas, os sintomas relatados e as constatações verificadas durante a atividade.';
-      if(!result.activities)result.activities='• Preparação e verificação inicial.\n• Execução das atividades previstas.\n• Registro das observações e evidências.';
-      if(!result.results)result.results='Registrar os resultados observados, as pendências identificadas e as recomendações aplicáveis.';
-      if(!result.conclusion)result.conclusion='Concluir com base nos fatos e evidências registrados, indicando os próximos passos quando necessário.';
-    }else{
-      if(result.objective&&!/^(objetivo|assunto|resumo)\s*:/i.test(result.objective))result.objective='Objetivo: '+result.objective;
-      if(result.observations)result.observations=result.observations.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>/^(\d+[.)]|[-•])/.test(line)?line:'• '+line).join('\n');
-      if(result.activities)result.activities=result.activities.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>/^(\d+[.)]|[-•])/.test(line)?line:'• '+line).join('\n');
-      if(result.results)result.results=result.results.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>/^(\d+[.)]|[-•])/.test(line)?line:'• '+line).join('\n');
-    }
-    gptPendingResult=result;
-    const labels={objective:'OBJETIVO',observations:'PONTOS DE OBSERVAÇÃO',activities:'ATIVIDADES REALIZADAS',results:'RESULTADOS E RECOMENDAÇÕES',conclusion:'CONCLUSÃO'};
-    $('gptResult').value=Object.entries(labels).map(([k,label])=>label+'\n'+(result[k]||'')).join('\n\n');
-    $('gptResultWrap').style.display='block';
-    status.textContent=mode==='structure'?'Estrutura sugerida localmente. Revise e adapte ao caso real. Nenhuma chamada externa foi feita.':'Texto organizado localmente. Revise os dados técnicos antes de aplicar. Nenhuma chamada externa foi feita.';
-  }catch(e){
-    status.textContent='Não foi possível organizar o texto. Seus campos originais foram preservados.';
-  }finally{
-    buttons.forEach(b=>b.disabled=false);
+ const status=$('gptStatus'),buttons=[$('improveWithGPT'),$('suggestStructure')];buttons.forEach(b=>b.disabled=true);$('gptResultWrap').style.display='none';
+ try{
+  const result={...buildGPTPayload(mode).fields};
+  if(mode==='structure'){
+   if(!result.objective)result.objective='Objetivo: descrever a finalidade da visita, inspeção ou manutenção realizada.';
+   if(!result.observations)result.observations='Registrar as condições encontradas, os sintomas relatados e as constatações verificadas durante a atividade.';
+   if(!result.activities)result.activities='• Preparação e verificação inicial.\n• Execução das atividades previstas.\n• Registro das observações e evidências.';
+   if(!result.results)result.results='Registrar os resultados observados, as pendências identificadas e as recomendações aplicáveis.';
+   if(!result.conclusion)result.conclusion='Concluir com base nos fatos e evidências registrados, indicando os próximos passos quando necessário.';
+  }else{
+   if(result.objective&&!/^(objetivo|assunto|resumo)\s*:/i.test(result.objective))result.objective='Objetivo: '+result.objective;
+   for(const key of ['observations','activities','results'])if(result[key])result[key]=result[key].split('\n').map(line=>line.trim()).filter(Boolean).map(line=>/^(\d+[.)]|[-•])/.test(line)?line:'• '+line).join('\n');
   }
+  gptPendingResult=result;const labels={objective:'OBJETIVO',observations:'PONTOS DE OBSERVAÇÃO',activities:'ATIVIDADES REALIZADAS',results:'RESULTADOS E RECOMENDAÇÕES',conclusion:'CONCLUSÃO'};
+  $('gptResult').value=Object.entries(labels).map(([k,label])=>label+'\n'+(result[k]||'')).join('\n\n');$('gptResultWrap').style.display='block';
+  status.textContent=mode==='structure'?'Estrutura sugerida localmente. Revise e adapte ao caso real. Nenhuma chamada externa foi feita.':'Texto organizado localmente. Revise os dados técnicos antes de aplicar. Nenhuma chamada externa foi feita.';
+ }catch(e){status.textContent='Não foi possível organizar o texto. Seus campos originais foram preservados.'}finally{buttons.forEach(b=>b.disabled=false)}
 }
 $('improveWithGPT').addEventListener('click',()=>sendToGPT('improve'));$('suggestStructure').addEventListener('click',()=>sendToGPT('structure'));
-$('applyGPTResult').addEventListener('click',()=>{if(!gptPendingResult)return;for(const key of ['objective','observations','activities','results','conclusion'])if(typeof gptPendingResult[key]==='string')$(key).value=gptPendingResult[key];preview();draft();$('gptStatus').textContent='Texto aplicado aos campos do relatório. Confira os dados técnicos antes de salvar ou emitir.'});
+$('applyGPTResult').addEventListener('click',()=>{if(!gptPendingResult)return;for(const key of ['objective','observations','activities','results','conclusion'])if(typeof gptPendingResult[key]==='string')$(key).value=gptPendingResult[key];preview();draft();$('gptStatus').textContent='Texto aplicado aos campos. Confira os dados técnicos antes de salvar ou emitir.'});
 $('copyGPTResult').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('gptResult').value);$('gptStatus').textContent='Resultado copiado.'}catch(e){$('gptResult').select();$('gptStatus').textContent='Selecione e copie o texto manualmente.'}});
 $('search').addEventListener('input',renderSaved);$('filter').addEventListener('change',renderSaved);
-function init(){setModel(read(MODEL,defaultModel));$('date').value=new Date().toISOString().slice(0,10);renderPhotos();preview();renderSaved();try{localStorage.removeItem(DRAFT)}catch(e){}applyModelDOM(read(MODEL,defaultModel))}
-init();
+
+$('newTop').insertAdjacentHTML('afterend','<button class="light" id="logoutBtn" type="button">Sair</button>');
+$('logoutBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){alert(friendlyAuthError(e))}});
+async function initializeUser(user){
+ activeUser=user;
+ if(!user){$('appShell').hidden=true;$('authGate').hidden=false;return}
+ $('authGate').hidden=true;$('appShell').hidden=false;
+ $('draftStatus').textContent='Conectando ao Firestore...';
+ try{
+  const [modelSnap,reportsSnap]=await Promise.all([getDoc(modelRef()),getDocs(userReportsRef())]);
+  modelCache=modelSnap.exists()?modelSnap.data():{...defaultModel};
+  if(!modelSnap.exists())await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()});
+  setModel(modelCache);
+  reportCache=reportsSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();
+  $('draftStatus').textContent='Conectado ao Firestore. Os dados são salvos na nuvem quando você clica em Salvar relatório.';
+ }catch(error){console.error(error);$('draftStatus').textContent='Erro ao conectar ao Firestore: '+friendlyAuthError(error);alert('O login foi realizado, mas não foi possível acessar o Firestore. '+friendlyAuthError(error))}
+}
+onAuthStateChanged(auth,user=>{initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
 </script>
+</div>
 </body>
 </html>
