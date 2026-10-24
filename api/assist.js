@@ -12,10 +12,10 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Método não permitido." });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(503).json({
-      error: "A integração de IA ainda não foi configurada. Adicione OPENAI_API_KEY nas variáveis de ambiente do projeto na Vercel e publique novamente."
+      error: "A integração Gemini não está configurada. Adicione GEMINI_API_KEY nas variáveis de ambiente da Vercel e publique novamente."
     });
   }
 
@@ -57,42 +57,65 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + apiKey,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-        temperature: 0.2,
-        max_completion_tokens: 1800,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user }
-        ]
-      })
-    });
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const upstream = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent",
+      {
+        method: "POST",
+        headers: {
+          "x-goog-api-key": apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: user }] }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 1800,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                objective: { type: "STRING" },
+                observations: { type: "STRING" },
+                activities: { type: "STRING" },
+                results: { type: "STRING" },
+                conclusion: { type: "STRING" }
+              },
+              required: ["objective", "observations", "activities", "results", "conclusion"]
+            }
+          }
+        })
+      }
+    );
 
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      console.error("OpenAI API error", upstream.status, data.error && data.error.message);
+      console.error("Gemini API error", upstream.status, data.error && data.error.message);
       return res.status(502).json({
-        error: upstream.status === 401
-          ? "A chave da integração de IA é inválida. Confira OPENAI_API_KEY na Vercel."
-          : "A IA não conseguiu processar o pedido. Verifique a configuração da API e tente novamente."
+        error: upstream.status === 400 || upstream.status === 404
+          ? "O Gemini recusou a solicitação. Confira o modelo configurado e se ele está disponível para sua chave."
+          : upstream.status === 401 || upstream.status === 403
+            ? "A chave Gemini foi recusada. Confira GEMINI_API_KEY nas variáveis de ambiente da Vercel e as permissões da chave."
+            : upstream.status === 429
+              ? "O Gemini atingiu o limite de uso ou de solicitações da API. Confira as cotas e o faturamento no Google AI Studio."
+              : "O Gemini não conseguiu processar o pedido. Tente novamente."
       });
     }
 
-    const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if (!content) return res.status(502).json({ error: "A IA retornou uma resposta vazia. Tente novamente." });
+    const content = data.candidates && data.candidates[0] &&
+      data.candidates[0].content && data.candidates[0].content.parts &&
+      data.candidates[0].content.parts.map(part => part.text || "").join("");
+    if (!content) {
+      console.error("Gemini returned no text", JSON.stringify(data.promptFeedback || data.candidates && data.candidates[0] && data.candidates[0].finishReason || {}));
+      return res.status(502).json({ error: "O Gemini retornou uma resposta vazia. Tente novamente." });
+    }
 
     let result;
     try {
       result = JSON.parse(content);
     } catch {
-      return res.status(502).json({ error: "A IA retornou um formato inválido. Tente novamente." });
+      return res.status(502).json({ error: "O Gemini retornou um formato inválido. Tente novamente." });
     }
 
     const safeResult = {};
@@ -101,7 +124,7 @@ module.exports = async function handler(req, res) {
     }
     return res.status(200).json({ result: safeResult });
   } catch (error) {
-    console.error("AI assistant request failed", error && error.message);
-    return res.status(502).json({ error: "Não foi possível conectar à IA. Tente novamente em instantes." });
+    console.error("Gemini assistant request failed", error && error.message);
+    return res.status(502).json({ error: "Não foi possível conectar ao Gemini. Tente novamente em instantes." });
   }
 };
