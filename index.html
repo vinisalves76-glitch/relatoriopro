@@ -213,18 +213,25 @@ let agendaCache=[];
 function agendaRef(ownerUid,id){return doc(db,'users',ownerUid,'agenda',id)}
 function agendaDateLabel(v){if(!v)return 'Data não definida';const p=String(v).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v}
 function agendaRoleEligible(u){
- const roles=[u.role,u.roleLabel,u.cargo,u.perfil].filter(Boolean).map(v=>String(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_'));
+ // Compatibilidade com variações de nomes de campos usadas em cadastros antigos.
+ const roleFields=Object.entries(u).filter(([key])=>/(role|cargo|perfil|funcao|função|position|title|tipo_usuario|tipousuario)/i.test(key)).map(([,value])=>value);
+ const roles=[u.role,u.roleLabel,u.cargo,u.perfil,u.funcao,u.função,u.position,u.jobTitle,u.userRole,u.tipoUsuario,u.tipo_usuario,...roleFields]
+  .filter(v=>typeof v==='string'&&v.trim())
+  .map(v=>String(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase());
  return roles.some(role=>role.includes('instrutor')||role.includes('consultor'));
 }
 async function refreshAgendaPeople(){
  if(!isSystemAdmin())return;
- // Atualiza diretamente do Firestore para incluir cadastros novos e mudanças de cargo/status.
+ // Sempre consulta os perfis atuais no Firestore, sem depender do cache da tela.
  const s=await getDocs(profilesRef);
  userProfilesCache=s.docs.map(d=>({...d.data(),uid:d.id}));
  const people=userProfilesCache.filter(u=>u.uid!==MASTER_UID&&u.active!==false&&agendaRoleEligible(u)).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'pt-BR'));
- const opts=people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml((u.name||u.email||u.uid)+' — '+(u.roleLabel||u.role||''))+'</option>').join('');
+ const opts=people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml((u.name||u.email||u.uid)+' — '+(u.roleLabel||u.role||u.cargo||u.perfil||'Instrutor/consultor'))+'</option>').join('');
  $('agendaAssignee').innerHTML='<option value="">Selecione um usuário cadastrado</option>'+opts;
  $('agendaPersonFilter').innerHTML='<option value="">Todos os profissionais</option>'+people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml(u.name||u.email||u.uid)+'</option>').join('');
+ if(!people.length){
+  $('agendaAssignee').insertAdjacentHTML('beforeend','<option value="" disabled>Nenhum perfil ativo identificado como instrutor/consultor</option>');
+ }
 }
 function clearAgendaForm(){
  $('agendaForm').reset();$('agendaId').value='';$('agendaOwnerUid').value='';$('agendaFormTitle').textContent='Cadastrar compromisso';$('agendaSaveBtn').textContent='Salvar compromisso';$('agendaFormStatus').textContent='';$('agendaDate').value=new Date().toISOString().slice(0,10);
