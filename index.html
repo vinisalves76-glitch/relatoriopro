@@ -208,7 +208,7 @@ async function loadSavedReports(){
  const box=$('savedList');box.innerHTML='<div class="empty">Carregando relatórios do Firestore...</div>';
  try{
   const snap=await getDocs(userReportsRef());
-  reportCache=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  reportCache=snap.docs.map(d=>({id:d.id,ownerUid:d.ref.parent.parent?.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
   renderSaved();
  }catch(error){console.error(error);box.innerHTML='<div class="empty">Erro ao consultar o Firestore: '+escapeHtml(friendlyAuthError(error))+'</div>'}
 }
