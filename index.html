@@ -79,7 +79,7 @@ $('resetModel').onclick=()=>{if(confirm('Restaurar identidade visual padrão?'))
 $('mLogo').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{logoData=await imageData(f);applyModelDOM(getModel());$('modelStatus').textContent='Logotipo carregado. Clique em Salvar e aplicar modelo.'}catch(err){alert('Não foi possível carregar o logotipo.')}e.target.value=''});
 $('removeLogo').onclick=()=>{logoData='';applyModelDOM(getModel());$('modelStatus').textContent='Logotipo removido. Clique em Salvar e aplicar modelo.'};
 $('search').addEventListener('input',renderSaved);$('filter').addEventListener('change',renderSaved);
-function init(){setModel(read(MODEL,defaultModel));$('date').value=new Date().toISOString().slice(0,10);$('number').value=makeNumber();renderPhotos();preview();renderSaved();const d=read(DRAFT,null);if(d&&d.fields&&(Object.values(d.fields).some(v=>String(v||'').trim())||(d.photos||[]).length)&&confirm('Encontramos um rascunho anterior. Deseja recuperá-lo?')){restoring=true;setFields(d.fields);photos=d.photos||[];editingId=d.editingId||null;if(d.model)setModel(d.model);renderPhotos();preview();restoring=false}applyModelDOM(read(MODEL,defaultModel))}
+function init(){setModel(read(MODEL,defaultModel));$('date').value=new Date().toISOString().slice(0,10);renderPhotos();preview();renderSaved();const d=read(DRAFT,null);if(d&&d.fields&&(Object.values(d.fields).some(v=>String(v||'').trim())||(d.photos||[]).length)&&confirm('Encontramos um rascunho anterior. Deseja recuperá-lo?')){restoring=true;setFields(d.fields);photos=d.photos||[];editingId=d.editingId||null;if(d.model)setModel(d.model);renderPhotos();preview();restoring=false}applyModelDOM(read(MODEL,defaultModel))}
 init();
 </script>
 </body>
