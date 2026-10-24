@@ -96,7 +96,7 @@ const defaultModel={company:'IRMEN',subtitle:'Soluções técnicas SANY',footer:
 let photos=[],editingId=null,logoData='',restoring=false,activeUser=null,reportCache=[],modelCache={...defaultModel},gptPendingResult=null;
 
 function userReportsRef(){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return isSystemAdmin()?collectionGroup(db,'reports'):collection(db,'users',activeUser.uid,'reports')}
-function reportRef(id){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return doc(db,'users',activeUser.uid,'reports',id)}
+function reportRef(id,ownerUid=activeUser?.uid){if(!ownerUid)throw new Error('Proprietário não identificado.');return doc(db,'users',ownerUid,'reports',id)}
 function modelRef(){if(!activeUser)throw new Error('Faça login para acessar o modelo.');return doc(db,'users',activeUser.uid,'settings','model')}
 function setAuthError(message){$('authError').textContent=message||''}
 function friendlyAuthError(error){
