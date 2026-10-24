@@ -213,24 +213,31 @@ let agendaCache=[];
 function agendaRef(ownerUid,id){return doc(db,'users',ownerUid,'agenda',id)}
 function agendaDateLabel(v){if(!v)return 'Data não definida';const p=String(v).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v}
 function agendaRoleEligible(u){
- // Compatibilidade com variações de nomes de campos usadas em cadastros antigos.
- const roleFields=Object.entries(u).filter(([key])=>/(role|cargo|perfil|funcao|função|position|title|tipo_usuario|tipousuario)/i.test(key)).map(([,value])=>value);
- const roles=[u.role,u.roleLabel,u.cargo,u.perfil,u.funcao,u.função,u.position,u.jobTitle,u.userRole,u.tipoUsuario,u.tipo_usuario,...roleFields]
-  .filter(v=>typeof v==='string'&&v.trim())
-  .map(v=>String(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase());
- return roles.some(role=>role.includes('instrutor')||role.includes('consultor'));
+ const values=Object.entries(u)
+  .filter(([key])=>/(role|cargo|perfil|funcao|função|position|title|tipo_usuario|tipousuario)/i.test(key))
+  .map(([,value])=>value)
+  .flatMap(value=>Array.isArray(value)?value:[value])
+  .filter(value=>typeof value==='string'&&value.trim())
+  .map(value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
+ return values.some(role=>role.includes('instrutor')||role.includes('consultor'));
 }
 async function refreshAgendaPeople(){
  if(!isSystemAdmin())return;
- // Sempre consulta os perfis atuais no Firestore, sem depender do cache da tela.
  const s=await getDocs(profilesRef);
  userProfilesCache=s.docs.map(d=>({...d.data(),uid:d.id}));
- const people=userProfilesCache.filter(u=>u.uid!==MASTER_UID&&u.active!==false&&agendaRoleEligible(u)).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'pt-BR'));
- const opts=people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml((u.name||u.email||u.uid)+' — '+(u.roleLabel||u.role||u.cargo||u.perfil||'Instrutor/consultor'))+'</option>').join('');
+ const activeProfiles=userProfilesCache.filter(u=>u.uid!==MASTER_UID&&u.active!==false);
+ const eligible=activeProfiles.filter(agendaRoleEligible);
+ // Se os campos de cargo de um cadastro antigo não forem reconhecidos, não deixa a agenda ficar vazia:
+ // disponibiliza os perfis ativos para seleção administrativa, mostrando o cargo registrado.
+ const people=(eligible.length?eligible:activeProfiles).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'pt-BR'));
+ const opts=people.map(u=>{
+  const roleLabel=u.roleLabel||u.role||u.cargo||u.perfil||u.funcao||u.função||'Cargo não identificado';
+  return '<option value="'+escapeHtml(u.uid)+'">'+escapeHtml((u.name||u.email||u.uid)+' — '+roleLabel)+'</option>';
+ }).join('');
  $('agendaAssignee').innerHTML='<option value="">Selecione um usuário cadastrado</option>'+opts;
  $('agendaPersonFilter').innerHTML='<option value="">Todos os profissionais</option>'+people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml(u.name||u.email||u.uid)+'</option>').join('');
- if(!people.length){
-  $('agendaAssignee').insertAdjacentHTML('beforeend','<option value="" disabled>Nenhum perfil ativo identificado como instrutor/consultor</option>');
+ if(!eligible.length&&activeProfiles.length){
+  $('agendaAssignee').insertAdjacentHTML('afterbegin','<option value="" disabled>Confira os cargos exibidos abaixo</option>');
  }
 }
 function clearAgendaForm(){
