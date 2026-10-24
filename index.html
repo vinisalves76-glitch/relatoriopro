@@ -25,7 +25,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
   <section class="auth-card" aria-labelledby="authTitle">
     <div class="auth-brand"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub" style="color:#68717d">IRMEN | Soluções técnicas SANY</div></div></div>
     <h1 id="authTitle">Acesso ao RelatorioPro</h1>
-    <p>Entre com sua conta para acessar os relatórios armazenados no Firestore.</p>
+    <p>Entre com sua conta para acessar os relatórios.</p>
     <form id="authForm">
       <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="username" required placeholder="nome@empresa.com">
       <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
@@ -111,7 +111,7 @@ function friendlyAuthError(error){
  'auth/too-many-requests':'Muitas tentativas. Aguarde e tente novamente.',
  'auth/network-request-failed':'Falha de conexão. Verifique a internet.',
  'auth/operation-not-allowed':'O login por e-mail/senha ainda não está habilitado no Firebase Authentication.',
- 'permission-denied':'O Firestore negou o acesso. Confira se as regras de segurança foram publicadas.',
+ 'permission-denied':'Seu acesso foi negado. Verifique suas permissões ou entre em contato com o administrador.',
  'unavailable':'O Firebase está temporariamente indisponível. Tente novamente.'
  };
  return codes[error?.code] || error?.message || 'Ocorreu um erro. Tente novamente.';
@@ -153,7 +153,7 @@ function preview(){
  [['pObjective','objective'],['pObservations','observations'],['pActivities','activities'],['pResults','results'],['pConclusion','conclusion']].forEach(([a,b])=>text(a,val(b),''));const area=$('pPhotos');area.innerHTML='';
  if(!photos.length){area.textContent='Nenhuma foto adicionada.';area.className='rphotos muted'}else{area.className='rphotos';photos.forEach(p=>{const f=document.createElement('figure');f.className='rphoto';const i=document.createElement('img');i.src=p.data;i.alt=p.caption||'Foto';f.appendChild(i);if(p.caption){const c=document.createElement('figcaption');c.textContent=p.caption;f.appendChild(c)}area.appendChild(f)})}
 }
-function draft(){if(restoring)return;$('draftStatus').textContent='Alterações no formulário ainda não salvas no Firestore.'}
+function draft(){if(restoring)return;$('draftStatus').textContent='Alterações no formulário ainda não salvas.'}
 function schedule(){draft()}
 function renderPhotos(){
  const box=$('photoList');box.innerHTML='';if(!photos.length){box.innerHTML='<div class="empty">Nenhuma foto adicionada.</div>';return}
@@ -174,7 +174,7 @@ function imageData(file){
 $('photoFiles').addEventListener('change',async e=>{
  const files=[...e.target.files];let count=0;$('photoStatus').textContent='Preparando imagens...';
  for(const f of files){try{photos.push({data:await imageData(f),caption:f.name.replace(/\.[^.]+$/,'')});count++}catch(err){$('photoStatus').textContent=err.message||'Falha ao processar uma imagem.'}}
- renderPhotos();preview();draft();if(count)$('photoStatus').textContent=count+' imagem(ns) adicionada(s). Salve o relatório para enviar as fotos ao Firestore.';e.target.value=''
+ renderPhotos();preview();draft();if(count)$('photoStatus').textContent=count+' imagem(ns) adicionada(s). Salve o relatório para guardar as fotos.';e.target.value=''
 });
 async function loadPhotos(reportId){
  const snap=await getDocs(collection(reportRef(reportId),'photos'));
@@ -184,7 +184,7 @@ async function saveReport(){
  if(!activeUser){alert('Faça login antes de salvar.');return}
  if(editingId&&!can('reports.edit')){requirePermission('reports.edit');return}
  if(!editingId&&!can('reports.create')){requirePermission('reports.create');return}
- const button=$('saveBtn');button.disabled=true;$('draftStatus').textContent='Salvando no Firestore...';
+ const button=$('saveBtn');button.disabled=true;$('draftStatus').textContent='Salvando relatório...';
  try{
   const id=editingId||('rpt-'+Date.now().toString(36));
   const r={...getFields(),id,model:getModel(),updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp(),ownerUid:activeUser.uid};
@@ -200,33 +200,33 @@ async function saveReport(){
   }
   editingId=id;
   await loadSavedReports();
-  $('draftStatus').textContent='Relatório e fotos salvos no Firestore com sucesso.';
-  alert('Relatório salvo no Firestore.');
- }catch(error){console.error(error);$('draftStatus').textContent='Falha ao salvar no Firestore: '+friendlyAuthError(error);alert('Não foi possível salvar no Firestore. '+friendlyAuthError(error))}
+  $('draftStatus').textContent='Relatório e fotos salvos com sucesso.';
+  alert('Relatório salvo com sucesso.');
+ }catch(error){console.error(error);$('draftStatus').textContent='Falha ao salvar o relatório: '+friendlyAuthError(error);alert('Não foi possível salvar o relatório. '+friendlyAuthError(error))}
  finally{button.disabled=false}
 }
 async function loadSavedReports(){
- const box=$('savedList');box.innerHTML='<div class="empty">Carregando relatórios do Firestore...</div>';
+ const box=$('savedList');box.innerHTML='<div class="empty">Carregando relatórios...</div>';
  try{
   const snap=await getDocs(userReportsRef());
   reportCache=snap.docs.map(d=>({id:d.id,ownerUid:d.ref.parent.parent?.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
   renderSaved();
- }catch(error){console.error(error);box.innerHTML='<div class="empty">Erro ao consultar o Firestore: '+escapeHtml(friendlyAuthError(error))+'</div>'}
+ }catch(error){console.error(error);box.innerHTML='<div class="empty">Erro ao consultar relatórios: '+escapeHtml(friendlyAuthError(error))+'</div>'}
 }
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function renderSaved(){
  const q=val('search').toLowerCase().trim(),type=val('filter'),box=$('savedList');box.innerHTML='';
  const list=reportCache.filter(r=>(!type||r.type===type)&&(!q||[r.client,r.equipment,r.responsible,r.location,r.id].join(' ').toLowerCase().includes(q)));
- if(!list.length){box.innerHTML='<div class="empty">Nenhum relatório encontrado no Firestore.</div>';return}
+ if(!list.length){box.innerHTML='<div class="empty">Nenhum relatório encontrado.</div>';return}
  list.forEach(r=>{
   const card=document.createElement('div');card.className='saved';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=r.client||'Cliente não informado';const meta=document.createElement('small');meta.textContent=(r.type||'Relatório')+' | '+fmtDate(r.date)+' | '+(r.equipment||'Equipamento não informado');
   info.append(title,meta);const actions=document.createElement('div');actions.className='actions';
-  [['Abrir relatório','primary',()=>loadReport(r.id,r.ownerUid)],['Imprimir','light',async()=>{await loadReport(r.id,r.ownerUid);setTimeout(()=>window.print(),150)}],...(isSystemAdmin()?[]:[['Excluir','danger',async()=>{if(confirm('Excluir este relatório do Firestore?')){try{const ps=await getDocs(collection(reportRef(r.id,r.ownerUid),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id,r.ownerUid));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]])].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
+  [['Abrir relatório','primary',()=>loadReport(r.id,r.ownerUid)],['Imprimir','light',async()=>{await loadReport(r.id,r.ownerUid);setTimeout(()=>window.print(),150)}],...(isSystemAdmin()?[]:[['Excluir','danger',async()=>{if(confirm('Deseja excluir este relatório?')){try{const ps=await getDocs(collection(reportRef(r.id,r.ownerUid),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id,r.ownerUid));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]])].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
   card.append(info,actions);box.appendChild(card)
  })
 }
 async function loadReport(id,ownerUid=activeUser?.uid){
- const snap=await getDoc(reportRef(id,ownerUid));if(!snap.exists()){alert('Este relatório não foi encontrado no Firestore.');return}
+ const snap=await getDoc(reportRef(id,ownerUid));if(!snap.exists()){alert('Este relatório não foi encontrado.');return}
  const r={id:snap.id,ownerUid,...snap.data()};restoring=true;setFields(r);photos=await getDocs(collection(reportRef(id,ownerUid),'photos')).then(s=>s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0)));editingId=id;
  if(isSystemAdmin()){setModel(r.model||defaultModel);$('editor').classList.add('readonly-report')}else{const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);$('editor').classList.remove('readonly-report')}
  renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
@@ -244,8 +244,8 @@ $('saveBtn').onclick=saveReport;$('saveTop').onclick=saveReport;$('newTop').oncl
 $('clearBtn').onclick=()=>{if(!confirm('Limpar campos e fotos do formulário?'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();restoring=false;draft()};
 $('applyModel').onclick=async()=>{
  if(!requirePermission('model.edit'))return;
- const m=getModel();$('modelStatus').textContent='Salvando identidade visual no Firestore...';
- try{await setDoc(modelRef(),{...m,updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp()});modelCache=m;applyModelDOM(m);preview();$('modelStatus').textContent='Identidade visual salva no Firestore e aplicada aos novos relatórios.'}
+ const m=getModel();$('modelStatus').textContent='Salvando identidade visual...';
+ try{await setDoc(modelRef(),{...m,updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp()});modelCache=m;applyModelDOM(m);preview();$('modelStatus').textContent='Identidade visual salva e aplicada aos novos relatórios.'}
  catch(error){$('modelStatus').textContent='Não foi possível salvar o modelo: '+friendlyAuthError(error)}
 };
 $('resetModel').onclick=()=>{if(confirm('Restaurar identidade visual padrão?')){setModel(defaultModel);$('applyModel').click()}};
@@ -287,7 +287,7 @@ async function initializeUser(user){
  $('authGate').hidden=true;$('appShell').hidden=false;applyAccessControl();
  if(can('model.view')||can('model.edit')){const ms=await getDoc(modelRef());modelCache=ms.exists()?ms.data():{...defaultModel};if(!ms.exists()&&can('model.edit'))await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()})}else modelCache={...defaultModel};
  setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
- restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado ao Firestore. Permissões carregadas.';if(isSystemAdmin())loadUsers();if(isSystemAdmin())showPage('saved')
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();if(isSystemAdmin())showPage('saved')
  }catch(error){console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
 }
 onAuthStateChanged(auth,user=>{if(user&&!manualLoginRequested){signOut(auth).catch(console.error);$('appShell').hidden=true;$('authGate').hidden=false;return}if(!user){activeUser=null;currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
