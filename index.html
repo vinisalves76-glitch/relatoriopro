@@ -208,6 +208,80 @@ function requirePermission(p){if(can(p))return true;alert('Seu perfil não tem p
 function applyAccessControl(){const admin=isSystemAdmin(),master=isMaster();$('usersTab').hidden=!admin;$('sessionInfo').textContent=(currentProfile?.name||activeUser?.email||'Usuário')+' | Cargo: '+(currentProfile?.roleLabel||currentProfile?.role||'')+(master?' | Mestre':'');document.querySelectorAll('.tab[data-permission]').forEach(t=>t.hidden=!can(t.dataset.permission));document.querySelector('.tab[data-page="model"]').hidden=!can('model.view');document.querySelector('.tab[data-page="editor"]').hidden=!can('reports.create');$('model').style.display=can('model.view')?'':'none';$('users').style.display=admin?'':'none';$('newTop').hidden=!can('reports.create');$('saveTop').hidden=!(can('reports.create')||can('reports.edit'));$('printTop').hidden=!can('reports.print');$('saveBtn').hidden=!(can('reports.create')||can('reports.edit'));$('printBtn').hidden=!can('reports.print');$('clearBtn').hidden=!can('reports.create');$('gptAssistant').hidden=!(can('reports.create')||can('reports.edit'))}
 async function loadUsers(){if(!isSystemAdmin())return;const box=$('usersList');try{const s=await getDocs(profilesRef);userProfilesCache=s.docs.map(d=>({uid:d.id,...d.data()}));box.innerHTML='';if(!userProfilesCache.length){box.innerHTML='<div class="empty">Nenhum usuário cadastrado.</div>';return}userProfilesCache.forEach(u=>{const card=document.createElement('div');card.className='panel';const title=document.createElement('h3');title.textContent=(u.name||'Usuário')+' — '+(u.email||u.uid);card.appendChild(title);const status=document.createElement('p');status.className='muted';status.textContent='Cargo: '+(u.roleLabel||u.role||'')+' | '+(u.active===false?'Desativado':'Ativo')+(u.uid===MASTER_UID?' | Mestre protegido':'');card.appendChild(status);if(u.uid!==MASTER_UID){const active=document.createElement('input');active.type='checkbox';active.checked=u.active!==false;active.style.width='auto';const lab=document.createElement('label');lab.append(active,document.createTextNode(' Acesso ativo'));card.appendChild(lab);const save=document.createElement('button');save.className='primary';save.textContent='Salvar status';save.onclick=async()=>{try{await setDoc(doc(db,'userProfiles',u.uid),{active:active.checked,updatedAt:new Date().toISOString()},{merge:true});await loadUsers();alert('Status de acesso atualizado. Peça ao usuário para entrar novamente.')}catch(e){alert(friendlyAuthError(e))}};card.appendChild(save);const reset=document.createElement('button');reset.className='light';reset.textContent='Enviar redefinição de senha';reset.onclick=async()=>{if(!isSystemAdmin())return;try{await sendPasswordResetEmail(auth,u.email);alert('E-mail de redefinição enviado para '+u.email)}catch(e){alert(friendlyAuthError(e))}};card.appendChild(reset)}box.appendChild(card)})}catch(e){box.textContent='Erro ao carregar usuários: '+friendlyAuthError(e)}}
 $('userCreateForm').addEventListener('submit',async e=>{e.preventDefault();if(!isSystemAdmin())return;const b=$('createUserBtn'),s=$('userCreateStatus');b.disabled=true;s.textContent='Criando usuário...';try{const email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,name=$('newUserName').value.trim(),role=$('newUserRole').value,permissions=ROLE_DEFAULTS[role]||[];if(!isMaster()&&['auxiliar_administrativo','gerente','coordenador'].includes(role))throw new Error('Cargo administrativo somente pode ser criado pelo mestre.');const cr=await createUserWithEmailAndPassword(creatorAuth,email,password);await setDoc(doc(db,'userProfiles',cr.user.uid),{uid:cr.user.uid,email,name,role,roleLabel:$('newUserRole').selectedOptions[0].text,permissions,active:true,mustChangePassword:true,createdAt:new Date().toISOString(),createdBy:activeUser.uid});await signOut(creatorAuth);$('userCreateForm').reset();s.textContent='Usuário criado com sucesso.';await loadUsers()}catch(e){s.textContent='Falha: '+friendlyAuthError(e)}finally{b.disabled=false}});
+
+let agendaCache=[];
+function agendaRef(ownerUid,id){return doc(db,'users',ownerUid,'agenda',id)}
+function agendaDateLabel(v){if(!v)return 'Data não definida';const p=String(v).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v}
+function agendaRoleEligible(u){const role=String(u.role||u.roleLabel||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[\\s-]+/g,'_');return role.includes('instrutor')||role.includes('consultor')}
+async function refreshAgendaPeople(){
+ if(!isSystemAdmin())return;
+ if(!userProfilesCache.length){const s=await getDocs(profilesRef);userProfilesCache=s.docs.map(d=>({uid:d.id,...d.data()}))}
+ const people=userProfilesCache.filter(u=>u.uid!==MASTER_UID&&u.active!==false&&agendaRoleEligible(u)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+ const opts=people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml((u.name||u.email||u.uid)+' — '+(u.roleLabel||u.role||''))+'</option>').join('');
+ $('agendaAssignee').innerHTML='<option value="">Selecione um usuário cadastrado</option>'+opts;
+ $('agendaPersonFilter').innerHTML='<option value="">Todos os profissionais</option>'+people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml(u.name||u.email||u.uid)+'</option>').join('');
+}
+function clearAgendaForm(){
+ $('agendaForm').reset();$('agendaId').value='';$('agendaOwnerUid').value='';$('agendaFormTitle').textContent='Cadastrar compromisso';$('agendaSaveBtn').textContent='Salvar compromisso';$('agendaFormStatus').textContent='';$('agendaDate').value=new Date().toISOString().slice(0,10);
+}
+function editAgendaItem(a){
+ if(!isSystemAdmin())return;
+ $('agendaId').value=a.id;$('agendaOwnerUid').value=a.ownerUid||'';
+ $('agendaDate').value=a.date||'';$('agendaTime').value=a.time||'';$('agendaAssignee').value=a.assigneeUid||a.ownerUid||'';
+ $('agendaClient').value=a.client||'';$('agendaLocation').value=a.location||'';$('agendaEquipment').value=a.equipment||'';
+ $('agendaType').value=a.type||'Atendimento técnico';$('agendaStatus').value=a.status||'Agendado';$('agendaNotes').value=a.notes||'';
+ $('agendaFormTitle').textContent='Editar compromisso';$('agendaSaveBtn').textContent='Salvar alterações';$('agendaFormStatus').textContent='';$('agendaAdminPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function loadAgenda(){
+ const box=$('agendaList');box.innerHTML='<div class="empty">Carregando agenda...</div>';
+ try{
+  if(isSystemAdmin()){await refreshAgendaPeople();$('agendaAdminPanel').hidden=false;$('agendaPersonFilterWrap').hidden=false}
+  else{$('agendaAdminPanel').hidden=true;$('agendaPersonFilterWrap').hidden=true}
+  const snap=await getDocs(isSystemAdmin()?collectionGroup(db,'agenda'):collection(db,'users',activeUser.uid,'agenda'));
+  agendaCache=snap.docs.map(d=>({id:d.id,ownerUid:d.ref.parent.parent?.id,...d.data()})).sort((a,b)=>(String(a.date||'')+' '+String(a.time||'')).localeCompare(String(b.date||'')+' '+String(b.time||'')));
+  renderAgenda();
+ }catch(error){console.error(error);box.innerHTML='<div class="empty">Não foi possível carregar a agenda: '+escapeHtml(friendlyAuthError(error))+'</div>'}
+}
+function renderAgenda(){
+ const q=String($('agendaSearch').value||'').toLowerCase().trim(),month=$('agendaMonth').value,status=$('agendaStatusFilter').value,person=isSystemAdmin()?$('agendaPersonFilter').value:'';
+ const items=agendaCache.filter(a=>(!month||String(a.date||'').startsWith(month))&&(!status||a.status===status)&&(!person||(a.assigneeUid||a.ownerUid)===person)&&(!q||[a.client,a.equipment,a.location,a.type,a.notes,a.assigneeName].some(v=>String(v||'').toLowerCase().includes(q))));
+ $('agendaSummary').textContent=items.length+' compromisso(s) encontrado(s)'+(isSystemAdmin()?' em todas as agendas.':'.');
+ const box=$('agendaList');box.innerHTML='';
+ if(!items.length){box.innerHTML='<div class="empty">Nenhum compromisso encontrado para os filtros selecionados.</div>';return}
+ items.forEach(a=>{
+  const card=document.createElement('article');card.className='agenda-card';
+  const head=document.createElement('div');head.className='agenda-card-head';
+  const info=document.createElement('div');const title=document.createElement('h3');title.textContent=a.client||'Cliente não informado';info.appendChild(title);
+  const date=document.createElement('p');date.className='agenda-date';date.textContent=agendaDateLabel(a.date)+(a.time?' • '+a.time:'');info.appendChild(date);
+  const pills=document.createElement('div');pills.className='agenda-meta';[a.type||'Atendimento',a.status||'Agendado',a.equipment||''].filter(Boolean).forEach(v=>{const pill=document.createElement('span');pill.className='agenda-pill';pill.textContent=v;pills.appendChild(pill)});info.appendChild(pills);head.appendChild(info);
+  if(isSystemAdmin()){const who=document.createElement('span');who.className='agenda-pill';who.textContent='Responsável: '+(a.assigneeName||'Usuário');head.appendChild(who)}
+  card.appendChild(head);
+  if(a.location){const p=document.createElement('p');p.textContent='Local/filial: '+a.location;card.appendChild(p)}
+  if(a.notes){const p=document.createElement('p');p.textContent=a.notes;card.appendChild(p)}
+  if(isSystemAdmin()){const actions=document.createElement('div');actions.className='agenda-actions';const edit=document.createElement('button');edit.className='light';edit.textContent='Editar';edit.onclick=()=>editAgendaItem(a);const del=document.createElement('button');del.className='danger';del.textContent='Excluir';del.onclick=async()=>{if(!confirm('Excluir o compromisso de '+(a.client||'cliente')+' em '+agendaDateLabel(a.date)+'?'))return;try{await deleteDoc(agendaRef(a.ownerUid,a.id));await loadAgenda()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}};actions.append(edit,del);card.appendChild(actions)}
+  box.appendChild(card);
+ });
+}
+$('agendaForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(!isSystemAdmin())return;
+ const btn=$('agendaSaveBtn');btn.disabled=true;$('agendaFormStatus').textContent='Salvando compromisso...';
+ try{
+  const assigneeUid=$('agendaAssignee').value,person=userProfilesCache.find(u=>u.uid===assigneeUid);
+  if(!person||person.active===false||!agendaRoleEligible(person))throw new Error('Selecione um instrutor ou consultor ativo já cadastrado no sistema.');
+  const oldId=$('agendaId').value,oldOwner=$('agendaOwnerUid').value,id=oldId||('ag-'+Date.now().toString(36));
+  const data={id,date:$('agendaDate').value,time:$('agendaTime').value||'',client:$('agendaClient').value.trim(),location:$('agendaLocation').value.trim(),equipment:$('agendaEquipment').value.trim(),type:$('agendaType').value,status:$('agendaStatus').value,notes:$('agendaNotes').value.trim(),assigneeUid,assigneeName:person.name||person.email||'Usuário',ownerUid:assigneeUid,updatedAt:new Date().toISOString(),updatedBy:activeUser.uid};
+  if(!data.date||!data.client)throw new Error('Preencha pelo menos a data e o cliente.');
+  await setDoc(agendaRef(assigneeUid,id),data,{merge:true});
+  if(oldId&&oldOwner&&oldOwner!==assigneeUid)await deleteDoc(agendaRef(oldOwner,oldId));
+  $('agendaFormStatus').textContent='Compromisso salvo.';clearAgendaForm();await loadAgenda();
+ }catch(error){console.error(error);$('agendaFormStatus').textContent='Falha ao salvar: '+friendlyAuthError(error)}
+ finally{btn.disabled=false}
+});
+$('agendaCancelEdit').addEventListener('click',clearAgendaForm);
+$('agendaSearch').addEventListener('input',renderAgenda);$('agendaMonth').addEventListener('change',renderAgenda);$('agendaStatusFilter').addEventListener('change',renderAgenda);$('agendaPersonFilter').addEventListener('change',renderAgenda);
+$('agendaToday').addEventListener('click',()=>{const n=new Date();$('agendaMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');renderAgenda()});
+$('agendaReload').addEventListener('click',loadAgenda);
+
 function getFields(){const o={};fields.forEach(k=>o[k]=$(k).value);return o}
 function setFields(o){fields.forEach(k=>$(k).value=o&&o[k]!=null?o[k]:'')}
 function val(id){return $(id).value}
