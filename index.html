@@ -212,11 +212,16 @@ $('userCreateForm').addEventListener('submit',async e=>{e.preventDefault();if(!i
 let agendaCache=[];
 function agendaRef(ownerUid,id){return doc(db,'users',ownerUid,'agenda',id)}
 function agendaDateLabel(v){if(!v)return 'Data não definida';const p=String(v).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v}
-function agendaRoleEligible(u){const role=String(u.role||u.roleLabel||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[\\s-]+/g,'_');return role.includes('instrutor')||role.includes('consultor')}
+function agendaRoleEligible(u){
+ const roles=[u.role,u.roleLabel,u.cargo,u.perfil].filter(Boolean).map(v=>String(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_'));
+ return roles.some(role=>role.includes('instrutor')||role.includes('consultor'));
+}
 async function refreshAgendaPeople(){
  if(!isSystemAdmin())return;
- if(!userProfilesCache.length){const s=await getDocs(profilesRef);userProfilesCache=s.docs.map(d=>({uid:d.id,...d.data()}))}
- const people=userProfilesCache.filter(u=>u.uid!==MASTER_UID&&u.active!==false&&agendaRoleEligible(u)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'));
+ // Atualiza diretamente do Firestore para incluir cadastros novos e mudanças de cargo/status.
+ const s=await getDocs(profilesRef);
+ userProfilesCache=s.docs.map(d=>({...d.data(),uid:d.id}));
+ const people=userProfilesCache.filter(u=>u.uid!==MASTER_UID&&u.active!==false&&agendaRoleEligible(u)).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'pt-BR'));
  const opts=people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml((u.name||u.email||u.uid)+' — '+(u.roleLabel||u.role||''))+'</option>').join('');
  $('agendaAssignee').innerHTML='<option value="">Selecione um usuário cadastrado</option>'+opts;
  $('agendaPersonFilter').innerHTML='<option value="">Todos os profissionais</option>'+people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml(u.name||u.email||u.uid)+'</option>').join('');
