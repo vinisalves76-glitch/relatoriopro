@@ -202,6 +202,7 @@ const PERMISSIONS=[['reports.view','Visualizar relatórios'],['reports.create','
 const ROLE_DEFAULTS={auxiliar_administrativo:PERMISSIONS.map(p=>p[0]),gerente:PERMISSIONS.map(p=>p[0]),coordenador:PERMISSIONS.map(p=>p[0]),instrutor_tecnico:['reports.view','reports.create','reports.print'],consultor_tecnico:['reports.view','reports.create','reports.print']};
 let currentProfile=null,userProfilesCache=[];
 
+const $=id=>document.getElementById(id);
 const TRAININGS='relatoriopro-trainings';
 function trainingAdmin(){return isSystemAdmin()}
 function trainingEscape(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -232,7 +233,6 @@ $('trainings').addEventListener('click',async e=>{const submit=e.target.closest(
  }catch(err){alert('Ação não concluída: '+err.message)}});
 const REPORTS='relatoriopro-reports';
 const MODEL='relatoriopro-model';
-const $=id=>document.getElementById(id);
 const fields=['type','date','responsible','client','branch','equipment','location','objective','observations','activities','results','conclusion'];
 const defaultModel={company:'IRMEN',subtitle:'Soluções técnicas SANY',footer:'IRMEN | Relatório técnico',conf:'Documento destinado ao uso técnico e profissional.',color:'#e4a900',logo:''};
 let photos=[],editingId=null,logoData='',restoring=false,activeUser=null,reportCache=[],modelCache={...defaultModel},gptPendingResult=null;
