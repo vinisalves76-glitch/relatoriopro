@@ -19,6 +19,12 @@ service cloud.firestore {
    allow read:if isSystemAdmin()||(signedIn()&&request.auth.uid==userId&&profileExists(request.auth.uid)&&profile(request.auth.uid).active==true);
    allow create,update,delete:if isSystemAdmin();
   }
+  match /relatoriopro-trainings/{trainingId}{
+   allow read:if isMaster() || (signedIn() && profileExists(request.auth.uid) && profile(request.auth.uid).active==true && (resource.data.status=='published' || resource.data.ownerUid==request.auth.uid || isSystemAdmin()));
+   allow create:if isMaster() || (signedIn() && profileExists(request.auth.uid) && profile(request.auth.uid).active==true && request.resource.data.ownerUid==request.auth.uid && request.resource.data.status in ['draft','pending']);
+   allow update:if isSystemAdmin() || (signedIn() && profileExists(request.auth.uid) && profile(request.auth.uid).active==true && resource.data.ownerUid==request.auth.uid && resource.data.status in ['draft','returned'] && request.resource.data.ownerUid==request.auth.uid && request.resource.data.status in ['draft','pending']);
+   allow delete:if isSystemAdmin() || (signedIn() && profileExists(request.auth.uid) && profile(request.auth.uid).active==true && resource.data.ownerUid==request.auth.uid && resource.data.status in ['draft','returned']);
+  }
   match /users/{userId}/settings/{settingId}{allow read:if isMaster()||(signedIn()&&request.auth.uid==userId&&(hasPermission('model.view')||hasPermission('model.edit')));allow create,update,delete:if isMaster()||(signedIn()&&request.auth.uid==userId&&hasPermission('model.edit'));}
  }
 }
