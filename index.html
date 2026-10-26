@@ -523,17 +523,21 @@ onAuthStateChanged(auth,user=>{if(user&&!manualLoginRequested){signOut(auth).cat
 let tourSteps=[],tourIndex=0,tourSpotlight=null;
 function makeTourSteps(){
  const steps=[
-  {title:'Bem-vindo ao RelatorioPro',text:'Este guia rápido mostra onde encontrar as funções principais. Você pode avançar, voltar ou sair quando quiser.',target:'#appShell header'},
-  {title:'Navegue pelas áreas do sistema',text:'Use as abas para acessar as áreas liberadas para o seu perfil. As opções disponíveis podem variar conforme suas permissões.',target:'.tabs'},
+  {title:'Bem-vindo ao RelatorioPro',text:'Olá, '+(currentProfile?.name||'bem-vindo')+'! Este guia foi adaptado ao seu perfil ('+(currentProfile?.roleLabel||currentProfile?.role||'usuário')+') e mostra somente as funções disponíveis para sua conta.',target:'#appShell header'},
+  {title:'Conheça o menu',text:'As abas do menu são liberadas conforme as permissões do seu perfil. Se uma função não aparecer, ela pode não estar habilitada para sua conta.',target:'.tabs'},
  ];
  if(can('reports.create')||can('reports.edit')){
-  steps.push({title:'Preencha o relatório técnico',text:'Na tela de relatório, informe os dados do atendimento, descreva as observações, as atividades realizadas, os resultados e a conclusão. Registre apenas informações verificadas.',target:'#editor'});
-  steps.push({title:'Revise e salve',text:'Confira a prévia antes de salvar. Use “Salvar relatório” para guardar as informações; se houver fotos, adicione-as no formulário antes de salvar.',target:'#saveTop'});
+  steps.push({title:'Criar e preencher relatórios',text:'Na aba “Relatório técnico”, preencha identificação, equipamento, objetivo, observações, atividades, resultados e conclusão. Adicione fotos quando necessário e registre apenas informações verificadas.',target:'[data-page="editor"]'});
+  steps.push({title:'Salvar e revisar',text:'Revise as informações e a prévia. Use “Salvar relatório” para guardar o registro. Para gerar uma cópia, utilize “Imprimir / PDF”.',target:'#saveTop'});
  }
- if(can('reports.view')) steps.push({title:'Consulte relatórios anteriores',text:'Abra “Relatórios salvos” para pesquisar registros existentes e abrir um relatório. As ações disponíveis dependem do seu perfil.',target:'[data-page="saved"]'});
- if(can('reports.print')) steps.push({title:'Imprima ou gere PDF',text:'Quando precisar compartilhar ou arquivar, use “Imprimir / PDF”. Confira a prévia e as opções de impressão do navegador.',target:'#printTop'});
- if(can('model.view')) steps.push({title:'Modelo e identidade visual',text:'Nesta área, os perfis autorizados podem consultar ou configurar a aparência do relatório. Alterações de configuração podem ser restritas à administração.',target:'[data-page="model"]'});
- steps.push({title:'Precisa rever as orientações?',text:'A qualquer momento, clique no botão discreto “? Ajuda” no topo da tela para abrir este guia novamente.',target:'#helpLaunch'});
+ if(can('reports.view')) steps.push({title:'Consultar relatórios',text:'Na aba “Relatórios salvos”, localize registros anteriores e abra o relatório desejado. As opções de edição dependem das permissões da sua conta.',target:'[data-page="saved"]'});
+ if(can('reports.print')) steps.push({title:'Imprimir ou gerar PDF',text:'Use “Imprimir / PDF” para abrir as opções de impressão do navegador e salvar uma cópia em PDF, quando disponível.',target:'#printTop'});
+ if(can('model.view')||can('model.edit')) steps.push({title:'Configurar layout e textos do relatório',text:'Esta área permite ajustar o modelo visual do relatório: nome da empresa, subtítulo, texto do rodapé, aviso de confidencialidade, cor de destaque e logotipo. Confira as alterações e clique em “Salvar e aplicar modelo”. Essas configurações afetam a apresentação dos relatórios conforme o escopo configurado no sistema.',target:'[data-page="model"]'});
+ if(isSystemAdmin()) steps.push({title:'Administrar usuários e acessos',text:'Na aba “Usuários e acessos”, o perfil administrativo pode consultar e gerenciar contas conforme as permissões disponíveis. Confira o perfil e o estado de acesso antes de realizar alterações.',target:'[data-page="users"]'});
+ if(isMaster()) {
+  steps.push({title:'Ferramentas do mestre',text:'Sua conta mestre também tem acesso às ferramentas administrativas exclusivas que aparecem no menu. Utilize-as com cuidado, especialmente ao testar permissões e configurações.',target:'#sessionInfo'});
+ }
+ steps.push({title:'Ajuda sempre disponível',text:'Você pode rever estas orientações quando quiser: clique em “? Ajuda” no topo da tela. O conteúdo do guia muda conforme a conta conectada.',target:'#helpLaunch'});
  return steps;
 }
 function clearTourSpotlight(){if(tourSpotlight){tourSpotlight.classList.remove('tour-spotlight');tourSpotlight=null}}
