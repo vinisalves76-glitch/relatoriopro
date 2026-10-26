@@ -175,7 +175,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 </main>
 <section class="page" id="simulation"><div class="simulation-head"><div><h1 id="simulationTitle">Simulação do RelatorioPro</h1><p class="muted">Ambiente de demonstração integrado ao sistema, com dados fictícios.</p></div><button id="closeSimulation" class="light" type="button">Voltar ao sistema</button></div><div class="simulation-warning">MODO TESTE LOCAL: funcionários, relatórios e agendas são fictícios. Nada é gravado no Firebase/Firestore. Ao sair, os dados de demonstração são descartados.</div><div class="simulation-stats" id="simulationStats"></div><nav class="simulation-tabs" aria-label="Seções da simulação"><button class="simulation-tab active" data-simpage="employees">Funcionários</button><button class="simulation-tab" data-simpage="reports">Relatórios prontos</button><button class="simulation-tab" data-simpage="agenda">Agenda por funcionário</button></nav><section class="simulation-page active" id="sim-employees"><div class="simulation-toolbar"><div><h3>Equipe técnica de demonstração</h3><p>Selecione um funcionário para ver seus dados e atividades.</p></div><input id="simEmployeeSearch" placeholder="Pesquisar funcionário..." aria-label="Pesquisar funcionário"></div><div id="simulationEmployees" class="simulation-grid"></div></section><section class="simulation-page" id="sim-reports" hidden><div class="simulation-toolbar"><div><h3>Relatórios técnicos de exemplo</h3><p>15 relatórios completos de demonstração, um por funcionário.</p></div><input id="simReportSearch" placeholder="Pesquisar cliente, equipamento ou responsável..." aria-label="Pesquisar relatório"></div><div id="simulationReports" class="simulation-report-list"></div><div id="simulationReportDetail" class="simulation-report-detail" hidden></div></section><section class="simulation-page" id="sim-agenda" hidden><div class="simulation-toolbar"><div><h3>Agenda individual</h3><p>Consulte compromissos agrupados por profissional.</p></div><select id="simAgendaPerson" aria-label="Filtrar agenda por funcionário"><option value="">Todos os funcionários</option></select></div><div id="simulationAgenda" class="simulation-agenda-list"></div></section></section>
 <section class="page" id="trainings"><h1>Treinamentos</h1><p class="muted">Biblioteca de treinamentos e fluxo de aprovação. Somente conteúdos cadastrados pela equipe serão exibidos.</p>
-<div class="panel" id="trainingCreatePanel"><h3>Criar treinamento</h3><div class="grid"><div class="field"><label>Nome do treinamento *</label><input id="trainingTitle" placeholder="Nome do treinamento"></div><div class="field"><label>Categoria</label><input id="trainingCategory" placeholder="Ex.: Equipamentos"></div><div class="field"><label>Filial / público-alvo</label><input id="trainingAudience" placeholder="Ex.: Todas as filiais"></div><div class="field" style="grid-column:1/-1"><label>Descrição</label><textarea id="trainingDescription" placeholder="Objetivo e conteúdo previsto"></textarea></div></div><div class="row"><button class="light" id="trainingSaveDraft">Salvar rascunho</button><button class="primary" id="trainingSubmit">Enviar para aprovação</button></div></div>
+<div class="panel" id="trainingCreatePanel"><h3>Criar treinamento</h3><div class="grid"><div class="field"><label>Nome do treinamento *</label><input id="trainingTitle" placeholder="Nome do treinamento"></div><div class="field"><label>Categoria</label><input id="trainingCategory" placeholder="Ex.: Equipamentos"></div><div class="field"><label>Filial / público-alvo</label><input id="trainingAudience" placeholder="Ex.: Todas as filiais"></div><div class="field" style="grid-column:1/-1"><label>Descrição</label><textarea id="trainingDescription" placeholder="Objetivo e conteúdo previsto"></textarea></div><div class="field" style="grid-column:1/-1"><label>Slides, manual da máquina e materiais de apoio</label><input id="trainingFiles" type="file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.mp4"><p class="muted">Selecione vários arquivos de uma vez. PDF, PowerPoint, Word, Excel, imagens e vídeos. Limite de 25 MB por arquivo.</p><div class="status" id="trainingFilesStatus" aria-live="polite"></div></div></div><div class="row"><button class="light" id="trainingSaveDraft" type="button">Salvar rascunho</button><button class="primary" id="trainingSubmit" type="button">Enviar para aprovação</button></div></div>
 <div class="panel"><h3>Biblioteca publicada</h3><div id="publishedTrainings"><p class="muted">Carregando treinamentos publicados…</p></div></div>
 <div class="panel"><h3>Meus treinamentos</h3><div id="myTrainings"><p class="muted">Carregando…</p></div></div>
 <div class="panel" id="trainingReviewPanel" hidden><h3>Aprovações pendentes</h3><div id="pendingTrainings"></div></div></section>
@@ -183,6 +183,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
 import { getFirestore, collection, collectionGroup, doc, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyArvp8v1S5qs758dxbapwZGvf2eqbnZsQI",
@@ -194,6 +195,7 @@ const firebaseConfig = {
 };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
 const auth = getAuth(firebaseApp);
 const MASTER_UID='sQYjYwjn2vOKtXty7NOT9CO43Mk1';
 const creatorAuth=getAuth(initializeApp(firebaseConfig,'relatoriopro-user-creator'));
@@ -224,15 +226,52 @@ async function loadTrainings(){
  try{
   const [publishedSnap,mineSnap]=await Promise.all([getDocs(query(collection(db,TRAININGS),where('status','==','published'))),getDocs(query(collection(db,TRAININGS),where('ownerUid','==',activeUser.uid)))]);
   const published=publishedSnap.docs.map(d=>({id:d.id,...d.data()})),own=mineSnap.docs.map(d=>({id:d.id,...d.data()}));
-  pub.innerHTML=published.length?published.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><span class="muted">'+trainingEscape(t.category||'')+' · Publicado</span></div>').join(''):'<p class="muted">Ainda não há treinamentos publicados.</p>';
-  mine.innerHTML=own.length?own.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><p class="muted">Status: '+trainingEscape(trainingStatus(t.status))+'</p>'+(t.status==='draft'||t.status==='returned'?'<button class="primary" data-training-submit="'+t.id+'">Enviar para aprovação</button>':'')+(t.reviewComment?'<p class="muted">Comentário do aprovador: '+trainingEscape(t.reviewComment)+'</p>':'')+'</div>').join(''):'<p class="muted">Você ainda não criou treinamentos.</p>';
-  if(trainingAdmin()){const pendingSnap=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=pendingSnap.docs.map(d=>({id:d.id,...d.data()}));pending.innerHTML=pend.length?pend.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><p class="muted">Autor: '+trainingEscape(t.ownerName||t.ownerUid)+' · '+trainingEscape(t.category||'')+'</p><textarea id="review-'+t.id+'" placeholder="Comentário / motivo de devolução"></textarea><div class="row"><button class="light" data-training-return="'+t.id+'">Devolver para correção</button><button class="primary" data-training-approve="'+t.id+'">Aprovar e publicar</button></div></div>').join(''):'<p class="muted">Nenhum treinamento aguardando aprovação.</p>'}
+  pub.innerHTML=published.length?published.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><span class="muted">'+trainingEscape(t.category||'')+' · Publicado</span>'+trainingAttachmentLinks(t.attachments)+'</div>').join(''):'<p class="muted">Ainda não há treinamentos publicados.</p>';
+  mine.innerHTML=own.length?own.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><p class="muted">Status: '+trainingEscape(trainingStatus(t.status))+'</p>'+trainingAttachmentLinks(t.attachments)+(t.status==='draft'||t.status==='returned'?'<button class="primary" data-training-submit="'+t.id+'">Enviar para aprovação</button>':'')+(t.reviewComment?'<p class="muted">Comentário do aprovador: '+trainingEscape(t.reviewComment)+'</p>':'')+'</div>').join(''):'<p class="muted">Você ainda não criou treinamentos.</p>';
+  if(trainingAdmin()){const pendingSnap=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=pendingSnap.docs.map(d=>({id:d.id,...d.data()}));pending.innerHTML=pend.length?pend.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><p class="muted">Autor: '+trainingEscape(t.ownerName||t.ownerUid)+' · '+trainingEscape(t.category||'')+'</p>'+trainingAttachmentLinks(t.attachments)+'<textarea id="review-'+t.id+'" placeholder="Comentário / motivo de devolução"></textarea><div class="row"><button class="light" data-training-return="'+t.id+'">Devolver para correção</button><button class="primary" data-training-approve="'+t.id+'">Aprovar e publicar</button></div></div>').join(''):'<p class="muted">Nenhum treinamento aguardando aprovação.</p>'}
  }catch(e){pub.innerHTML='<p class="muted">Não foi possível carregar os treinamentos. Verifique as permissões do Firestore.</p>';mine.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>';if(trainingAdmin())pending.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>'}
+}
+function trainingAttachmentLinks(files){
+ const list=Array.isArray(files)?files:[];
+ if(!list.length)return '<p class="muted">Nenhum anexo neste treinamento.</p>';
+ return '<div class="training-attachments"><strong>Materiais anexados</strong><ul>'+list.map(a=>'<li><a href="'+trainingEscape(a.url)+'" target="_blank" rel="noopener noreferrer">'+trainingEscape(a.name)+'</a> <span class="muted">('+trainingEscape(a.kind||'Arquivo')+')</span></li>').join('')+'</ul></div>';
+}
+function trainingFileKind(file){
+ const ext=(file.name.split('.').pop()||'').toLowerCase();
+ return ({pdf:'PDF',ppt:'PowerPoint',pptx:'PowerPoint',doc:'Word',docx:'Word',xls:'Excel',xlsx:'Excel',jpg:'Imagem',jpeg:'Imagem',png:'Imagem',webp:'Imagem',mp4:'Vídeo'})[ext]||'Arquivo';
+}
+async function uploadTrainingFiles(trainingId){
+ const selected=Array.from($('trainingFiles').files||[]);
+ if(!selected.length)return [];
+ const allowed=/\.(pdf|ppt|pptx|doc|docx|xls|xlsx|jpg|jpeg|png|webp|mp4)$/i;
+ for(const file of selected){
+  if(!allowed.test(file.name))throw new Error('Formato não permitido: '+file.name);
+  if(file.size>25*1024*1024)throw new Error('O arquivo '+file.name+' ultrapassa 25 MB.');
+ }
+ const uploaded=[];
+ $('trainingFilesStatus').textContent='Enviando '+selected.length+' arquivo(s)...';
+ for(const file of selected){
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path='relatoriopro-trainings/'+trainingId+'/'+Date.now()+'-'+safeName;
+  const fileRef=storageRef(storage,path);
+  await uploadBytes(fileRef,file,{contentType:file.type||'application/octet-stream',customMetadata:{trainingId,uploadedBy:activeUser.uid,originalName:file.name}});
+  uploaded.push({name:file.name,path,url:await getDownloadURL(fileRef),kind:trainingFileKind(file),size:file.size,contentType:file.type||''});
+ }
+ $('trainingFilesStatus').textContent=uploaded.length+' arquivo(s) anexado(s).';
+ return uploaded;
 }
 async function createTraining(status){
  if(!trainingCanCreate()){alert('Seu perfil não pode criar treinamentos.');return}
  const title=$('trainingTitle').value.trim();if(!title){alert('Informe o nome do treinamento.');return}
- try{const id=doc(collection(db,TRAININGS)).id;await setDoc(doc(db,TRAININGS,id),{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:1});$('trainingTitle').value='';$('trainingCategory').value='';$('trainingAudience').value='';$('trainingDescription').value='';await loadTrainings();alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.')}catch(e){alert('Não foi possível salvar: '+e.message)}
+ const buttons=[$('trainingSaveDraft'),$('trainingSubmit')];buttons.forEach(b=>b.disabled=true);
+ try{
+  const id=doc(collection(db,TRAININGS)).id;
+  const attachments=await uploadTrainingFiles(id);
+  await setDoc(doc(db,TRAININGS,id),{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),attachments,ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:1});
+  $('trainingTitle').value='';$('trainingCategory').value='';$('trainingAudience').value='';$('trainingDescription').value='';$('trainingFiles').value='';$('trainingFilesStatus').textContent='';
+  await loadTrainings();alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.');
+ }catch(e){$('trainingFilesStatus').textContent='';alert('Não foi possível salvar o treinamento ou enviar os anexos: '+e.message)}
+ finally{buttons.forEach(b=>b.disabled=false)}
 }
 $('trainingSaveDraft').addEventListener('click',()=>createTraining('draft'));$('trainingSubmit').addEventListener('click',()=>createTraining('pending'));
 $('trainings').addEventListener('click',async e=>{const submit=e.target.closest('[data-training-submit]'),approve=e.target.closest('[data-training-approve]'),ret=e.target.closest('[data-training-return]');try{
