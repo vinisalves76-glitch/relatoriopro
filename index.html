@@ -224,14 +224,23 @@ function friendlyAuthError(error){
  };
  return codes[error?.code] || error?.message || 'Ocorreu um erro. Tente novamente.';
 }
-$('authForm').addEventListener('submit',async e=>{
- e.preventDefault();setAuthError('');$('authSubmit').disabled=true;
- try{await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value); }
- catch(error){setAuthError(friendlyAuthError(error))}
- finally{$('authSubmit').disabled=false}
-});
+// Um único handler de login evita duas autenticações concorrentes e mudanças de estado em sequência.
 let manualLoginRequested=false;
-$('authForm').addEventListener('submit',async e=>{e.preventDefault();manualLoginRequested=true;setAuthError('');$('authSubmit').disabled=true;try{await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);}catch(error){manualLoginRequested=false;setAuthError(friendlyAuthError(error));}finally{$('authSubmit').disabled=false}});
+$('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if($('authSubmit').disabled)return;
+ manualLoginRequested=true;
+ setAuthError('');
+ $('authSubmit').disabled=true;
+ try{
+  await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);
+ }catch(error){
+  manualLoginRequested=false;
+  setAuthError(friendlyAuthError(error));
+ }finally{
+  $('authSubmit').disabled=false;
+ }
+});
 
 function isMaster(){return !!activeUser&&activeUser.uid===MASTER_UID}
 function openSimulation(){if(!isMaster())return;
