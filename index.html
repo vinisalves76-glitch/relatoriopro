@@ -45,6 +45,27 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 .auth-card h1{font-size:22px;margin:0 0 8px}.auth-card p{font-size:13px;color:#68717d;line-height:1.5}
 .auth-card label{margin-top:12px}.auth-card .auth-actions{display:grid;gap:9px;margin-top:18px}.auth-error{font-size:12px;color:#a32222;min-height:18px;margin-top:10px}.auth-muted{font-size:12px;color:#68717d;margin-top:12px}
 #appShell[hidden],#authGate[hidden],#changePasswordGate[hidden]{display:none!important}
+
+/* Onboarding interativo RelatorioPro */
+.help-launch{padding:8px 11px;background:#fff;border:1px solid #68717d;color:#f3c64a;border-radius:999px;font-size:12px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px #0002}
+.help-launch .help-dot{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#f3c64a;color:#20242b;font-weight:900}
+.tour-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(13,18,27,.68);display:flex;align-items:center;justify-content:center;padding:18px}
+.tour-backdrop[hidden]{display:none!important}
+.tour-card{width:min(100%,460px);background:#fff;border-radius:16px;padding:24px;box-shadow:0 24px 80px #0005;border-top:5px solid var(--brand);position:relative;animation:tourIn .18s ease-out}
+@keyframes tourIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.tour-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#7b630b;font-weight:800;margin-bottom:10px}
+.tour-card h2{font-size:22px;margin:0 0 10px;line-height:1.25}
+.tour-card p{font-size:14px;line-height:1.65;color:#505966;margin:0 0 18px}
+.tour-progress{height:4px;background:#edf0f3;border-radius:99px;overflow:hidden;margin:18px 0}
+.tour-progress span{display:block;height:100%;background:var(--brand);transition:width .2s}
+.tour-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tour-footer .actions{margin-left:auto}
+.tour-count{font-size:12px;color:#68717d}
+.tour-close{position:absolute;right:12px;top:12px;background:transparent;color:#68717d;padding:5px 8px;font-size:20px}
+.tour-spotlight{position:relative!important;z-index:10001!important;outline:3px solid #ffd23f!important;outline-offset:4px!important;border-radius:8px!important;box-shadow:0 0 0 6px rgba(255,210,63,.2)!important}
+@media(max-width:600px){.tour-card{padding:21px}.tour-card h2{font-size:20px}.help-launch{padding:7px 9px}}
+@media(prefers-reduced-motion:reduce){.tour-card{animation:none}}
+
 </style>
 </head>
 <body>
@@ -82,7 +103,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
   </section>
 </div>
 <div id="appShell" hidden>
-<header><div class="logohead"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button><button class="primary" id="saveTop">Salvar relatório</button><button class="light" id="printTop">Imprimir / PDF</button><button class="light" id="simulateBtn" type="button" hidden>Simular sistema</button></div></header>
+<header><div class="logohead"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button><button class="primary" id="saveTop">Salvar relatório</button><button class="light" id="printTop">Imprimir / PDF</button><button class="light" id="simulateBtn" type="button" hidden>Simular sistema</button><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir tutorial do sistema"><span class="help-dot">?</span><span>Ajuda</span></button></div></header>
 <nav class="tabs"><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><button class="tab" data-page="simulation" id="simulationTab" hidden>Simulação</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div></nav>
 <main>
 <section class="page active" id="editor"><h1>Relatório técnico</h1><p class="muted">Preencha os dados do atendimento, adicione fotos e confira a prévia antes de imprimir.</p><div class="layout"><div>
@@ -141,6 +162,16 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 <div id="agendaSummary" class="muted"></div><div id="agendaList"><div class="empty">Carregando agenda...</div></div>
 </section>
 <section class="page" id="users"><h1>Usuários e controle de acessos</h1><p class="muted">Cadastre usuários e gerencie o status de acesso.</p><div class="panel"><h3>Criar usuário</h3><form id="userCreateForm"><div class="grid"><div class="field"><label>Nome completo</label><input id="newUserName" required></div><div class="field"><label>E-mail corporativo</label><input id="newUserEmail" type="email" required></div><div class="field"><label>Senha inicial</label><input id="newUserPassword" type="password" minlength="6" required></div><div class="field"><label>Cargo</label><select id="newUserRole"><option value="auxiliar_administrativo">Auxiliar Administrativo</option><option value="gerente">Gerente</option><option value="coordenador">Coordenador</option><option value="instrutor_tecnico">Instrutor Técnico</option><option value="consultor_tecnico">Consultor Técnico</option></select></div></div><button class="primary" id="createUserBtn" type="submit">Criar usuário</button><div class="status" id="userCreateStatus"></div></form></div><div class="panel"><h3>Usuários cadastrados</h3><div id="usersList"><div class="empty">Carregando usuários...</div></div></div></section>
+<div class="tour-backdrop" id="tourBackdrop" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+ <section class="tour-card">
+  <button class="tour-close" id="tourClose" type="button" aria-label="Fechar tutorial" title="Fechar">×</button>
+  <div class="tour-eyebrow">RelatorioPro • Guia rápido</div>
+  <h2 id="tourTitle">Bem-vindo!</h2>
+  <p id="tourText"></p>
+  <div class="tour-progress" aria-hidden="true"><span id="tourProgressBar"></span></div>
+  <div class="tour-footer"><span class="tour-count" id="tourCount"></span><div class="actions"><button class="light" id="tourSkip" type="button">Pular</button><button class="light" id="tourBack" type="button">Voltar</button><button class="primary" id="tourNext" type="button">Começar</button></div></div>
+ </section>
+</div>
 </main>
 <section class="page" id="simulation"><div class="simulation-head"><div><h1 id="simulationTitle">Simulação do RelatorioPro</h1><p class="muted">Ambiente de demonstração integrado ao sistema, com dados fictícios.</p></div><button id="closeSimulation" class="light" type="button">Voltar ao sistema</button></div><div class="simulation-warning">MODO TESTE LOCAL: funcionários, relatórios e agendas são fictícios. Nada é gravado no Firebase/Firestore. Ao sair, os dados de demonstração são descartados.</div><div class="simulation-stats" id="simulationStats"></div><nav class="simulation-tabs" aria-label="Seções da simulação"><button class="simulation-tab active" data-simpage="employees">Funcionários</button><button class="simulation-tab" data-simpage="reports">Relatórios prontos</button><button class="simulation-tab" data-simpage="agenda">Agenda por funcionário</button></nav><section class="simulation-page active" id="sim-employees"><div class="simulation-toolbar"><div><h3>Equipe técnica de demonstração</h3><p>Selecione um funcionário para ver seus dados e atividades.</p></div><input id="simEmployeeSearch" placeholder="Pesquisar funcionário..." aria-label="Pesquisar funcionário"></div><div id="simulationEmployees" class="simulation-grid"></div></section><section class="simulation-page" id="sim-reports" hidden><div class="simulation-toolbar"><div><h3>Relatórios técnicos de exemplo</h3><p>15 relatórios completos de demonstração, um por funcionário.</p></div><input id="simReportSearch" placeholder="Pesquisar cliente, equipamento ou responsável..." aria-label="Pesquisar relatório"></div><div id="simulationReports" class="simulation-report-list"></div><div id="simulationReportDetail" class="simulation-report-detail" hidden></div></section><section class="simulation-page" id="sim-agenda" hidden><div class="simulation-toolbar"><div><h3>Agenda individual</h3><p>Consulte compromissos agrupados por profissional.</p></div><select id="simAgendaPerson" aria-label="Filtrar agenda por funcionário"><option value="">Todos os funcionários</option></select></div><div id="simulationAgenda" class="simulation-agenda-list"></div></section></section>
 <script type="module">
@@ -482,11 +513,63 @@ async function initializeUser(user){
  $('changePasswordGate').hidden=true;$('authGate').hidden=true;$('appShell').hidden=false;applyAccessControl();
  if(can('model.view')||can('model.edit')){const ms=await getDoc(modelRef());modelCache=ms.exists()?ms.data():{...defaultModel};if(!ms.exists()&&can('model.edit'))await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()})}else modelCache={...defaultModel};
  setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
- restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();if(isSystemAdmin()&&!isMaster())showPage('model');else if(isSystemAdmin())showPage('saved')
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();if(isSystemAdmin()&&!isMaster())showPage('model');else if(isSystemAdmin())showPage('saved');try{if(!localStorage.getItem('relatoriopro-tour-complete-'+user.uid))openTour()}catch(e){openTour()}
  }catch(error){console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
 }
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);await setDoc(doc(db,'userProfiles',auth.currentUser.uid),{mustChangePassword:false,passwordChangedAt:new Date().toISOString()},{merge:true});$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
 onAuthStateChanged(auth,user=>{if(user&&!manualLoginRequested){signOut(auth).catch(console.error);$('appShell').hidden=true;$('authGate').hidden=false;return}if(!user){activeUser=null;currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
+
+/* Guia interativo: aparece no primeiro acesso por usuário e pode ser reaberto pelo botão Ajuda. */
+let tourSteps=[],tourIndex=0,tourSpotlight=null;
+function makeTourSteps(){
+ const steps=[
+  {title:'Bem-vindo ao RelatorioPro',text:'Este guia rápido mostra onde encontrar as funções principais. Você pode avançar, voltar ou sair quando quiser.',target:'#appShell header'},
+  {title:'Navegue pelas áreas do sistema',text:'Use as abas para acessar as áreas liberadas para o seu perfil. As opções disponíveis podem variar conforme suas permissões.',target:'.tabs'},
+ ];
+ if(can('reports.create')||can('reports.edit')){
+  steps.push({title:'Preencha o relatório técnico',text:'Na tela de relatório, informe os dados do atendimento, descreva as observações, as atividades realizadas, os resultados e a conclusão. Registre apenas informações verificadas.',target:'#editor'});
+  steps.push({title:'Revise e salve',text:'Confira a prévia antes de salvar. Use “Salvar relatório” para guardar as informações; se houver fotos, adicione-as no formulário antes de salvar.',target:'#saveTop'});
+ }
+ if(can('reports.view')) steps.push({title:'Consulte relatórios anteriores',text:'Abra “Relatórios salvos” para pesquisar registros existentes e abrir um relatório. As ações disponíveis dependem do seu perfil.',target:'[data-page="saved"]'});
+ if(can('reports.print')) steps.push({title:'Imprima ou gere PDF',text:'Quando precisar compartilhar ou arquivar, use “Imprimir / PDF”. Confira a prévia e as opções de impressão do navegador.',target:'#printTop'});
+ if(can('model.view')) steps.push({title:'Modelo e identidade visual',text:'Nesta área, os perfis autorizados podem consultar ou configurar a aparência do relatório. Alterações de configuração podem ser restritas à administração.',target:'[data-page="model"]'});
+ steps.push({title:'Precisa rever as orientações?',text:'A qualquer momento, clique no botão discreto “? Ajuda” no topo da tela para abrir este guia novamente.',target:'#helpLaunch'});
+ return steps;
+}
+function clearTourSpotlight(){if(tourSpotlight){tourSpotlight.classList.remove('tour-spotlight');tourSpotlight=null}}
+function renderTourStep(){
+ if(!tourSteps.length)return;
+ clearTourSpotlight();
+ const s=tourSteps[tourIndex],target=s.target?document.querySelector(s.target):null;
+ $('tourTitle').textContent=s.title;$('tourText').textContent=s.text;
+ $('tourCount').textContent='Passo '+(tourIndex+1)+' de '+tourSteps.length;
+ $('tourProgressBar').style.width=((tourIndex+1)/tourSteps.length*100)+'%';
+ $('tourBack').hidden=tourIndex===0;
+ $('tourNext').textContent=tourIndex===tourSteps.length-1?'Concluir':'Próximo';
+ $('tourSkip').hidden=tourIndex===tourSteps.length-1;
+ if(target&&!target.hidden){tourSpotlight=target;target.classList.add('tour-spotlight')}
+}
+function openTour(){
+ tourSteps=makeTourSteps();tourIndex=0;
+ if(!tourSteps.length)return;
+ $('tourBackdrop').hidden=false;document.body.style.overflow='hidden';renderTourStep();
+}
+function closeTour(completed=false){
+ clearTourSpotlight();$('tourBackdrop').hidden=true;document.body.style.overflow='';
+ if(completed&&activeUser){try{localStorage.setItem('relatoriopro-tour-complete-'+activeUser.uid,'1')}catch(e){}}
+}
+function nextTourStep(){
+ if(tourIndex>=tourSteps.length-1){closeTour(true);return}
+ tourIndex++;renderTourStep();
+}
+$('helpLaunch').addEventListener('click',openTour);
+$('tourClose').addEventListener('click',()=>closeTour(false));
+$('tourSkip').addEventListener('click',()=>closeTour(true));
+$('tourNext').addEventListener('click',nextTourStep);
+$('tourBack').addEventListener('click',()=>{if(tourIndex>0){tourIndex--;renderTourStep()}});
+$('tourBackdrop').addEventListener('click',e=>{if(e.target===$('tourBackdrop'))closeTour(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('tourBackdrop').hidden)closeTour(false)});
+
 </script>
 </div>
 </body>
