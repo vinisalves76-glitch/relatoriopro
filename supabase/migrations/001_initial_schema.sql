@@ -287,7 +287,10 @@ create policy "trainings_read" on public.trainings
 for select to authenticated
 using (
   public.is_system_admin()
-  or status = 'published'
+  or (
+    status = 'published'
+    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.active = true)
+  )
   or (owner_id = auth.uid() and exists (
     select 1 from public.profiles p where p.id = auth.uid() and p.active = true
   ))
@@ -339,8 +342,14 @@ using (exists (
   where t.id = training_id
     and (
       public.is_system_admin()
-      or t.status = 'published'
-      or t.owner_id = auth.uid()
+      or (
+        t.status = 'published'
+        and exists (select 1 from public.profiles p where p.id = auth.uid() and p.active = true)
+      )
+      or (
+        t.owner_id = auth.uid()
+        and exists (select 1 from public.profiles p where p.id = auth.uid() and p.active = true)
+      )
     )
 ));
 
