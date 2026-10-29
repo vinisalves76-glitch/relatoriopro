@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teste de migração Supabase | RelatorioPro IRMEN</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#20242b;background:#f2f4f7}*{box-sizing:border-box}body{margin:0;padding:24px}.wrap{max-width:760px;margin:auto}.card{background:#fff;border:1px solid #dfe3e8;border-radius:12px;padding:22px;margin:14px 0}.warn{background:#fff5d6;border-color:#e8c85e}.field{display:block;margin:12px 0;font-size:13px;font-weight:700}input{display:block;width:100%;padding:12px;border:1px solid #cbd1d9;border-radius:7px;margin-top:6px;font:inherit}button{padding:11px 16px;border:0;border-radius:7px;background:#e4a900;font-weight:700;cursor:pointer;margin:8px 8px 0 0}button.secondary{background:#edf0f3}#status{white-space:pre-wrap;line-height:1.6;background:#f7f8fa;border-radius:8px;padding:12px;min-height:50px}.ok{color:#187343}.bad{color:#a32222}small{color:#68717d}
+</style>
+</head>
+<body><main class="wrap">
+<h1>RelatorioPro IRMEN — teste isolado do Supabase</h1>
+<p>Esta página valida somente a conexão, o login e o perfil mestre. Ela não altera nem substitui o sistema atual e não escreve relatórios.</p>
+<div class="card warn"><strong>Ambiente de teste</strong><p>O Firebase continua sendo o backend da aplicação principal. Não publique esta página como versão principal antes de concluir os testes.</p></div>
+<div class="card">
+<label class="field">E-mail do usuário Supabase<input id="email" type="email" autocomplete="username" placeholder="E-mail cadastrado no Supabase" required></label>
+<label class="field">Senha<input id="password" type="password" autocomplete="current-password" placeholder="Senha do usuário Supabase" required></label>
+<button id="login">Testar conexão e entrar</button><button id="logout" class="secondary" disabled>Sair</button>
+</div>
+<div class="card"><h2>Resultado do teste</h2><div id="status">Aguardando teste. Nenhuma alteração foi feita.</div></div>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_URL='https://vwvesygsudhbaqmayhsz.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw';
+const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+const status=document.querySelector('#status'),login=document.querySelector('#login'),logout=document.querySelector('#logout');
+function report(message,kind=''){status.className=kind;status.textContent=message}
+login.addEventListener('click',async()=>{
+ const email=document.querySelector('#email').value.trim(),password=document.querySelector('#password').value;
+ if(!email||!password){report('Informe o e-mail e a senha.','bad');return}
+ login.disabled=true;report('1/3 — Verificando conexão e autenticando...');
+ try{
+  const {data:authData,error:authError}=await supabase.auth.signInWithPassword({email,password});
+  if(authError)throw authError;
+  if(!authData.user)throw new Error('O Supabase não retornou um usuário autenticado.');
+  report('2/3 — Login confirmado. Consultando o perfil...');
+  const {data:profile,error:profileError}=await supabase.from('profiles').select('id,email,name,role,role_label,active,permissions,must_change_password').eq('id',authData.user.id).maybeSingle();
+  if(profileError)throw profileError;
+  if(!profile){await supabase.auth.signOut();throw new Error('Login válido, mas não existe linha em public.profiles para este UUID. Confira o campo profiles.id.')}
+  if(profile.active===false){await supabase.auth.signOut();throw new Error('O perfil existe, mas active está false.')}
+  const lines=[
+   'SUCESSO: conexão, autenticação e leitura do perfil confirmadas.',
+   '',
+   'Auth UUID: '+authData.user.id,
+   'E-mail Auth: '+(authData.user.email||'não informado'),
+   'Nome do perfil: '+(profile.name||'não informado'),
+   'Role: '+profile.role,
+   'Ativo: '+String(profile.active),
+   'Permissões: '+(Array.isArray(profile.permissions)?profile.permissions.join(', '):'não configuradas'),
+   '',
+   'Limite deste teste: não foram testados relatórios, fotos, treinamentos, anexos ou agenda.'
+  ];
+  report(lines.join('\n'),'ok');logout.disabled=false;
+ }catch(error){
+  report('FALHA NO TESTE\n'+(error.message||String(error))+'\n\nNão alteramos dados do sistema principal.','bad');
+  try{await supabase.auth.signOut()}catch{}
+ }finally{login.disabled=false}
+});
+logout.addEventListener('click',async()=>{const {error}=await supabase.auth.signOut();logout.disabled=true;report(error?'Falha ao encerrar sessão: '+error.message:'Sessão de teste encerrada. Nenhuma alteração foi feita.');});
+</script>
+</main></body></html>
