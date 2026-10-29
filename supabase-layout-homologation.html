@@ -340,7 +340,9 @@ $('trainings').addEventListener('click',async e=>{const submit=e.target.closest(
 function setAuthError(message){$('authError').textContent=message||''}
 function friendlyAuthError(error){
  const codes={
- 'auth/invalid-credential':'E-mail ou senha incorretos.',
+ 'auth/invalid-credential':'O Firebase recusou as credenciais. Este login é o do RelatorioPro (Firebase), separado do login Supabase. Se os dados funcionam na produção, confira se esta versão de teste está usando a mesma conta Firebase.',
+ 'auth/unauthorized-domain':'Este endereço de teste não está autorizado no Firebase Authentication. Adicione o domínio desta versão de teste aos domínios autorizados do projeto relatoriopro-63368.',
+ 'auth/invalid-api-key':'A chave de API do Firebase desta versão não foi aceita. Verifique a configuração do projeto.',
  'auth/user-not-found':'Conta não encontrada. Crie uma conta ou confira o e-mail.',
  'auth/wrong-password':'Senha incorreta.',
  'auth/email-already-in-use':'Este e-mail já possui uma conta.',
@@ -366,7 +368,8 @@ $('authForm').addEventListener('submit',async e=>{
   await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);
  }catch(error){
   manualLoginRequested=false;
-  setAuthError(friendlyAuthError(error));
+  console.error('Falha no login Firebase do RelatorioPro', {code:error?.code||'', message:error?.message||'', projectId:firebaseConfig.projectId, page:'supabase-layout-homologation'});
+  setAuthError(friendlyAuthError(error)+' Código técnico: '+(error?.code||'não informado'));
  }finally{
   $('authSubmit').disabled=false;
  }
