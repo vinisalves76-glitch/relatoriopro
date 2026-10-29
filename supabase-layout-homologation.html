@@ -75,8 +75,8 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
     <h1 id="authTitle">RelatorioPro</h1>
     <p>Tecnologia e praticidade para um serviço mais eficiente.</p>
     <form id="authForm">
-      <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="username" required placeholder="nome@empresa.com">
-      <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
+      <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="section-relatoriopro-firebase username" required placeholder="nome@empresa.com">
+      <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="section-relatoriopro-firebase current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
       <div class="auth-actions"><button class="primary" id="authSubmit" type="submit">Entrar</button></div>
       <div class="auth-error" id="authError" role="alert" aria-live="polite"></div>
     </form>
@@ -193,7 +193,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 <section id="supabaseHomologPanel" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle">
 <div class="sh-card">
 <div class="row" style="justify-content:space-between;align-items:center"><div><h2 id="shTitle">Treinamentos — homologação Supabase</h2><p class="muted">Área de teste dentro do layout original. Os outros módulos continuam usando Firebase.</p></div><button type="button" class="light" id="shClose">Fechar</button></div>
-<div id="shLoginArea"><p>Entre com a conta de homologação do Supabase. A senha é enviada diretamente ao Supabase pelo navegador, não ao assistente.</p><div class="grid"><div class="field"><label>E-mail</label><input id="shEmail" type="email" autocomplete="username" value="vinicius.alves@irmen.com.br"></div><div class="field"><label>Senha do Supabase</label><input id="shPassword" type="password" autocomplete="current-password"></div></div><button type="button" class="primary" id="shLogin">Entrar no Supabase</button><span id="shLoginMsg" class="muted"></span></div>
+<div id="shLoginArea"><p>Entre com a conta de homologação do Supabase. A senha é enviada diretamente ao Supabase pelo navegador, não ao assistente.</p><div class="grid"><div class="field"><label>E-mail</label><input id="shEmail" type="email" autocomplete="section-supabase-homologation username" value="vinicius.alves@irmen.com.br"></div><div class="field"><label>Senha do Supabase</label><input id="shPassword" type="password" autocomplete="section-supabase-homologation current-password"></div></div><button type="button" class="primary" id="shLogin">Entrar no Supabase</button><span id="shLoginMsg" class="muted"></span></div>
 <div id="shWorkspace" hidden>
 <div class="row" style="justify-content:space-between;align-items:center"><p id="shSession" class="muted"></p><button type="button" class="light" id="shLogout">Sair do Supabase</button></div>
 <h3>Criar treinamento</h3><div class="grid">
