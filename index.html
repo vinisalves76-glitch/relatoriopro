@@ -211,6 +211,7 @@ function tableRef(table, id=null, ownerId=null, reportId=null) {
   return { __sb:true, table, id, ownerId, reportId, parent };
 }
 function collection(_db, ...parts) {
+  if (_db && _db.__sb && _db.table === "reports" && parts[0] === "photos") return tableRef("report_photos",null,_db.ownerId,_db.id);
   if (parts[0] === "userProfiles") return tableRef("profiles");
   if (parts[0] === "users" && parts[2] === "reports") return tableRef("reports",null,parts[1]);
   if (parts[0] === "users" && parts[2] === "agenda") return tableRef("agenda",null,parts[1]);
@@ -223,6 +224,7 @@ function collectionGroup(_db, name) {
 }
 function doc(base, ...parts) {
   if (base && base.__sb) {
+    if (parts.length === 0) return tableRef(base.table,crypto.randomUUID(),base.ownerId,base.reportId);
     if (base.table === "reports" && parts[0] === "photos") return tableRef("report_photos",null,base.ownerId,base.id);
     if (base.table === "user_settings" && parts.length === 1) return tableRef("user_settings",parts[0],base.ownerId);
     return tableRef(base.table,parts[0],base.ownerId,base.reportId);
@@ -293,7 +295,12 @@ async function getDoc(ref) {
   return {id:ref.id,ref,exists:()=>!!row,data:()=>mapRow(ref.table,row)};
 }
 async function setDoc(ref,data,options={}) {
-  const payload=mapWrite(ref,data);
+  let writeData=data;
+  if (options.merge && ref.id) {
+    const existing=await getDoc(ref);
+    if (existing.exists()) writeData={...existing.data(),...data};
+  }
+  const payload=mapWrite(ref,writeData);
   const conflict={profiles:"id",reports:"owner_id,id",report_photos:"owner_id,report_id,id",user_settings:"owner_id,setting_key",trainings:"id",agenda:"owner_id,id"}[ref.table];
   const {error}=await supabase.from(ref.table).upsert(payload,{onConflict:conflict});
   if(error)throw error;
@@ -402,8 +409,10 @@ async function createTraining(status){
  const buttons=[$('trainingSaveDraft'),$('trainingSubmit')];buttons.forEach(b=>b.disabled=true);
  try{
   const id=doc(collection(db,TRAININGS)).id;
+  const trainingRef=doc(db,TRAININGS,id);
+  await setDoc(trainingRef,{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),attachments:[],ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:1});
   const attachments=await uploadTrainingFiles(id);
-  await setDoc(doc(db,TRAININGS,id),{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),attachments,ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:1});
+  if(attachments.length)await setDoc(trainingRef,{attachments,updatedAt:serverTimestamp()},{merge:true});
   $('trainingTitle').value='';$('trainingCategory').value='';$('trainingAudience').value='';$('trainingDescription').value='';$('trainingFiles').value='';$('trainingFilesStatus').textContent='';
   await loadTrainings();alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.');
  }catch(e){$('trainingFilesStatus').textContent='';alert('Não foi possível salvar o treinamento ou enviar os anexos: '+e.message)}
