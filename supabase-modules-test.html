@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Homologação Supabase — módulos adicionais | IRMEN</title>
+<body style="font:16px Arial;max-width:820px;margin:32px auto;padding:0 16px">
+<h1>Homologação Supabase — módulos adicionais</h1>
+<p>Teste isolado de fotos de relatório, configurações, agenda, treinamentos e metadados de anexos. Não altera a aplicação principal nem o Firebase. Os registros criados são temporários e a rotina tenta removê-los ao final.</p>
+<label>E-mail <input id="email" type="email" autocomplete="username"></label><br><br>
+<label>Senha <input id="password" type="password" autocomplete="current-password"></label><br><br>
+<button id="login">Autenticar</button> <button id="test" disabled>Testar módulos</button>
+<pre id="out" style="white-space:pre-wrap;background:#f3f4f6;padding:16px">Aguardando autenticação.</pre>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const db=createClient('https://vwvesygsudhbaqmayhsz.supabase.co','sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw',{auth:{persistSession:false}});
+const out=document.querySelector('#out');let user;
+const say=t=>out.textContent=t;
+document.querySelector('#login').onclick=async()=>{
+ const {data,error}=await db.auth.signInWithPassword({email:document.querySelector('#email').value.trim(),password:document.querySelector('#password').value});
+ if(error){say('FALHA LOGIN: '+error.message);return}
+ user=data.user;
+ const p=await db.from('profiles').select('role,active').eq('id',user.id).single();
+ if(p.error||p.data.role!=='super_admin'||!p.data.active){say('Perfil não autorizado para o teste. '+(p.error?.message||''));await db.auth.signOut();return}
+ document.querySelector('#test').disabled=false;say('Login confirmado. Perfil super_admin ativo. Pronto para testar módulos adicionais.');
+};
+document.querySelector('#test').onclick=async()=>{
+ const suffix=Date.now().toString();
+ const reportId='homologacao-modulos-'+suffix;
+ const trainingId='homologacao-treinamento-'+suffix;
+ const agendaId='homologacao-agenda-'+suffix;
+ const settingKey='homologacao-'+suffix;
+ const photoId='foto-teste-'+suffix;
+ const attachmentName='anexo-teste-'+suffix+'.txt';
+ const log=[]; let reportMade=false,trainingMade=false,agendaMade=false,settingMade=false,photoMade=false,attachmentMade=false;
+ const check=(r,label)=>{if(r.error)throw Error(label+': '+r.error.message);return r};
+ try{
+  check(await db.from('reports').insert({id:reportId,owner_id:user.id,type:'Teste de módulos',responsible:'Homologação IRMEN',client:'DADO DE TESTE',equipment:'Equipamento de teste',observations:'Registro temporário',model:{temporary:true}}),'RELATÓRIO INSERT');reportMade=true;log.push('Relatório pai: CREATE OK');
+  check(await db.from('report_photos').insert({id:photoId,owner_id:user.id,report_id:reportId,data:'TESTE-SEM-IMAGEM-REAL',caption:'Foto temporária de homologação',order_index:0}),'FOTO INSERT');photoMade=true;log.push('Fotos de relatório: CREATE OK (metadado/texto de teste, não arquivo real)');
+  let r=check(await db.from('report_photos').select('id,caption').eq('owner_id',user.id).eq('report_id',reportId).eq('id',photoId).single(),'FOTO SELECT');if(!r.data)throw Error('FOTO SELECT: registro não retornado');log.push('Fotos de relatório: READ OK');
+  check(await db.from('report_photos').update({caption:'Legenda atualizada'}).eq('owner_id',user.id).eq('report_id',reportId).eq('id',photoId),'FOTO UPDATE');log.push('Fotos de relatório: UPDATE OK');
+  check(await db.from('user_settings').insert({owner_id:user.id,setting_key:settingKey,data:{temporary:true,label:'Teste IRMEN'}}),'CONFIG INSERT');settingMade=true;log.push('Configurações do usuário: CREATE OK');
+  r=check(await db.from('user_settings').select('data').eq('owner_id',user.id).eq('setting_key',settingKey).single(),'CONFIG SELECT');if(!r.data)throw Error('CONFIG SELECT: registro não retornado');log.push('Configurações do usuário: READ OK');
+  check(await db.from('user_settings').update({data:{temporary:true,label:'Teste atualizado'}}).eq('owner_id',user.id).eq('setting_key',settingKey),'CONFIG UPDATE');log.push('Configurações do usuário: UPDATE OK');
+  const d=new Date();const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  check(await db.from('agenda').insert({id:agendaId,owner_id:user.id,appointment_date:date,client:'CLIENTE TESTE',location:'Homologação',equipment:'Equipamento de teste',activity_type:'Teste técnico',status:'Agendado',notes:'Registro temporário',assignee_name:'Homologação IRMEN',updated_by:user.id}),'AGENDA INSERT');agendaMade=true;log.push('Agenda: CREATE OK');
+  r=check(await db.from('agenda').select('id,status').eq('owner_id',user.id).eq('id',agendaId).single(),'AGENDA SELECT');if(!r.data)throw Error('AGENDA SELECT: registro não retornado');log.push('Agenda: READ OK');
+  check(await db.from('agenda').update({status:'Confirmado',notes:'Atualização temporária'}).eq('owner_id',user.id).eq('id',agendaId),'AGENDA UPDATE');log.push('Agenda: UPDATE OK');
+  check(await db.from('trainings').insert({id:trainingId,title:'Treinamento temporário de homologação',category:'Teste',audience:'Equipe técnica',description:'Registro temporário; não publicar',owner_id:user.id,owner_name:'Homologação IRMEN',status:'draft',legacy_data:{temporary:true}}),'TREINAMENTO INSERT');trainingMade=true;log.push('Treinamentos: CREATE OK (rascunho)');
+  r=check(await db.from('trainings').select('id,title,status').eq('id',trainingId).single(),'TREINAMENTO SELECT');if(!r.data)throw Error('TREINAMENTO SELECT: registro não retornado');log.push('Treinamentos: READ OK');
+  check(await db.from('trainings').update({description:'Descrição atualizada no teste'}).eq('id',trainingId),'TREINAMENTO UPDATE');log.push('Treinamentos: UPDATE OK');
+  check(await db.from('training_attachments').insert({training_id:trainingId,name:attachmentName,storage_path:'homologacao/'+attachmentName,public_url:'',kind:'test',size_bytes:0,content_type:'text/plain',legacy_data:{temporary:true}}),'ANEXO METADADO INSERT');attachmentMade=true;log.push('Metadados de anexos: CREATE OK (sem upload de arquivo ao Storage)');
+  r=check(await db.from('training_attachments').select('id,name').eq('training_id',trainingId).eq('name',attachmentName).single(),'ANEXO METADADO SELECT');if(!r.data)throw Error('ANEXO SELECT: registro não retornado');log.push('Metadados de anexos: READ OK');
+ }catch(e){log.push('FALHA: '+e.message)}
+ const cleanup=[];
+ if(attachmentMade){const r=await db.from('training_attachments').delete().eq('training_id',trainingId).eq('name',attachmentName);cleanup.push(r.error?'Falha ao limpar metadado de anexo':'Metadado de anexo removido');}
+ if(trainingMade){const r=await db.from('trainings').delete().eq('id',trainingId);cleanup.push(r.error?'Falha ao limpar treinamento: '+r.error.message:'Treinamento temporário removido');}
+ if(agendaMade){const r=await db.from('agenda').delete().eq('owner_id',user.id).eq('id',agendaId);cleanup.push(r.error?'Falha ao limpar agenda: '+r.error.message:'Evento temporário removido');}
+ if(settingMade){const r=await db.from('user_settings').delete().eq('owner_id',user.id).eq('setting_key',settingKey);cleanup.push(r.error?'Falha ao limpar configuração: '+r.error.message:'Configuração temporária removida');}
+ if(reportMade){const r=await db.from('reports').delete().eq('owner_id',user.id).eq('id',reportId);cleanup.push(r.error?'Falha ao limpar relatório/foto: '+r.error.message:'Relatório e foto temporários removidos (cascade)');}
+ say('RESULTADO DOS TESTES\n'+log.join('\n')+'\n\nLIMPEZA\n'+cleanup.join('\n')+'\n\nIMPORTANTE: este teste NÃO envia um arquivo real ao Supabase Storage nem testa políticas com outros papéis. Se houver falha de limpeza, confira o texto acima antes de repetir.');
+};
+</script>
+</body></html>
