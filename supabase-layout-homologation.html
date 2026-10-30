@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RelatorioPro | IRMEN SANY</title>
+<style>
+:root{--brand:#e4a900;--ink:#20242b;--muted:#68717d;--line:#dfe3e8;--bg:#f2f4f7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:7px;padding:10px 14px;font-weight:700}.primary{background:var(--brand);color:#20242b}.dark{background:#303640;color:white}.light{background:white;border:1px solid var(--line);color:var(--ink)}.danger{background:#fff0f0;color:#a32222;border:1px solid #f3caca}
+header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid var(--brand);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.logohead{display:flex;align-items:center;gap:12px}.mark{background:var(--brand);color:#20242b;padding:13px;border-radius:8px;font-weight:900}.sub{font-size:12px;color:#c7cbd1;margin-top:4px}.actions,.tabs,.row{display:flex;gap:8px;flex-wrap:wrap}.tabs{background:white;padding:10px 20px 0;border-bottom:1px solid var(--line)}.tab{background:transparent;color:#626b75;border-radius:7px 7px 0 0}.tab.active{background:var(--bg);border-bottom:3px solid var(--brand);color:var(--ink)}main{max-width:1500px;margin:auto;padding:20px}.page{display:none}.page.active{display:block}h1{font-size:23px;margin:0 0 7px}.muted{font-size:13px;color:var(--muted);line-height:1.5}.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,.95fr);gap:18px;align-items:start}.panel{background:white;border:1px solid var(--line);border-radius:10px;padding:18px;margin:15px 0;box-shadow:0 2px 8px #1d29390a}.panel h3{font-size:16px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{min-width:0}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;color:#4f5966;margin-bottom:6px}input,select,textarea{width:100%;min-width:0;border:1px solid #d5dae1;border-radius:7px;padding:10px;background:white;color:var(--ink)}textarea{resize:vertical;min-height:85px;line-height:1.5}.previewbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0}.previewwrap{background:#e9ecf0;padding:8px;overflow:auto;border-radius:9px}.paper{background:white;max-width:794px;min-height:1123px;margin:auto;padding:38px 40px;box-shadow:0 3px 15px #0001;font-size:11px;line-height:1.5;overflow-wrap:anywhere}.rhead{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:3px solid var(--brand);padding-bottom:15px}.rhead img{max-width:130px;max-height:60px;object-fit:contain}.company{font-size:19px;font-weight:900}.rsub{font-size:10px;color:#626b75}.tag{border:1px solid #d9dde2;padding:6px;border-radius:4px;font-size:9px;text-align:center}.rtitle{text-align:center;font-size:19px;font-weight:900;text-transform:uppercase;margin:16px 0 3px}.rnumber{text-align:center;color:#59616b;font-size:10px;margin-bottom:18px}.sect{margin-top:16px}.secttitle{font-size:11px;font-weight:900;text-transform:uppercase;background:#f0f2f4;border-left:4px solid var(--brand);padding:7px 9px;margin-bottom:8px}.rtable{width:100%;border-collapse:collapse;table-layout:fixed}.rtable td,.rtable th{border:1px solid #d9dde2;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}.rtable th{background:#f7f8f9;width:20%}.rtext{white-space:pre-wrap}.rphotos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rphoto{margin:0;break-inside:avoid}.rphoto img{width:100%;height:auto;max-height:240px;object-fit:contain;border:1px solid #ddd}.rphoto figcaption{font-size:9px;color:#555;margin-top:4px}.rfoot{border-top:1px solid #ddd;margin-top:25px;padding-top:8px;font-size:8px;color:#68717d;display:flex;justify-content:space-between;gap:10px}.conf{text-align:center;color:#68717d;font-size:8px;margin-top:10px}.photoitem,.saved{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:9px;border-radius:8px;margin-top:10px;flex-wrap:wrap}.photoitem img{width:78px;height:62px;object-fit:cover}.photoitem input{flex:1;min-width:140px}.saved{justify-content:space-between;background:white;padding:14px}.saved small{display:block;color:var(--muted);margin-top:5px}.empty{padding:22px;text-align:center;border:1px dashed #cbd1d9;border-radius:8px;color:var(--muted);font-size:13px}.logo-preview{width:150px;height:85px;border:1px dashed #cbd1d9;border-radius:8px;display:grid;place-items:center;padding:8px;margin-top:8px;color:var(--muted);font-size:12px}.logo-preview img{max-width:100%;max-height:100%;object-fit:contain}.note{background:#fff8e4;border:1px solid #f1dfa5;padding:12px;border-radius:8px;color:#64501a;font-size:12px;margin-bottom:15px}.status{font-size:11px;color:var(--muted);margin-top:8px}
+.simulation-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:12px}.simulation-head h2{margin:0 0 6px}.simulation-head p{margin:0;color:var(--muted)}.simulation-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:12px}.simulation-head h2{margin:0 0 6px}.simulation-head p{margin:0;color:var(--muted)}.simulation-warning{background:#fff5d6;border:1px solid #e8c85e;border-radius:8px;padding:12px;margin:18px 0;font-weight:700;font-size:13px}.simulation-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}.simulation-stat,.simulation-person,.simulation-report,.simulation-appointment{background:white;border:1px solid var(--line);border-radius:9px;padding:14px}.simulation-stat strong{display:block;font-size:24px;margin-top:5px}.simulation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 22px}.simulation-person h4,.simulation-report h4,.simulation-appointment h4{margin:0 0 7px}.simulation-person p,.simulation-report p,.simulation-appointment p{font-size:12px;color:var(--muted);margin:5px 0}.simulation-tag{display:inline-block;background:#fff0bf;border-radius:20px;padding:4px 8px;font-size:11px;margin-top:5px}.simulation-app{min-height:0}.simulation-tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:18px 0;padding-bottom:10px}.simulation-tab{background:#e8ebef;color:var(--ink)}.simulation-tab.active{background:var(--ink);color:white}.simulation-page{display:block}.simulation-page[hidden]{display:none}.simulation-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.simulation-toolbar h3{margin-bottom:4px}.simulation-toolbar p{margin-top:0;color:var(--muted);font-size:13px}.simulation-toolbar input,.simulation-toolbar select{padding:10px;border:1px solid var(--line);border-radius:7px;min-width:230px}.simulation-report-list,.simulation-agenda-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.simulation-report-detail{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px;margin:12px 0;white-space:pre-wrap;line-height:1.6}.simulation-report-detail h3{margin-top:0}.simulation-empty{padding:18px;background:white;border:1px dashed var(--line);border-radius:8px;color:var(--muted)}@media(max-width:700px){.simulation-stats,.simulation-grid,.simulation-report-list,.simulation-agenda-list{grid-template-columns:1fr}.simulation-toolbar input,.simulation-toolbar select{min-width:0;width:100%}}.agenda-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:9px;padding:14px;margin:10px 0}.agenda-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.agenda-meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.agenda-pill{display:inline-block;padding:4px 8px;border-radius:20px;background:#f0f2f4;font-size:11px;color:#4b5563}.agenda-card p{margin:7px 0;font-size:13px;line-height:1.5}.agenda-card h3{margin:0;font-size:16px}.agenda-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.agenda-date{font-weight:800;color:#8a6500}@media(max-width:1000px){.layout{grid-template-columns:1fr}.paper{max-width:100%}}@media(max-width:600px){main{padding:12px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.paper{padding:22px 16px}.rtitle{font-size:16px}.rphotos{grid-template-columns:1fr}.rhead{align-items:flex-start}header{padding:14px}}
+.readonly-report .layout>div:first-child{display:none}.readonly-report .layout{grid-template-columns:1fr}.readonly-report .previewbar{justify-content:flex-end}
+@page{size:A4;margin:12mm}@media print{body *{visibility:hidden!important}#preview,#preview *{visibility:visible!important}#preview{position:absolute;left:0;top:0;width:100%;max-width:none;min-height:0;margin:0;padding:0;box-shadow:none;font-size:10pt;overflow:visible}.sect,.rtable,.rphoto,.rhead{break-inside:avoid}.rphotos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.auth-gate{position:fixed;inset:0;z-index:9999;background:#f2f4f7;display:grid;place-items:center;padding:20px}
+.auth-card{width:min(100%,440px);background:white;border:1px solid #dfe3e8;border-radius:14px;padding:26px;box-shadow:0 10px 35px #20242b18}
+#authGate.auth-gate{grid-template-columns:minmax(0,1fr);gap:0;padding:0;overflow:hidden;place-items:stretch;background:#111720}
+#authGate .auth-card{position:relative;z-index:2;width:min( calc(100% - 48px), 440px);max-width:440px;align-self:center;justify-self:start;margin:clamp(20px,6.2vw,96px);padding:clamp(26px,3vw,40px);border:1px solid #ffffff24;border-radius:17px;box-shadow:0 24px 80px #0008;min-height:auto;display:flex;flex-direction:column;justify-content:center;background:rgba(10,16,24,.91);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#f8fafc}
+#authGate .auth-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #ffffff20}
+#authGate .auth-brand>strong{width:100%;text-align:center}
+#authGate .auth-brand .auth-irmen-logo{display:block;width:min(100%,260px);height:auto;max-height:105px;object-fit:contain;margin:0 auto;filter:brightness(0) invert(1)}
+#authGate .auth-brand .mark{display:none}
+#authGate .auth-brand strong{display:block!important;font-size:27px!important;letter-spacing:.04em;color:#fff}
+#authGate .auth-brand .sub{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#d5d9df!important;margin-top:5px}
+#authGate .auth-brand .auth-sany{display:block;margin-top:8px;color:#e32636;font-size:25px;font-weight:900;letter-spacing:.12em;line-height:1;text-transform:uppercase;font-style:italic;text-shadow:0 1px 10px #e3263620}
+#authGate .auth-sany-logo{display:flex;justify-content:center;align-items:center;margin:18px auto 0;padding:0;background:transparent;border:0;border-radius:0;width:fit-content;line-height:0}
+#authGate .auth-sany-logo img{display:block;width:112px;max-width:100%;height:auto;max-height:36px;object-fit:contain;background:transparent}
+#authGate .auth-card h1{font-size:23px;line-height:1.25;margin:0 0 8px;color:#fff}
+#authGate .auth-card p{font-size:13px;color:#c4cbd4;line-height:1.6;margin:0 0 15px}
+#authGate .auth-card label{color:#e3e7ec;margin-top:15px;font-size:12px}
+#authGate .auth-card input{background:#18212c;border:1px solid #364252;border-radius:9px;padding:13px 14px;color:#fff;outline:none;transition:border-color .18s,box-shadow .18s}
+#authGate .auth-card input::placeholder{color:#8f9aaa}
+#authGate .auth-card input:focus{border-color:#f2b705;box-shadow:0 0 0 3px #f2b70525}
+#authGate .auth-card .auth-actions{margin-top:22px}
+#authGate .auth-card .primary{background:linear-gradient(135deg,#ffd02f,#f0ad00);color:#171a1f;border-radius:9px;padding:14px 16px;font-size:15px;box-shadow:0 7px 20px #e4a90025;transition:filter .18s,transform .18s}
+#authGate .auth-card .primary:hover{filter:brightness(1.05);transform:translateY(-1px)}
+#authGate .auth-error{color:#ffb4b4}
+#authGate .auth-muted{font-size:11px;color:#9da8b6;line-height:1.5;margin-top:19px;padding-top:15px;border-top:1px solid #ffffff1a}
+.auth-video-panel{position:absolute;inset:0;min-width:0;min-height:100vh;overflow:hidden;background:#171a1f}
+.auth-video-panel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.auth-video-panel:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,13,20,.68) 0%,rgba(8,13,20,.43) 35%,rgba(8,13,20,.08) 70%,rgba(8,13,20,.2) 100%);pointer-events:none}
+.auth-video-caption{display:none}
+@media(max-width:760px){#authGate.auth-gate{grid-template-columns:1fr;overflow:auto;min-height:100dvh}#authGate .auth-card{width:calc(100% - 32px);max-width:440px;margin:22px auto;padding:27px 23px;grid-row:auto}#authGate .auth-video-panel{position:fixed;inset:0;min-height:100dvh}.auth-video-panel:after{background:linear-gradient(180deg,rgba(8,13,20,.35),rgba(8,13,20,.72)),linear-gradient(90deg,rgba(8,13,20,.35),transparent)}}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.auth-brand .mark{display:inline-block}
+.auth-card h1{font-size:22px;margin:0 0 8px}.auth-card p{font-size:13px;color:#68717d;line-height:1.5}
+.auth-card label{margin-top:12px}.auth-card .auth-actions{display:grid;gap:9px;margin-top:18px}.auth-error{font-size:12px;color:#a32222;min-height:18px;margin-top:10px}.auth-muted{font-size:12px;color:#68717d;margin-top:12px}
+#appShell[hidden],#authGate[hidden],#changePasswordGate[hidden]{display:none!important}
+
+/* Onboarding interativo RelatorioPro */
+.help-launch{padding:8px 11px;background:#fff;border:1px solid #68717d;color:#f3c64a;border-radius:999px;font-size:12px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px #0002}
+.help-launch .help-dot{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#f3c64a;color:#20242b;font-weight:900}
+.tour-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(13,18,27,.68);display:flex;align-items:center;justify-content:center;padding:18px}
+.tour-backdrop[hidden]{display:none!important}
+.tour-card{width:min(100%,460px);background:#fff;border-radius:16px;padding:24px;box-shadow:0 24px 80px #0005;border-top:5px solid var(--brand);position:relative;animation:tourIn .18s ease-out}
+@keyframes tourIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.tour-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#7b630b;font-weight:800;margin-bottom:10px}
+.tour-card h2{font-size:22px;margin:0 0 10px;line-height:1.25}
+.tour-card p{font-size:14px;line-height:1.65;color:#505966;margin:0 0 18px}
+.tour-progress{height:4px;background:#edf0f3;border-radius:99px;overflow:hidden;margin:18px 0}
+.tour-progress span{display:block;height:100%;background:var(--brand);transition:width .2s}
+.tour-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tour-footer .actions{margin-left:auto}
+.tour-count{font-size:12px;color:#68717d}
+.tour-close{position:absolute;right:12px;top:12px;background:transparent;color:#68717d;padding:5px 8px;font-size:20px}
+.tour-spotlight{position:relative!important;z-index:10001!important;outline:3px solid #ffd23f!important;outline-offset:4px!important;border-radius:8px!important;box-shadow:0 0 0 6px rgba(255,210,63,.2)!important}
+@media(max-width:600px){.tour-card{padding:21px}.tour-card h2{font-size:20px}.help-launch{padding:7px 9px}}
+@media(prefers-reduced-motion:reduce){.tour-card{animation:none}}
+
+</style>
+</head>
+<body>
+<div class="auth-gate" id="authGate">
+  <section class="auth-card" aria-labelledby="authTitle">
+    <div class="auth-brand"><img class="auth-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"></div>
+    <h1 id="authTitle">RelatorioPro</h1>
+    <p>Tecnologia e praticidade para um serviço mais eficiente.</p>
+    <form id="authForm">
+      <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="section-relatoriopro-firebase username" required placeholder="nome@empresa.com">
+      <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="section-relatoriopro-firebase current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
+      <div class="auth-actions"><button class="primary" id="authSubmit" type="submit">Entrar</button></div>
+      <div class="auth-error" id="authError" role="alert" aria-live="polite"></div>
+    </form>
+    <div class="auth-sany-logo"><img src="./Logo%20Sany.png" alt="Logo SANY"></div>
+  </section>
+  <aside class="auth-video-panel" aria-label="Vídeo institucional IRMEN SANY">
+    <video autoplay muted loop playsinline preload="metadata" aria-label="Vídeo institucional com máquinas pesadas">
+      <source src="./gemini_generated_video_6df6c18c.mp4" type="video/mp4">
+      Seu navegador não conseguiu reproduzir o vídeo.
+    </video>
+  </aside>
+</div>
+<div class="auth-gate" id="changePasswordGate" hidden>
+  <section class="auth-card" aria-labelledby="changePasswordTitle">
+    <div class="auth-brand"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub" style="color:#68717d">IRMEN | Soluções técnicas SANY</div></div></div>
+    <h1 id="changePasswordTitle">Cadastre sua nova senha</h1>
+    <p>Por segurança, você precisa trocar a senha inicial antes de acessar o sistema.</p>
+    <form id="changePasswordForm">
+      <label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
+      <label for="confirmNewPassword">Confirmar nova senha</label><input id="confirmNewPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="Digite novamente a nova senha">
+      <div class="auth-actions"><button class="primary" id="changePasswordBtn" type="submit">Salvar nova senha e entrar</button></div>
+      <div class="auth-error" id="changePasswordError" role="alert" aria-live="polite"></div>
+    </form>
+  </section>
+</div>
+<div id="appShell" hidden>
+<header><div class="logohead"><div class="mark">IR</div><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button><button class="primary" id="saveTop">Salvar relatório</button><button class="light" id="printTop">Imprimir / PDF</button><button class="light" id="simulateBtn" type="button" hidden>Simular sistema</button><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir tutorial do sistema"><span class="help-dot">?</span><span>Ajuda</span></button></div></header>
+<nav class="tabs"><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><button class="tab" data-page="simulation" id="simulationTab" hidden>Simulação</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div></nav>
+<main>
+<section class="page active" id="editor"><h1>Relatório técnico</h1><p class="muted">Preencha os dados do atendimento, adicione fotos e confira a prévia antes de imprimir.</p><div class="layout"><div>
+<div class="panel"><h3>1. Identificação</h3><div class="grid">
+<div class="field"><label>Tipo de atendimento</label><select id="type"><option>Relatório de campo</option><option>Relatório de manutenção</option><option>Relatório de entrega técnica</option><option>Relatório de treinamento</option><option>Relatório de inspeção</option><option>Relatório de diagnóstico</option><option>Relatório de garantia</option><option>Outro</option></select></div>
+<div class="field"><label>Data</label><input id="date" type="date"></div><div class="field"><label>Responsável técnico</label><input id="responsible" placeholder="Nome do responsável"></div>
+<div class="field"><label>Cliente</label><input id="client" placeholder="Nome do cliente"></div><div class="field"><label>Filial / departamento</label><input id="branch" placeholder="IRMEN - Matriz"></div>
+<div class="field"><label>Equipamento</label><input id="equipment" placeholder="Modelo SANY"></div>
+<div class="field"><label>Local do atendimento</label><input id="location"></div></div></div>
+<div class="panel"><h3>2. Descrição técnica</h3><div class="grid">
+<div class="field full"><label>Objetivo</label><textarea id="objective" placeholder="Objetivo do atendimento técnico"></textarea></div>
+<div class="field full"><label>Pontos de observação</label><textarea id="observations" placeholder="Sintomas, condições encontradas e observações"></textarea></div>
+<div class="field full"><label>Atividades realizadas</label><textarea id="activities" style="min-height:125px" placeholder="Inspeções, testes, verificações e etapas executadas"></textarea></div>
+<div class="field full"><label>Resultados e recomendações</label><textarea id="results" placeholder="Resultados obtidos e recomendações ao cliente"></textarea></div>
+<div class="field full"><label>Conclusão</label><textarea id="conclusion" placeholder="Conclusão técnica e situação final do equipamento"></textarea></div></div></div>
+<div class="panel" id="gptAssistant"><h3>✦ Assistente GPT</h3><p class="muted">Organize suas anotações em linguagem técnica e profissional sem sair do RelatorioPro. Revise os dados antes de emitir o documento.</p><div class="actions"><button class="primary" id="improveWithGPT">✦ Melhorar texto com GPT</button><button class="light" id="suggestStructure">Sugerir estrutura</button></div><div class="status" id="gptStatus" role="status" aria-live="polite"></div><div id="gptResultWrap" style="display:none;margin-top:12px"><label for="gptResult">Resultado da IA — revise antes de aplicar</label><textarea id="gptResult" style="min-height:220px" placeholder="O resultado da IA aparecerá aqui."></textarea><div class="actions" style="margin-top:8px"><button class="primary" id="applyGPTResult">Aplicar aos campos do relatório</button><button class="light" id="copyGPTResult">Copiar resultado</button></div></div></div><div class="panel"><h3>3. Evidências fotográficas</h3><label>Selecionar fotos</label><input id="photoFiles" type="file" accept="image/*" multiple><div id="photoList"></div><div class="status" id="photoStatus"></div></div>
+<div class="actions"><button class="primary" id="saveBtn">Salvar relatório</button><button class="light" id="printBtn">Imprimir / salvar PDF</button><button class="light" id="clearBtn">Limpar formulário</button></div><div class="status" id="draftStatus">Rascunho automático ativado.</div>
+</div><div><div class="previewbar"><div><strong>Prévia do documento</strong><div class="muted">Formato A4 aproximado</div></div><button class="light" id="refresh">Atualizar</button></div>
+<div class="previewwrap"><article class="paper" id="preview"><div class="rhead"><div id="previewBrand"><div class="company" id="pvCompany">IRMEN</div><div class="rsub" id="pvSubtitle">Soluções técnicas SANY</div></div><div class="tag">RELATÓRIO<br>TÉCNICO</div></div>
+<div class="rtitle" id="pvType">Relatório de campo</div>
+<div class="sect"><div class="secttitle">Identificação</div><table class="rtable"><tbody><tr><th>Cliente</th><td id="pClient">—</td><th>Data</th><td id="pDate">—</td></tr><tr><th>Equipamento</th><td colspan="3" id="pEquipment">—</td></tr><tr><th>Responsável</th><td id="pResponsible">—</td><th>Local</th><td id="pLocation">—</td></tr><tr><th>Filial / setor</th><td colspan="3" id="pBranch">—</td></tr></tbody></table></div>
+<div class="sect"><div class="secttitle">Objetivo</div><div class="rtext" id="pObjective"></div></div><div class="sect"><div class="secttitle">Pontos de observação</div><div class="rtext" id="pObservations"></div></div><div class="sect"><div class="secttitle">Atividades realizadas</div><div class="rtext" id="pActivities"></div></div><div class="sect"><div class="secttitle">Resultados e recomendações</div><div class="rtext" id="pResults"></div></div>
+<div class="sect"><div class="secttitle">Evidências fotográficas</div><div class="rphotos" id="pPhotos"><span class="muted">Nenhuma foto adicionada.</span></div></div><div class="sect"><div class="secttitle">Conclusão</div><div class="rtext" id="pConclusion"></div></div>
+<div class="rfoot"><span id="pFooter">IRMEN | Relatório técnico</span><span id="pFooterRight">IRMEN</span></div><div class="conf" id="pConf"></div></article></div></div></div></section>
+<section class="page" id="model"><h1>Modelo e identidade visual</h1><p class="muted">Personalize a identidade visual que será aplicada ao relatório atual e aos novos relatórios.</p><div class="panel"><div class="note">A identidade visual salva será usada no relatório atual, nos novos relatórios e também nos relatórios já salvos neste navegador.</div><div class="grid">
+<div class="field"><label>Nome da empresa</label><input id="mCompany" value="IRMEN"></div><div class="field"><label>Subtítulo</label><input id="mSubtitle" value="Soluções técnicas SANY"></div><div class="field"><label>Texto do rodapé</label><input id="mFooter" value="IRMEN | Relatório técnico"></div><div class="field"><label>Aviso de confidencialidade</label><input id="mConf" value="Documento destinado ao uso técnico e profissional."></div><div class="field"><label>Cor de destaque</label><input id="mColor" type="color" value="#e4a900"></div><div class="field"><label>Logotipo</label><input id="mLogo" type="file" accept="image/*"><div class="logo-preview" id="logoPreview">Nenhum logotipo selecionado</div><button class="light" id="removeLogo" style="margin-top:8px">Remover logotipo</button></div></div><div class="actions" style="margin-top:16px"><button class="primary" id="applyModel">Salvar e aplicar modelo</button><button class="light" id="resetModel">Restaurar padrão</button></div><div class="status" id="modelStatus"></div></div></section>
+<section class="page" id="saved"><h1>Relatórios salvos</h1><p class="muted">Pesquise, abra, imprima ou exclua relatórios guardados neste navegador.</p><div class="panel"><div class="grid"><div class="field"><label>Pesquisar</label><input id="search" placeholder="Número, cliente, equipamento ou responsável"></div><div class="field"><label>Tipo</label><select id="filter"><option value="">Todos os tipos</option><option>Relatório de campo</option><option>Relatório de manutenção</option><option>Relatório de entrega técnica</option><option>Relatório de treinamento</option><option>Relatório de inspeção</option><option>Relatório de diagnóstico</option><option>Relatório de garantia</option><option>Outro</option></select></div></div></div><div id="savedList"></div></section>
+<section class="page" id="agenda">
+<h1>Agenda técnica IRMEN</h1>
+<p class="muted">Consulte os atendimentos atribuídos ao seu usuário. Administradores podem visualizar todas as agendas e cadastrar ou alterar compromissos.</p>
+<div class="panel" id="agendaAdminPanel" hidden>
+<h3 id="agendaFormTitle">Cadastrar compromisso</h3>
+<form id="agendaForm">
+<input type="hidden" id="agendaId"><input type="hidden" id="agendaOwnerUid">
+<div class="grid">
+<div class="field"><label>Data</label><input id="agendaDate" type="date" required></div>
+<div class="field"><label>Horário</label><input id="agendaTime" type="time"></div>
+<div class="field"><label>Instrutor / consultor responsável</label><select id="agendaAssignee" required></select></div>
+<div class="field"><label>Cliente</label><input id="agendaClient" required></div>
+<div class="field"><label>Filial / local</label><input id="agendaLocation"></div>
+<div class="field"><label>Equipamento / modelo</label><input id="agendaEquipment"></div>
+<div class="field"><label>Tipo de atividade</label><select id="agendaType"><option>Atendimento técnico</option><option>Treinamento</option><option>Entrega técnica</option><option>Inspeção</option><option>Manutenção</option><option>Reunião</option><option>Outro</option></select></div>
+<div class="field"><label>Status</label><select id="agendaStatus"><option value="Agendado">Agendado</option><option value="Confirmado">Confirmado</option><option value="Concluído">Concluído</option><option value="Cancelado">Cancelado</option></select></div>
+<div class="field full"><label>Detalhes / observações</label><textarea id="agendaNotes" rows="2"></textarea></div>
+</div>
+<div class="actions" style="margin-top:14px"><button class="primary" id="agendaSaveBtn" type="submit">Salvar compromisso</button><button class="light" id="agendaCancelEdit" type="button">Limpar formulário</button></div>
+<div class="status" id="agendaFormStatus"></div>
+</form>
+</div>
+<div class="panel"><div class="grid">
+<div class="field"><label>Pesquisar</label><input id="agendaSearch" placeholder="Cliente, equipamento ou atividade"></div>
+<div class="field"><label>Mês</label><input id="agendaMonth" type="month"></div>
+<div class="field" id="agendaPersonFilterWrap" hidden><label>Responsável</label><select id="agendaPersonFilter"><option value="">Todos os profissionais</option></select></div>
+<div class="field"><label>Status</label><select id="agendaStatusFilter"><option value="">Todos os status</option><option>Agendado</option><option>Confirmado</option><option>Concluído</option><option>Cancelado</option></select></div>
+</div><div class="actions" style="margin-top:12px"><button class="light" id="agendaToday" type="button">Mês atual</button><button class="light" id="agendaReload" type="button">Atualizar agenda</button></div></div>
+<div id="agendaSummary" class="muted"></div><div id="agendaList"><div class="empty">Carregando agenda...</div></div>
+</section>
+<section class="page" id="users"><h1>Usuários e controle de acessos</h1><p class="muted">Cadastre usuários e gerencie o status de acesso.</p><div class="panel"><h3>Criar usuário</h3><form id="userCreateForm"><div class="grid"><div class="field"><label>Nome completo</label><input id="newUserName" required></div><div class="field"><label>E-mail corporativo</label><input id="newUserEmail" type="email" required></div><div class="field"><label>Senha inicial</label><input id="newUserPassword" type="password" minlength="6" required></div><div class="field"><label>Cargo</label><select id="newUserRole"><option value="auxiliar_administrativo">Auxiliar Administrativo</option><option value="gerente">Gerente</option><option value="coordenador">Coordenador</option><option value="instrutor_tecnico">Instrutor Técnico</option><option value="consultor_tecnico">Consultor Técnico</option></select></div></div><button class="primary" id="createUserBtn" type="submit">Criar usuário</button><div class="status" id="userCreateStatus"></div></form></div><div class="panel"><h3>Usuários cadastrados</h3><div id="usersList"><div class="empty">Carregando usuários...</div></div></div></section>
+<div class="tour-backdrop" id="tourBackdrop" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+ <section class="tour-card">
+  <button class="tour-close" id="tourClose" type="button" aria-label="Fechar tutorial" title="Fechar">×</button>
+  <div class="tour-eyebrow">RelatorioPro • Guia rápido</div>
+  <h2 id="tourTitle">Bem-vindo!</h2>
+  <p id="tourText"></p>
+  <div class="tour-progress" aria-hidden="true"><span id="tourProgressBar"></span></div>
+  <div class="tour-footer"><span class="tour-count" id="tourCount"></span><div class="actions"><button class="light" id="tourSkip" type="button">Pular</button><button class="light" id="tourBack" type="button">Voltar</button><button class="primary" id="tourNext" type="button">Começar</button></div></div>
+ </section>
+</div>
+</main>
+<section class="page" id="simulation"><div class="simulation-head"><div><h1 id="simulationTitle">Simulação do RelatorioPro</h1><p class="muted">Ambiente de demonstração integrado ao sistema, com dados fictícios.</p></div><button id="closeSimulation" class="light" type="button">Voltar ao sistema</button></div><div class="simulation-warning">MODO TESTE LOCAL: funcionários, relatórios e agendas são fictícios. Nada é gravado no Firebase/Firestore. Ao sair, os dados de demonstração são descartados.</div><div class="simulation-stats" id="simulationStats"></div><nav class="simulation-tabs" aria-label="Seções da simulação"><button class="simulation-tab active" data-simpage="employees">Funcionários</button><button class="simulation-tab" data-simpage="reports">Relatórios prontos</button><button class="simulation-tab" data-simpage="agenda">Agenda por funcionário</button></nav><section class="simulation-page active" id="sim-employees"><div class="simulation-toolbar"><div><h3>Equipe técnica de demonstração</h3><p>Selecione um funcionário para ver seus dados e atividades.</p></div><input id="simEmployeeSearch" placeholder="Pesquisar funcionário..." aria-label="Pesquisar funcionário"></div><div id="simulationEmployees" class="simulation-grid"></div></section><section class="simulation-page" id="sim-reports" hidden><div class="simulation-toolbar"><div><h3>Relatórios técnicos de exemplo</h3><p>15 relatórios completos de demonstração, um por funcionário.</p></div><input id="simReportSearch" placeholder="Pesquisar cliente, equipamento ou responsável..." aria-label="Pesquisar relatório"></div><div id="simulationReports" class="simulation-report-list"></div><div id="simulationReportDetail" class="simulation-report-detail" hidden></div></section><section class="simulation-page" id="sim-agenda" hidden><div class="simulation-toolbar"><div><h3>Agenda individual</h3><p>Consulte compromissos agrupados por profissional.</p></div><select id="simAgendaPerson" aria-label="Filtrar agenda por funcionário"><option value="">Todos os funcionários</option></select></div><div id="simulationAgenda" class="simulation-agenda-list"></div></section></section>
+<section class="page" id="trainings"><h1>Treinamentos</h1><p class="muted">Biblioteca de treinamentos e fluxo de aprovação. Somente conteúdos cadastrados pela equipe serão exibidos.</p>
+ <div class="panel" id="trainingQuickGuide" style="border-left:4px solid #e4a900"><h3>Guia rápido — Central de conhecimento IRMEN</h3><p><strong>Status: ideia em planejamento — ainda não funcional.</strong></p><p>A proposta é centralizar em um único ambiente os treinamentos técnicos, slides das aulas, manuais das máquinas SANY e demais materiais de apoio, facilitando a consulta pela equipe.</p><ol><li>O instrutor cria um treinamento e adiciona a descrição e os materiais de apoio.</li><li>O treinamento é enviado para aprovação.</li><li>Após a aprovação, o conteúdo é publicado na biblioteca.</li><li>Os instrutores terão acesso à biblioteca de conteúdos aprovados para consultar os treinamentos, slides, manuais e materiais vinculados.</li></ol><p class="muted">Observação: esta centralização é a visão planejada. O guia é informativo; a experiência completa de biblioteca e acesso integrado ainda precisa ser desenvolvida e validada.</p></div>
+<div class="panel" id="trainingCreatePanel"><h3>Criar treinamento</h3><div class="grid"><div class="field"><label>Nome do treinamento *</label><input id="trainingTitle" placeholder="Nome do treinamento"></div><div class="field"><label>Categoria</label><input id="trainingCategory" placeholder="Ex.: Equipamentos"></div><div class="field"><label>Filial / público-alvo</label><input id="trainingAudience" placeholder="Ex.: Todas as filiais"></div><div class="field" style="grid-column:1/-1"><label>Descrição</label><textarea id="trainingDescription" placeholder="Objetivo e conteúdo previsto"></textarea></div><div class="field" style="grid-column:1/-1"><label>Slides, manual da máquina e materiais de apoio</label><input id="trainingFiles" type="file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.mp4"><p class="muted">Selecione vários arquivos de uma vez. PDF, PowerPoint, Word, Excel, imagens e vídeos. Limite de 25 MB por arquivo.</p><div class="status" id="trainingFilesStatus" aria-live="polite"></div></div></div><div class="row"><button class="light" id="trainingSaveDraft" type="button">Salvar rascunho</button><button class="primary" id="trainingSubmit" type="button">Enviar para aprovação</button></div></div>
+<div class="panel"><h3>Biblioteca publicada</h3><div id="publishedTrainings"><p class="muted">Carregando treinamentos publicados…</p></div></div>
+<div class="panel"><h3>Meus treinamentos</h3><div id="myTrainings"><p class="muted">Carregando…</p></div></div>
+<div class="panel" id="trainingReviewPanel" hidden><h3>Aprovações pendentes</h3><div id="pendingTrainings"></div></div></section>
+
+<style>
+#supabaseHomologBtn{background:#fff7df;border:1px solid #e4a900;color:#20242b}
+#supabaseHomologPanel{position:fixed;inset:0;background:rgba(20,24,30,.68);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px}
+#supabaseHomologPanel[hidden]{display:none}
+#supabaseHomologPanel .sh-card{width:min(920px,100%);max-height:90vh;overflow:auto;background:white;border-radius:12px;padding:22px;border-top:4px solid #e4a900}
+#supabaseHomologPanel input,#supabaseHomologPanel textarea,#supabaseHomologPanel select{max-width:100%}
+.sh-row{border-top:1px solid #dfe3e8;padding:12px 0}.sh-log{white-space:pre-wrap;background:#20242b;color:#f3f4f6;padding:12px;border-radius:8px;max-height:180px;overflow:auto}
+</style>
+<button id="supabaseHomologBtn" type="button" style="position:fixed;right:16px;bottom:16px;z-index:1000;box-shadow:0 3px 14px #0002">Homologação Supabase</button>
+<section id="supabaseHomologPanel" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle">
+<div class="sh-card">
+<div class="row" style="justify-content:space-between;align-items:center"><div><h2 id="shTitle">Treinamentos — homologação Supabase</h2><p class="muted">Área de teste dentro do layout original. Os outros módulos continuam usando Firebase.</p></div><button type="button" class="light" id="shClose">Fechar</button></div>
+<div id="shLoginArea"><p>Entre com a conta de homologação do Supabase. A senha é enviada diretamente ao Supabase pelo navegador, não ao assistente.</p><div class="grid"><div class="field"><label>E-mail</label><input id="shEmail" type="email" autocomplete="section-supabase-homologation username" value="vinicius.alves@irmen.com.br"></div><div class="field"><label>Senha do Supabase</label><input id="shPassword" type="password" autocomplete="section-supabase-homologation current-password"></div></div><button type="button" class="primary" id="shLogin">Entrar no Supabase</button><span id="shLoginMsg" class="muted"></span></div>
+<div id="shWorkspace" hidden>
+<div class="row" style="justify-content:space-between;align-items:center"><p id="shSession" class="muted"></p><button type="button" class="light" id="shLogout">Sair do Supabase</button></div>
+<h3>Criar treinamento</h3><div class="grid">
+<div class="field"><label>Nome do treinamento *</label><input id="shTitle" placeholder="Ex.: Sistema hidráulico SANY"></div>
+<div class="field"><label>Categoria</label><input id="shCategory" placeholder="Ex.: Escavadeiras"></div>
+<div class="field"><label>Filial / público-alvo</label><input id="shAudience" placeholder="Ex.: Todas as filiais"></div>
+<div class="field"><label>Status inicial</label><select id="shStatus"><option value="draft">Rascunho</option><option value="pending">Enviar para aprovação</option></select></div>
+<div class="field" style="grid-column:1/-1"><label>Descrição</label><textarea id="shDescription" placeholder="Objetivo e conteúdo"></textarea></div>
+<div class="field" style="grid-column:1/-1"><label>Materiais de apoio</label><input id="shFiles" type="file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.mp4,.txt"><p class="muted">Até 25 MB por arquivo.</p></div></div>
+<button type="button" class="primary" id="shSave">Salvar treinamento e anexos</button><span id="shSaveMsg" class="muted"></span>
+<h3>Meus treinamentos</h3><div id="shList"></div><h3>Biblioteca publicada</h3><div id="shPublished"></div><div id="shReviewArea" hidden><h3>Aprovações pendentes</h3><div id="shPending"></div></div>
+<h3>Log de diagnóstico</h3><pre id="shLog" class="sh-log">Aguardando ações.</pre>
+</div></div></section>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const shDb=createClient('https://vwvesygsudhbaqmayhsz.supabase.co','sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw',{auth:{persistSession:true,autoRefreshToken:true}});
+const sh=$id=>document.getElementById('sh'+$id);
+let shUser=null,shProfile=null;
+function shLog(s){const el=sh('Log');el.textContent+='\n'+new Date().toLocaleTimeString()+' — '+s;el.scrollTop=el.scrollHeight}
+function shEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.getElementById('supabaseHomologBtn').addEventListener('click',()=>{sh('Panel').hidden=false});
+sh('Close').addEventListener('click',()=>{sh('Panel').hidden=true});
+sh('Login').addEventListener('click',async()=>{sh('Login').disabled=true;sh('LoginMsg').textContent='Autenticando…';try{const a=await shDb.auth.signInWithPassword({email:sh('Email').value.trim(),password:sh('Password').value});if(a.error)throw a.error;shUser=a.data.user;const p=await shDb.from('profiles').select('*').eq('id',shUser.id).single();if(p.error)throw p.error;if(!p.data.active)throw new Error('Perfil inativo');shProfile=p.data;sh('Password').value='';sh('LoginArea').hidden=true;sh('Workspace').hidden=false;sh('Session').textContent=(shProfile.name||shUser.email)+' · '+shProfile.role;shLog('LOGIN OK; perfil ativo: '+shProfile.role);await shLoad()}catch(e){sh('LoginMsg').textContent=e.message;shLog('LOGIN FALHOU: '+e.message)}finally{sh('Login').disabled=false}});
+sh('Logout').addEventListener('click',async()=>{await shDb.auth.signOut();shUser=null;shProfile=null;sh('Workspace').hidden=true;sh('LoginArea').hidden=false;sh('LoginMsg').textContent='Sessão encerrada.'});
+async function shLoad(){
+ const admin=['super_admin','auxiliar_administrativo','gerente','coordenador'].includes(shProfile.role);
+ const canCreate=['super_admin','auxiliar_administrativo','gerente','coordenador','instrutor_tecnico','consultor_tecnico'].includes(shProfile.role);
+ sh('Save').disabled=!canCreate;sh('ReviewArea').hidden=!admin;
+ const [ownRes,pubRes]=await Promise.all([shDb.from('trainings').select('*').eq('owner_id',shUser.id).order('created_at',{ascending:false}),shDb.from('trainings').select('*').eq('status','published').order('updated_at',{ascending:false})]);
+ if(ownRes.error||pubRes.error){const err=ownRes.error||pubRes.error;sh('List').textContent=err.message;sh('Published').textContent=err.message;shLog('LEITURA FALHOU: '+err.message);return}
+ const own=ownRes.data||[],pub=pubRes.data||[];
+ sh('List').innerHTML=own.length?own.map(t=>'<div class="sh-row"><strong>'+shEsc(t.title)+'</strong><p>'+shEsc(t.description||'')+'</p><p class="muted">Status: '+shEsc(t.status)+' · ID: '+shEsc(t.id)+'</p><button type="button" class="light" data-sh-check="'+shEsc(t.id)+'">Ver anexos</button> '+(['draft','returned'].includes(t.status)?'<button type="button" class="primary" data-sh-submit="'+shEsc(t.id)+'">Enviar para aprovação</button>':'')+(t.review_comment?'<p class="muted">Comentário: '+shEsc(t.review_comment)+'</p>':'')+'<div id="sh-att-'+shEsc(t.id)+'"></div></div>').join(''):'Nenhum treinamento cadastrado.';
+ sh('Published').innerHTML=pub.length?pub.map(t=>'<div class="sh-row"><strong>'+shEsc(t.title)+'</strong><p>'+shEsc(t.description||'')+'</p><p class="muted">'+shEsc(t.category||'')+' · Publicado</p><button type="button" class="light" data-sh-check="'+shEsc(t.id)+'">Ver anexos</button><div id="sh-att-'+shEsc(t.id)+'"></div></div>').join(''):'Nenhum treinamento publicado.';
+ for(const box of [sh('List'),sh('Published')]){box.querySelectorAll('[data-sh-check]').forEach(b=>b.addEventListener('click',()=>shAttachments(b.dataset.shCheck)));box.querySelectorAll('[data-sh-submit]').forEach(b=>b.addEventListener('click',()=>shSubmit(b.dataset.shSubmit)))}
+ if(admin){const pr=await shDb.from('trainings').select('*').eq('status','pending').order('created_at',{ascending:true});if(pr.error){sh('Pending').textContent=pr.error.message;shLog('PENDÊNCIAS FALHARAM: '+pr.error.message)}else{const pend=pr.data||[];sh('Pending').innerHTML=pend.length?pend.map(t=>'<div class="sh-row"><strong>'+shEsc(t.title)+'</strong><p>'+shEsc(t.description||'')+'</p><p class="muted">Autor: '+shEsc(t.owner_name||'')+' · '+shEsc(t.category||'')+'</p><button type="button" class="light" data-sh-check="'+shEsc(t.id)+'">Ver anexos</button><div id="sh-att-'+shEsc(t.id)+'"></div><label>Comentário de revisão</label><textarea id="sh-review-'+shEsc(t.id)+'" placeholder="Obrigatório para devolver"></textarea><p><button type="button" class="light" data-sh-return="'+shEsc(t.id)+'">Devolver para correção</button> <button type="button" class="primary" data-sh-approve="'+shEsc(t.id)+'">Aprovar e publicar</button></p></div>').join(''):'Nenhum treinamento aguardando aprovação.';sh('Pending').querySelectorAll('[data-sh-check]').forEach(b=>b.addEventListener('click',()=>shAttachments(b.dataset.shCheck)));sh('Pending').querySelectorAll('[data-sh-approve]').forEach(b=>b.addEventListener('click',()=>shReview(b.dataset.shApprove,true)));sh('Pending').querySelectorAll('[data-sh-return]').forEach(b=>b.addEventListener('click',()=>shReview(b.dataset.shReturn,false)))}}
+ shLog('LEITURA OK: '+own.length+' próprio(s), '+pub.length+' publicado(s)'+(admin?' e aprovação administrativa verificada':''));
+}
+async function shSubmit(id){const r=await shDb.from('trainings').update({status:'pending',updated_at:new Date().toISOString()}).eq('id',id).eq('owner_id',shUser.id);if(r.error){shLog('ENVIO PARA APROVAÇÃO FALHOU: '+r.error.message);alert(r.error.message);return}shLog('TREINAMENTO ENVIADO PARA APROVAÇÃO: '+id);await shLoad()}
+async function shReview(id,approve){if(!['super_admin','auxiliar_administrativo','gerente','coordenador'].includes(shProfile.role)){alert('Perfil sem permissão de aprovação.');return}const comment=(document.getElementById('sh-review-'+id)?.value||'').trim();if(!approve&&!comment){alert('Informe o motivo da devolução.');return}const update={status:approve?'published':'returned',review_comment:comment,reviewed_by:shUser.id,reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()};const r=await shDb.from('trainings').update(update).eq('id',id).eq('status','pending');if(r.error){shLog('REVISÃO FALHOU: '+r.error.message);alert(r.error.message);return}shLog(approve?'TREINAMENTO APROVADO E PUBLICADO: '+id:'TREINAMENTO DEVOLVIDO: '+id);await shLoad()}
+async function shAttachments(id){const target=document.getElementById('sh-att-'+id);target.textContent='Consultando anexos…';const r=await shDb.from('training_attachments').select('name,storage_path,size_bytes').eq('training_id',id);if(r.error){target.textContent=r.error.message;shLog('ANEXOS FALHOU: '+r.error.message);return}target.innerHTML='';if(!r.data.length){target.textContent='Nenhum anexo.';return}for(const a of r.data){const row=document.createElement('div');row.className='sh-row';const label=document.createElement('span');label.textContent=a.name+' · '+Math.round((a.size_bytes||0)/1024)+' KB ';const btn=document.createElement('button');btn.type='button';btn.className='light';btn.textContent='Gerar link de download';btn.onclick=async()=>{btn.disabled=true;try{const x=await shDb.storage.from('training-attachments-private').createSignedUrl(a.storage_path,60);if(x.error)throw x.error;window.open(x.data.signedUrl,'_blank','noopener');shLog('LINK DE DOWNLOAD GERADO: '+a.name)}catch(e){shLog('DOWNLOAD FALHOU: '+e.message);alert(e.message)}finally{btn.disabled=false}};row.append(label,btn);target.append(row)}shLog('ANEXOS OK: '+r.data.length+' arquivo(s)')}
+sh('Save').addEventListener('click',async()=>{const title=sh('Title').value.trim(),files=[...sh('Files').files];if(!title){sh('SaveMsg').textContent='Informe o nome.';return}if(files.some(f=>f.size>25*1024*1024)){sh('SaveMsg').textContent='Cada arquivo deve ter até 25 MB.';return}sh('Save').disabled=true;sh('SaveMsg').textContent='Salvando…';const id='trn-'+crypto.randomUUID();try{const ins=await shDb.from('trainings').insert({id,title,category:sh('Category').value.trim(),audience:sh('Audience').value.trim(),description:sh('Description').value.trim(),owner_id:shUser.id,owner_name:shProfile.name||shUser.email,status:sh('Status').value,review_comment:'',version:1,legacy_data:{homologation:true}});if(ins.error)throw ins.error;shLog('CREATE TREINAMENTO OK: '+id);for(const f of files){if(!/\.(pdf|ppt|pptx|doc|docx|xls|xlsx|jpg|jpeg|png|webp|mp4|txt)$/i.test(f.name))throw new Error('Formato não permitido: '+f.name);const safe=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'),path=shUser.id+'/'+id+'/'+Date.now()+'-'+safe;const up=await shDb.storage.from('training-attachments-private').upload(path,f,{contentType:f.type||'application/octet-stream'});if(up.error)throw up.error;shLog('UPLOAD OK: '+f.name);const meta=await shDb.from('training_attachments').insert({training_id:id,name:f.name,storage_path:path,public_url:'',kind:f.name.split('.').pop().toUpperCase(),size_bytes:f.size,content_type:f.type||''});if(meta.error)throw meta.error;shLog('METADADOS OK: '+f.name)}sh('Title').value='';sh('Category').value='';sh('Audience').value='';sh('Description').value='';sh('Files').value='';sh('SaveMsg').textContent='Salvo. Confira a lista.';await shLoad()}catch(e){sh('SaveMsg').textContent=e.message;shLog('FALHA AO SALVAR: '+e.message)}finally{sh('Save').disabled=false}});
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+import { getFirestore, collection, collectionGroup, doc, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyArvp8v1S5qs758dxbapwZGvf2eqbnZsQI",
+  authDomain: "relatoriopro-63368.firebaseapp.com",
+  projectId: "relatoriopro-63368",
+  storageBucket: "relatoriopro-63368.firebasestorage.app",
+  messagingSenderId: "1027762547199",
+  appId: "1:1027762547199:web:a05b12cb5e53c4a94e5fca"
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
+const auth = getAuth(firebaseApp);
+const MASTER_UID='sQYjYwjn2vOKtXty7NOT9CO43Mk1';
+const creatorAuth=getAuth(initializeApp(firebaseConfig,'relatoriopro-user-creator'));
+const profilesRef=collection(db,'userProfiles');
+const PERMISSIONS=[['reports.view','Visualizar relatórios'],['reports.create','Criar relatórios'],['reports.edit','Editar relatórios'],['reports.delete','Excluir relatórios'],['reports.print','Imprimir / PDF'],['model.view','Ver modelo visual'],['model.edit','Editar modelo visual']];
+const ROLE_DEFAULTS={auxiliar_administrativo:PERMISSIONS.map(p=>p[0]),gerente:PERMISSIONS.map(p=>p[0]),coordenador:PERMISSIONS.map(p=>p[0]),instrutor_tecnico:['reports.view','reports.create','reports.print'],consultor_tecnico:['reports.view','reports.create','reports.print']};
+let currentProfile=null,userProfilesCache=[];
+
+const REPORTS='relatoriopro-reports';
+const MODEL='relatoriopro-model';
+const $=id=>document.getElementById(id);
+const fields=['type','date','responsible','client','branch','equipment','location','objective','observations','activities','results','conclusion'];
+const defaultModel={company:'IRMEN',subtitle:'Soluções técnicas SANY',footer:'IRMEN | Relatório técnico',conf:'Documento destinado ao uso técnico e profissional.',color:'#e4a900',logo:''};
+let photos=[],editingId=null,logoData='',restoring=false,activeUser=null,reportCache=[],modelCache={...defaultModel},gptPendingResult=null;
+
+function userReportsRef(){if(!activeUser)throw new Error('Faça login para acessar os relatórios.');return isSystemAdmin()?collectionGroup(db,'reports'):collection(db,'users',activeUser.uid,'reports')}
+function reportRef(id,ownerUid=activeUser?.uid){if(!ownerUid)throw new Error('Proprietário não identificado.');return doc(db,'users',ownerUid,'reports',id)}
+function modelRef(){if(!activeUser)throw new Error('Faça login para acessar o modelo.');return doc(db,'users',activeUser.uid,'settings','model')}
+const TRAININGS='relatoriopro-trainings';
+function trainingAdmin(){return isSystemAdmin()}
+function trainingEscape(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function trainingStatus(s){return ({draft:'Rascunho',pending:'Aguardando aprovação',published:'Publicado',returned:'Correções solicitadas'})[s]||s}
+function trainingCanCreate(){return !!activeUser&&!!currentProfile&&currentProfile.active!==false&&(['instrutor_tecnico','consultor_tecnico','auxiliar_administrativo','gerente','coordenador'].includes(currentProfile.role)||isMaster())}
+async function loadTrainings(){
+ if(!activeUser)return;
+ $('trainingCreatePanel').hidden=!trainingCanCreate();$('trainingReviewPanel').hidden=!trainingAdmin();
+ const pub=$('publishedTrainings'),mine=$('myTrainings'),pending=$('pendingTrainings');
+ try{
+  const [publishedSnap,mineSnap]=await Promise.all([getDocs(query(collection(db,TRAININGS),where('status','==','published'))),getDocs(query(collection(db,TRAININGS),where('ownerUid','==',activeUser.uid)))]);
+  const published=publishedSnap.docs.map(d=>({id:d.id,...d.data()})),own=mineSnap.docs.map(d=>({id:d.id,...d.data()}));
+  pub.innerHTML=published.length?published.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><span class="muted">'+trainingEscape(t.category||'')+' · Publicado</span>'+trainingAttachmentLinks(t.attachments)+'</div>').join(''):'<p class="muted">Ainda não há treinamentos publicados.</p>';
+  mine.innerHTML=own.length?own.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><p class="muted">Status: '+trainingEscape(trainingStatus(t.status))+'</p>'+trainingAttachmentLinks(t.attachments)+(t.status==='draft'||t.status==='returned'?'<button class="primary" data-training-submit="'+t.id+'">Enviar para aprovação</button>':'')+(t.reviewComment?'<p class="muted">Comentário do aprovador: '+trainingEscape(t.reviewComment)+'</p>':'')+'</div>').join(''):'<p class="muted">Você ainda não criou treinamentos.</p>';
+  if(trainingAdmin()){const pendingSnap=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=pendingSnap.docs.map(d=>({id:d.id,...d.data()}));pending.innerHTML=pend.length?pend.map(t=>'<div class="saved-item"><h3>'+trainingEscape(t.title)+'</h3><p>'+trainingEscape(t.description||'')+'</p><p class="muted">Autor: '+trainingEscape(t.ownerName||t.ownerUid)+' · '+trainingEscape(t.category||'')+'</p>'+trainingAttachmentLinks(t.attachments)+'<textarea id="review-'+t.id+'" placeholder="Comentário / motivo de devolução"></textarea><div class="row"><button class="light" data-training-return="'+t.id+'">Devolver para correção</button><button class="primary" data-training-approve="'+t.id+'">Aprovar e publicar</button></div></div>').join(''):'<p class="muted">Nenhum treinamento aguardando aprovação.</p>'}
+ }catch(e){pub.innerHTML='<p class="muted">Não foi possível carregar os treinamentos. Verifique as permissões do Firestore.</p>';mine.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>';if(trainingAdmin())pending.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>'}
+}
+function trainingAttachmentLinks(files){
+ const list=Array.isArray(files)?files:[];
+ if(!list.length)return '<p class="muted">Nenhum anexo neste treinamento.</p>';
+ return '<div class="training-attachments"><strong>Materiais anexados</strong><ul>'+list.map(a=>'<li><a href="'+trainingEscape(a.url)+'" target="_blank" rel="noopener noreferrer">'+trainingEscape(a.name)+'</a> <span class="muted">('+trainingEscape(a.kind||'Arquivo')+')</span></li>').join('')+'</ul></div>';
+}
+function trainingFileKind(file){
+ const ext=(file.name.split('.').pop()||'').toLowerCase();
+ return ({pdf:'PDF',ppt:'PowerPoint',pptx:'PowerPoint',doc:'Word',docx:'Word',xls:'Excel',xlsx:'Excel',jpg:'Imagem',jpeg:'Imagem',png:'Imagem',webp:'Imagem',mp4:'Vídeo'})[ext]||'Arquivo';
+}
+async function uploadTrainingFiles(trainingId){
+ const selected=Array.from($('trainingFiles').files||[]);
+ if(!selected.length)return [];
+ const allowed=/\.(pdf|ppt|pptx|doc|docx|xls|xlsx|jpg|jpeg|png|webp|mp4)$/i;
+ for(const file of selected){
+  if(!allowed.test(file.name))throw new Error('Formato não permitido: '+file.name);
+  if(file.size>25*1024*1024)throw new Error('O arquivo '+file.name+' ultrapassa 25 MB.');
+ }
+ const uploaded=[];
+ $('trainingFilesStatus').textContent='Enviando '+selected.length+' arquivo(s)...';
+ for(const file of selected){
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path='relatoriopro-trainings/'+trainingId+'/'+Date.now()+'-'+safeName;
+  const fileRef=storageRef(storage,path);
+  await uploadBytes(fileRef,file,{contentType:file.type||'application/octet-stream',customMetadata:{trainingId,uploadedBy:activeUser.uid,originalName:file.name}});
+  uploaded.push({name:file.name,path,url:await getDownloadURL(fileRef),kind:trainingFileKind(file),size:file.size,contentType:file.type||''});
+ }
+ $('trainingFilesStatus').textContent=uploaded.length+' arquivo(s) anexado(s).';
+ return uploaded;
+}
+async function createTraining(status){
+ if(!trainingCanCreate()){alert('Seu perfil não pode criar treinamentos.');return}
+ const title=$('trainingTitle').value.trim();if(!title){alert('Informe o nome do treinamento.');return}
+ const buttons=[$('trainingSaveDraft'),$('trainingSubmit')];buttons.forEach(b=>b.disabled=true);
+ try{
+  const id=doc(collection(db,TRAININGS)).id;
+  const attachments=await uploadTrainingFiles(id);
+  await setDoc(doc(db,TRAININGS,id),{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),attachments,ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:1});
+  $('trainingTitle').value='';$('trainingCategory').value='';$('trainingAudience').value='';$('trainingDescription').value='';$('trainingFiles').value='';$('trainingFilesStatus').textContent='';
+  await loadTrainings();alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.');
+ }catch(e){$('trainingFilesStatus').textContent='';alert('Não foi possível salvar o treinamento ou enviar os anexos: '+e.message)}
+ finally{buttons.forEach(b=>b.disabled=false)}
+}
+$('trainingSaveDraft').addEventListener('click',()=>createTraining('draft'));$('trainingSubmit').addEventListener('click',()=>createTraining('pending'));
+$('trainings').addEventListener('click',async e=>{const submit=e.target.closest('[data-training-submit]'),approve=e.target.closest('[data-training-approve]'),ret=e.target.closest('[data-training-return]');try{
+ if(submit){const ref=doc(db,TRAININGS,submit.dataset.trainingSubmit),snap=await getDoc(ref);if(!snap.exists()||snap.data().ownerUid!==activeUser.uid||!['draft','returned'].includes(snap.data().status))throw new Error('Este treinamento não pode ser enviado.');await updateDoc(ref,{status:'pending',reviewComment:'',updatedAt:serverTimestamp()});await loadTrainings();alert('Enviado para aprovação.')}
+ if(approve){if(!trainingAdmin())throw new Error('Apenas administrador pode aprovar.');await updateDoc(doc(db,TRAININGS,approve.dataset.trainingApprove),{status:'published',reviewComment:$('review-'+approve.dataset.trainingApprove).value.trim(),approvedBy:activeUser.uid,approvedAt:serverTimestamp(),updatedAt:serverTimestamp()});await loadTrainings();alert('Treinamento publicado.')}
+ if(ret){if(!trainingAdmin())throw new Error('Apenas administrador pode devolver para correção.');const comment=$('review-'+ret.dataset.trainingReturn).value.trim();if(!comment)throw new Error('Informe o motivo da devolução.');await updateDoc(doc(db,TRAININGS,ret.dataset.trainingReturn),{status:'returned',reviewComment:comment,updatedAt:serverTimestamp()});await loadTrainings();alert('Treinamento devolvido para correção.')}
+ }catch(err){alert('Ação não concluída: '+err.message)}});
+
+function setAuthError(message){$('authError').textContent=message||''}
+function friendlyAuthError(error){
+ const codes={
+ 'auth/invalid-credential':'O Firebase recusou as credenciais. Este login é o do RelatorioPro (Firebase), separado do login Supabase. Se os dados funcionam na produção, confira se esta versão de teste está usando a mesma conta Firebase.',
+ 'auth/unauthorized-domain':'Este endereço de teste não está autorizado no Firebase Authentication. Adicione o domínio desta versão de teste aos domínios autorizados do projeto relatoriopro-63368.',
+ 'auth/invalid-api-key':'A chave de API do Firebase desta versão não foi aceita. Verifique a configuração do projeto.',
+ 'auth/user-not-found':'Conta não encontrada. Crie uma conta ou confira o e-mail.',
+ 'auth/wrong-password':'Senha incorreta.',
+ 'auth/email-already-in-use':'Este e-mail já possui uma conta.',
+ 'auth/weak-password':'A senha deve ter pelo menos 6 caracteres.',
+ 'auth/invalid-email':'Informe um endereço de e-mail válido.',
+ 'auth/too-many-requests':'Muitas tentativas. Aguarde e tente novamente.',
+ 'auth/network-request-failed':'Falha de conexão. Verifique a internet.',
+ 'auth/operation-not-allowed':'O login por e-mail/senha ainda não está habilitado no Firebase Authentication.',
+ 'permission-denied':'Seu acesso foi negado. Verifique suas permissões ou entre em contato com o administrador.',
+ 'unavailable':'O Firebase está temporariamente indisponível. Tente novamente.'
+ };
+ return codes[error?.code] || error?.message || 'Ocorreu um erro. Tente novamente.';
+}
+// Um único handler de login evita duas autenticações concorrentes e mudanças de estado em sequência.
+let manualLoginRequested=false;
+$('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if($('authSubmit').disabled)return;
+ manualLoginRequested=true;
+ setAuthError('');
+ $('authSubmit').disabled=true;
+ try{
+  await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);
+ }catch(error){
+  manualLoginRequested=false;
+  console.error('Falha no login Firebase do RelatorioPro', {code:error?.code||'', message:error?.message||'', projectId:firebaseConfig.projectId, page:'supabase-layout-homologation'});
+  setAuthError(friendlyAuthError(error)+' Código técnico: '+(error?.code||'não informado'));
+ }finally{
+  $('authSubmit').disabled=false;
+ }
+});
+
+function isMaster(){return !!activeUser&&activeUser.uid===MASTER_UID}
+function openSimulation(){if(!isMaster())return;
+const staff=[['Ana Paula Ribeiro','Instrutora técnica','Treinamentos'],['Bruno Martins','Consultor técnico','Escavadeiras'],['Camila Souza','Consultora técnica','Pós-venda'],['Diego Ferreira','Consultor técnico','Pá carregadeira'],['Eduarda Lima','Instrutora técnica','Segurança operacional'],['Felipe Costa','Consultor técnico','Diagnóstico'],['Gabriela Alves','Consultora técnica','Motores diesel'],['Henrique Rocha','Consultor técnico','Hidráulica'],['Isabela Mendes','Instrutora técnica','Elétrica e eletrônica'],['João Pedro Santos','Consultor técnico','Transmissão'],['Karen Oliveira','Consultora técnica','Manutenção preventiva'],['Lucas Almeida','Consultor técnico','Equipamentos de mineração'],['Mariana Carvalho','Instrutora técnica','Procedimentos operacionais'],['Nicolas Gomes','Consultor técnico','Atendimento de campo'],['Patrícia Nunes','Consultora técnica','Garantia e inspeção']];
+const clients=['Mineração Horizonte (TESTE)','Pedreira Modelo (TESTE)','Obras Brasil Demonstração (TESTE)','Construtora Vale Verde (TESTE)','Unidade IRMEN Treinamento (TESTE)'];
+const equipment=['Escavadeira SANY SY215C','Escavadeira SANY SY365H','Pá carregadeira SANY SW966K','Motoniveladora SANY STG190C','Rolo compactador SANY SSR120'];
+const reportTypes=['Relatório de campo','Inspeção técnica','Diagnóstico de falha','Treinamento técnico','Manutenção preventiva'];
+const reports=staff.map((p,i)=>({id:'SIM-'+String(i+1).padStart(3,'0'),owner:p[0],role:p[1],client:clients[i%clients.length],equipment:equipment[i%equipment.length],type:reportTypes[i%reportTypes.length],date:new Date(Date.now()-i*86400000).toLocaleDateString('pt-BR'),status:i%4===0?'Em revisão':'Concluído',objective:['Avaliar as condições operacionais e registrar as evidências encontradas.','Realizar inspeção preventiva dos principais sistemas do equipamento.','Investigar o sintoma relatado e documentar as verificações realizadas.'][i%3],activities:['Inspeção visual geral e verificação de segurança.','Conferência dos registros de operação e histórico de manutenção.','Verificação dos sistemas relacionados ao atendimento.','Registro das observações e recomendações técnicas.'].join('\n'),results:['Condição geral registrada para fins de demonstração.','Pontos de atenção documentados para acompanhamento.','Recomendações registradas; validar com manual específico antes de qualquer intervenção.'][i%3],conclusion:'Relatório fictício para teste visual do RelatorioPro. Não representa diagnóstico real nem especificação oficial SANY.'}));
+const appointments=staff.flatMap((p,i)=>[{id:'SIM-AG-'+(i+1)+'A',person:p[0],dateOffset:i%5,time:['08:00','09:30','11:00','13:30','15:00'][i%5],title:['Inspeção técnica de equipamento','Treinamento de manutenção preventiva','Diagnóstico de sistema hidráulico','Verificação elétrica e eletrônica','Acompanhamento de pós-venda'][i%5],client:clients[i%clients.length],equipment:equipment[i%equipment.length],status:i%3===0?'Confirmado':'Agendado',location:['Oficina de demonstração','Cliente fictício — Unidade Norte','Centro de treinamento IRMEN'][i%3]},{id:'SIM-AG-'+(i+1)+'B',person:p[0],dateOffset:(i+2)%7,time:['08:30','10:00','14:00'][i%3],title:['Retorno técnico','Revisão de relatório','Visita de acompanhamento'][i%3],client:clients[(i+2)%clients.length],equipment:equipment[(i+1)%equipment.length],status:'Planejado',location:'Agenda fictícia de demonstração'}]);
+const dateFor=offset=>{const d=new Date();d.setDate(d.getDate()+offset);return d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'})};
+$('simulationStats').innerHTML='<div class="simulation-stat">Funcionários<strong>15</strong></div><div class="simulation-stat">Relatórios prontos<strong>15</strong></div><div class="simulation-stat">Compromissos individuais<strong>'+appointments.length+'</strong></div>';
+$('simulationEmployees').innerHTML=staff.map((p,i)=>'<article class="simulation-person"><h4>'+String(i+1).padStart(2,'0')+'. '+escapeHtml(p[0])+'</h4><p>'+escapeHtml(p[1])+'</p><p>Área: '+escapeHtml(p[2])+'</p><p>Relatórios de teste: '+reports.filter(r=>r.owner===p[0]).length+' · Agenda: '+appointments.filter(a=>a.person===p[0]).length+' compromissos</p><span class="simulation-tag">FUNCIONÁRIO FICTÍCIO</span><div style="margin-top:10px"><button type="button" class="light sim-view-person" data-person="'+i+'">Ver relatórios e agenda</button></div></article>').join('');
+const reportList=$('simulationReports'),agendaList=$('simulationAgenda'),personSelect=$('simAgendaPerson');
+personSelect.innerHTML='<option value="">Todos os funcionários</option>'+staff.map(p=>'<option value="'+escapeHtml(p[0])+'">'+escapeHtml(p[0])+'</option>').join('');
+function showReportList(){const q=$('simReportSearch').value.toLowerCase().trim();const filtered=reports.filter(r=>[r.id,r.owner,r.client,r.equipment,r.type,r.status].join(' ').toLowerCase().includes(q));reportList.innerHTML=filtered.length?filtered.map((r)=>'<article class="simulation-report"><h4>'+escapeHtml(r.id)+' · '+escapeHtml(r.type)+'</h4><p><strong>Responsável:</strong> '+escapeHtml(r.owner)+'</p><p><strong>Cliente:</strong> '+escapeHtml(r.client)+'</p><p><strong>Equipamento:</strong> '+escapeHtml(r.equipment)+'</p><p><strong>Data:</strong> '+escapeHtml(r.date)+' · <strong>Status:</strong> '+escapeHtml(r.status)+'</p><button type="button" class="primary sim-open-report" data-report="'+reports.indexOf(r)+'">Abrir relatório</button></article>').join(''):'<div class="simulation-empty">Nenhum relatório corresponde à pesquisa.</div>'}
+function openReport(index){const r=reports[index];if(!r)return;const detail=$('simulationReportDetail');detail.hidden=false;detail.innerHTML='<button type="button" class="light" id="simBackReports">← Voltar aos relatórios</button><h3 style="margin-top:18px">'+escapeHtml(r.id)+' · '+escapeHtml(r.type)+'</h3><p><strong>Data:</strong> '+escapeHtml(r.date)+' | <strong>Status:</strong> '+escapeHtml(r.status)+'</p><p><strong>Responsável:</strong> '+escapeHtml(r.owner)+' ('+escapeHtml(r.role)+')</p><p><strong>Cliente:</strong> '+escapeHtml(r.client)+'</p><p><strong>Equipamento:</strong> '+escapeHtml(r.equipment)+'</p><h4>Objetivo</h4><p>'+escapeHtml(r.objective)+'</p><h4>Atividades realizadas</h4><p>'+escapeHtml(r.activities).replace(/\n/g,'<br>')+'</p><h4>Resultados e recomendações</h4><p>'+escapeHtml(r.results)+'</p><h4>Conclusão</h4><p>'+escapeHtml(r.conclusion)+'</p><span class="simulation-tag">CONTEÚDO FICTÍCIO · NÃO SALVO</span>';detail.scrollIntoView({behavior:'smooth',block:'start'});$('simBackReports').onclick=()=>{detail.hidden=true;reportList.scrollIntoView({behavior:'smooth',block:'start'})}}
+function showAgenda(){const selected=personSelect.value;const filtered=appointments.filter(a=>!selected||a.person===selected).sort((a,b)=>a.dateOffset-b.dateOffset||a.time.localeCompare(b.time));agendaList.innerHTML=filtered.length?filtered.map(a=>'<article class="simulation-appointment"><h4>'+escapeHtml(a.title)+'</h4><p><strong>Responsável:</strong> '+escapeHtml(a.person)+'</p><p><strong>Data:</strong> '+escapeHtml(dateFor(a.dateOffset))+' · '+escapeHtml(a.time)+'</p><p><strong>Cliente:</strong> '+escapeHtml(a.client)+'</p><p><strong>Equipamento:</strong> '+escapeHtml(a.equipment)+'</p><p><strong>Local:</strong> '+escapeHtml(a.location)+'</p><p><strong>Status:</strong> '+escapeHtml(a.status)+'</p><span class="simulation-tag">COMPROMISSO FICTÍCIO</span></article>').join(''):'<div class="simulation-empty">Nenhum compromisso para este funcionário.</div>'}
+function switchSimPage(page){document.querySelectorAll('.simulation-tab').forEach(b=>b.classList.toggle('active',b.dataset.simpage===page));document.querySelectorAll('.simulation-page').forEach(s=>{const active=s.id==='sim-'+page;s.hidden=!active;s.classList.toggle('active',active)});if(page==='agenda')showAgenda();if(page==='reports')showReportList()}
+document.querySelectorAll('.simulation-tab').forEach(b=>b.onclick=()=>switchSimPage(b.dataset.simpage));
+$('simEmployeeSearch').oninput=()=>{const q=$('simEmployeeSearch').value.toLowerCase().trim();document.querySelectorAll('#simulationEmployees .simulation-person').forEach(card=>card.hidden=!card.textContent.toLowerCase().includes(q))};
+$('simReportSearch').oninput=showReportList;personSelect.onchange=showAgenda;
+reportList.onclick=e=>{const b=e.target.closest('.sim-open-report');if(b)openReport(Number(b.dataset.report))};
+$('simulationEmployees').onclick=e=>{const b=e.target.closest('.sim-view-person');if(!b)return;personSelect.value=staff[Number(b.dataset.person)]?.[0]||'';switchSimPage('agenda');showAgenda()};
+showReportList();showAgenda();switchSimPage('employees');showPage('simulation')}
+function closeSimulation(){showPage('saved')}
+$('simulateBtn').addEventListener('click',openSimulation);$('closeSimulation').addEventListener('click',closeSimulation);
+function isSystemAdmin(){return isMaster()||!!(currentProfile&&currentProfile.active!==false&&['auxiliar_administrativo','gerente','coordenador'].includes(currentProfile.role))}
+function can(p){if(isMaster())return true;if(!currentProfile||currentProfile.active===false)return false;const role=String(currentProfile.role||currentProfile.roleLabel||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[\s-]+/g,'_');const defaults=ROLE_DEFAULTS[role]||(role==='consultor'||role==='consultortecnico'?ROLE_DEFAULTS.consultor_tecnico:[]);const configured=Array.isArray(currentProfile.permissions)?currentProfile.permissions:defaults;return configured.includes(p)}
+function requirePermission(p){if(can(p))return true;alert('Seu perfil não tem permissão para esta ação.');return false}
+function applyAccessControl(){const admin=isSystemAdmin(),master=isMaster();$('agendaTab').hidden=!master;$('usersTab').hidden=!admin;$('simulationTab').hidden=!master;$('simulateBtn').hidden=!master;$('sessionInfo').textContent=(currentProfile?.name||activeUser?.email||'Usuário')+' | Cargo: '+(currentProfile?.roleLabel||currentProfile?.role||'')+(master?' | Mestre':'');document.querySelectorAll('.tab[data-permission]').forEach(t=>t.hidden=!can(t.dataset.permission));document.querySelector('.tab[data-page="model"]').hidden=!can('model.view');document.querySelector('.tab[data-page="editor"]').hidden=!can('reports.create');$('model').style.display=can('model.view')?'':'none';$('users').style.display=admin?'':'none';$('newTop').hidden=!can('reports.create');$('saveTop').hidden=!(can('reports.create')||can('reports.edit'));$('printTop').hidden=!can('reports.print');$('saveBtn').hidden=!(can('reports.create')||can('reports.edit'));$('printBtn').hidden=!can('reports.print');$('clearBtn').hidden=!can('reports.create');$('gptAssistant').hidden=!(can('reports.create')||can('reports.edit'))}
+async function loadUsers(){if(!isSystemAdmin())return;const box=$('usersList');try{const s=await getDocs(profilesRef);userProfilesCache=s.docs.map(d=>({uid:d.id,...d.data()}));box.innerHTML='';if(!userProfilesCache.length){box.innerHTML='<div class="empty">Nenhum usuário cadastrado.</div>';return}userProfilesCache.forEach(u=>{const card=document.createElement('div');card.className='panel';const title=document.createElement('h3');title.textContent=(u.name||'Usuário')+' — '+(u.email||u.uid);card.appendChild(title);const status=document.createElement('p');status.className='muted';status.textContent='Cargo: '+(u.roleLabel||u.role||'')+' | '+(u.active===false?'Desativado':'Ativo')+(u.uid===MASTER_UID?' | Mestre protegido':'');card.appendChild(status);if(u.uid!==MASTER_UID){const active=document.createElement('input');active.type='checkbox';active.checked=u.active!==false;active.style.width='auto';const lab=document.createElement('label');lab.append(active,document.createTextNode(' Acesso ativo'));card.appendChild(lab);const save=document.createElement('button');save.className='primary';save.textContent='Salvar status';save.onclick=async()=>{try{await setDoc(doc(db,'userProfiles',u.uid),{active:active.checked,updatedAt:new Date().toISOString()},{merge:true});await loadUsers();alert('Status de acesso atualizado. Peça ao usuário para entrar novamente.')}catch(e){alert(friendlyAuthError(e))}};card.appendChild(save);const reset=document.createElement('button');reset.className='light';reset.textContent='Enviar redefinição de senha';reset.onclick=async()=>{if(!isSystemAdmin())return;try{await sendPasswordResetEmail(auth,u.email);alert('E-mail de redefinição enviado para '+u.email)}catch(e){alert(friendlyAuthError(e))}};card.appendChild(reset);if(isMaster()){const del=document.createElement('button');del.className='danger';del.textContent='Excluir usuário permanentemente';del.style.marginTop='8px';del.onclick=async()=>{if(!isMaster()||u.uid===MASTER_UID)return;const label=u.name||u.email||u.uid;if(!confirm('ATENÇÃO: excluir permanentemente '+label+'? A conta será removida do Firebase Authentication e os dados vinculados em users/'+u.uid+' e userProfiles/'+u.uid+' serão apagados. Esta ação não pode ser desfeita.'))return;if(!confirm('Confirma novamente a exclusão definitiva de '+label+'?'))return;del.disabled=true;del.textContent='Excluindo...';try{if(!activeUser)throw new Error('Sessão administrativa expirada. Entre novamente.');const token=await activeUser.getIdToken(true);const response=await fetch('/api/delete-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({uid:u.uid})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'Falha ao excluir usuário.');alert(result.message||'Usuário excluído.');await loadUsers()}catch(e){del.disabled=false;del.textContent='Excluir usuário permanentemente';alert(e.message||friendlyAuthError(e))}};card.appendChild(del)}}box.appendChild(card)})}catch(e){box.textContent='Erro ao carregar usuários: '+friendlyAuthError(e)}}
+$('userCreateForm').addEventListener('submit',async e=>{e.preventDefault();if(!isSystemAdmin())return;const b=$('createUserBtn'),s=$('userCreateStatus');b.disabled=true;s.textContent='Criando usuário...';try{const email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,name=$('newUserName').value.trim(),role=$('newUserRole').value,permissions=ROLE_DEFAULTS[role]||[];if(!isMaster()&&['auxiliar_administrativo','gerente','coordenador'].includes(role))throw new Error('Cargo administrativo somente pode ser criado pelo mestre.');const cr=await createUserWithEmailAndPassword(creatorAuth,email,password);await setDoc(doc(db,'userProfiles',cr.user.uid),{uid:cr.user.uid,email,name,role,roleLabel:$('newUserRole').selectedOptions[0].text,permissions,active:true,mustChangePassword:true,createdAt:new Date().toISOString(),createdBy:activeUser.uid});await signOut(creatorAuth);$('userCreateForm').reset();s.textContent='Usuário criado com sucesso.';await loadUsers()}catch(e){s.textContent='Falha: '+friendlyAuthError(e)}finally{b.disabled=false}});
+
+let agendaCache=[];
+function agendaRef(ownerUid,id){return doc(db,'users',ownerUid,'agenda',id)}
+function agendaDateLabel(v){if(!v)return 'Data não definida';const p=String(v).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v}
+function agendaRoleEligible(u){
+ const values=Object.entries(u)
+  .filter(([key])=>/(role|cargo|perfil|funcao|função|position|title|tipo_usuario|tipousuario)/i.test(key))
+  .map(([,value])=>value)
+  .flatMap(value=>Array.isArray(value)?value:[value])
+  .filter(value=>typeof value==='string'&&value.trim())
+  .map(value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
+ return values.some(role=>role.includes('instrutor')||role.includes('consultor'));
+}
+async function refreshAgendaPeople(){
+ if(!isSystemAdmin())return;
+ const s=await getDocs(profilesRef);
+ userProfilesCache=s.docs.map(d=>({...d.data(),uid:d.id}));
+ const activeProfiles=userProfilesCache.filter(u=>u.uid!==MASTER_UID&&u.active!==false);
+ const eligible=activeProfiles.filter(agendaRoleEligible);
+ // Se os campos de cargo de um cadastro antigo não forem reconhecidos, não deixa a agenda ficar vazia:
+ // disponibiliza os perfis ativos para seleção administrativa, mostrando o cargo registrado.
+ const people=(eligible.length?eligible:activeProfiles).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'pt-BR'));
+ const opts=people.map(u=>{
+  const roleLabel=u.roleLabel||u.role||u.cargo||u.perfil||u.funcao||u.função||'Cargo não identificado';
+  return '<option value="'+escapeHtml(u.uid)+'">'+escapeHtml((u.name||u.email||u.uid)+' — '+roleLabel)+'</option>';
+ }).join('');
+ $('agendaAssignee').innerHTML='<option value="">Selecione um usuário cadastrado</option>'+opts;
+ $('agendaPersonFilter').innerHTML='<option value="">Todos os profissionais</option>'+people.map(u=>'<option value="'+escapeHtml(u.uid)+'">'+escapeHtml(u.name||u.email||u.uid)+'</option>').join('');
+ if(!eligible.length&&activeProfiles.length){
+  $('agendaAssignee').insertAdjacentHTML('afterbegin','<option value="" disabled>Confira os cargos exibidos abaixo</option>');
+ }
+}
+function clearAgendaForm(){
+ $('agendaForm').reset();$('agendaId').value='';$('agendaOwnerUid').value='';$('agendaFormTitle').textContent='Cadastrar compromisso';$('agendaSaveBtn').textContent='Salvar compromisso';$('agendaFormStatus').textContent='';$('agendaDate').value=new Date().toISOString().slice(0,10);
+}
+function editAgendaItem(a){
+ if(!isSystemAdmin())return;
+ $('agendaId').value=a.id;$('agendaOwnerUid').value=a.ownerUid||'';
+ $('agendaDate').value=a.date||'';$('agendaTime').value=a.time||'';$('agendaAssignee').value=a.assigneeUid||a.ownerUid||'';
+ $('agendaClient').value=a.client||'';$('agendaLocation').value=a.location||'';$('agendaEquipment').value=a.equipment||'';
+ $('agendaType').value=a.type||'Atendimento técnico';$('agendaStatus').value=a.status||'Agendado';$('agendaNotes').value=a.notes||'';
+ $('agendaFormTitle').textContent='Editar compromisso';$('agendaSaveBtn').textContent='Salvar alterações';$('agendaFormStatus').textContent='';$('agendaAdminPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function loadAgenda(){
+ if(!isMaster()){return}
+ if(!$('agendaMonth').value){const n=new Date();$('agendaMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')}
+ const box=$('agendaList');box.innerHTML='<div class="empty">Carregando agenda...</div>';
+ try{
+  if(isSystemAdmin()){await refreshAgendaPeople();$('agendaAdminPanel').hidden=false;$('agendaPersonFilterWrap').hidden=false}
+  else{$('agendaAdminPanel').hidden=true;$('agendaPersonFilterWrap').hidden=true}
+  const snap=await getDocs(isSystemAdmin()?collectionGroup(db,'agenda'):collection(db,'users',activeUser.uid,'agenda'));
+  agendaCache=snap.docs.map(d=>({id:d.id,ownerUid:d.ref.parent.parent?.id,...d.data()})).sort((a,b)=>(String(a.date||'')+' '+String(a.time||'')).localeCompare(String(b.date||'')+' '+String(b.time||'')));
+  renderAgenda();
+ }catch(error){console.error(error);box.innerHTML='<div class="empty">Não foi possível carregar a agenda: '+escapeHtml(friendlyAuthError(error))+'</div>'}
+}
+function renderAgenda(){
+ const q=String($('agendaSearch').value||'').toLowerCase().trim(),month=$('agendaMonth').value,status=$('agendaStatusFilter').value,person=isSystemAdmin()?$('agendaPersonFilter').value:'';
+ const items=agendaCache.filter(a=>(!month||String(a.date||'').startsWith(month))&&(!status||a.status===status)&&(!person||(a.assigneeUid||a.ownerUid)===person)&&(!q||[a.client,a.equipment,a.location,a.type,a.notes,a.assigneeName].some(v=>String(v||'').toLowerCase().includes(q))));
+ $('agendaSummary').textContent=items.length+' compromisso(s) encontrado(s)'+(isSystemAdmin()?' em todas as agendas.':'.');
+ const box=$('agendaList');box.innerHTML='';
+ if(!items.length){box.innerHTML='<div class="empty">Nenhum compromisso encontrado para os filtros selecionados.</div>';return}
+ items.forEach(a=>{
+  const card=document.createElement('article');card.className='agenda-card';
+  const head=document.createElement('div');head.className='agenda-card-head';
+  const info=document.createElement('div');const title=document.createElement('h3');title.textContent=a.client||'Cliente não informado';info.appendChild(title);
+  const date=document.createElement('p');date.className='agenda-date';date.textContent=agendaDateLabel(a.date)+(a.time?' • '+a.time:'');info.appendChild(date);
+  const pills=document.createElement('div');pills.className='agenda-meta';[a.type||'Atendimento',a.status||'Agendado',a.equipment||''].filter(Boolean).forEach(v=>{const pill=document.createElement('span');pill.className='agenda-pill';pill.textContent=v;pills.appendChild(pill)});info.appendChild(pills);head.appendChild(info);
+  if(isSystemAdmin()){const who=document.createElement('span');who.className='agenda-pill';who.textContent='Responsável: '+(a.assigneeName||'Usuário');head.appendChild(who)}
+  card.appendChild(head);
+  if(a.location){const p=document.createElement('p');p.textContent='Local/filial: '+a.location;card.appendChild(p)}
+  if(a.notes){const p=document.createElement('p');p.textContent=a.notes;card.appendChild(p)}
+  if(isSystemAdmin()){const actions=document.createElement('div');actions.className='agenda-actions';const edit=document.createElement('button');edit.className='light';edit.textContent='Editar';edit.onclick=()=>editAgendaItem(a);const del=document.createElement('button');del.className='danger';del.textContent='Excluir';del.onclick=async()=>{if(!confirm('Excluir o compromisso de '+(a.client||'cliente')+' em '+agendaDateLabel(a.date)+'?'))return;try{await deleteDoc(agendaRef(a.ownerUid,a.id));await loadAgenda()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}};actions.append(edit,del);card.appendChild(actions)}
+  box.appendChild(card);
+ });
+}
+$('agendaForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(!isSystemAdmin())return;
+ const btn=$('agendaSaveBtn');btn.disabled=true;$('agendaFormStatus').textContent='Salvando compromisso...';
+ try{
+  const assigneeUid=$('agendaAssignee').value,person=userProfilesCache.find(u=>u.uid===assigneeUid);
+  if(!person||person.active===false||!agendaRoleEligible(person))throw new Error('Selecione um instrutor ou consultor ativo já cadastrado no sistema.');
+  const oldId=$('agendaId').value,oldOwner=$('agendaOwnerUid').value,id=oldId||('ag-'+Date.now().toString(36));
+  const data={id,date:$('agendaDate').value,time:$('agendaTime').value||'',client:$('agendaClient').value.trim(),location:$('agendaLocation').value.trim(),equipment:$('agendaEquipment').value.trim(),type:$('agendaType').value,status:$('agendaStatus').value,notes:$('agendaNotes').value.trim(),assigneeUid,assigneeName:person.name||person.email||'Usuário',ownerUid:assigneeUid,updatedAt:new Date().toISOString(),updatedBy:activeUser.uid};
+  if(!data.date||!data.client)throw new Error('Preencha pelo menos a data e o cliente.');
+  await setDoc(agendaRef(assigneeUid,id),data,{merge:true});
+  if(oldId&&oldOwner&&oldOwner!==assigneeUid)await deleteDoc(agendaRef(oldOwner,oldId));
+  $('agendaFormStatus').textContent='Compromisso salvo.';clearAgendaForm();await loadAgenda();
+ }catch(error){console.error(error);$('agendaFormStatus').textContent='Falha ao salvar: '+friendlyAuthError(error)}
+ finally{btn.disabled=false}
+});
+$('agendaCancelEdit').addEventListener('click',clearAgendaForm);
+$('agendaSearch').addEventListener('input',renderAgenda);$('agendaMonth').addEventListener('change',renderAgenda);$('agendaStatusFilter').addEventListener('change',renderAgenda);$('agendaPersonFilter').addEventListener('change',renderAgenda);
+$('agendaToday').addEventListener('click',()=>{const n=new Date();$('agendaMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');renderAgenda()});
+$('agendaReload').addEventListener('click',loadAgenda);
+
+function getFields(){const o={};fields.forEach(k=>o[k]=$(k).value);return o}
+function setFields(o){fields.forEach(k=>$(k).value=o&&o[k]!=null?o[k]:'')}
+function val(id){return $(id).value}
+function fmtDate(v){if(!v)return '—';const a=v.split('-');return a.length===3?a[2]+'/'+a[1]+'/'+a[0]:v}
+function text(id,v,empty='—'){$(id).textContent=v&&String(v).trim()?v:empty}
+function getModel(){return {company:$('mCompany').value.trim(),subtitle:$('mSubtitle').value.trim(),footer:$('mFooter').value.trim(),conf:$('mConf').value.trim(),color:$('mColor').value||'#e4a900',logo:logoData}}
+function applyModelDOM(m){
+ m={...defaultModel,...(m||{})};document.documentElement.style.setProperty('--brand',m.color);
+ const setText=(id,value)=>{const el=$(id);if(el)el.textContent=value??''};
+ setText('pvCompany',m.company);setText('pvSubtitle',m.subtitle);setText('pFooter',m.footer);setText('pFooterRight',m.company);setText('pConf',m.conf);
+ const area=$('previewBrand');if(area){area.innerHTML='';if(m.logo){const img=document.createElement('img');img.src=m.logo;img.alt='Logotipo';area.appendChild(img)}if(String(m.company||'').trim()){const c=document.createElement('div');c.className='company';c.textContent=m.company;area.appendChild(c)}if(String(m.subtitle||'').trim()){const s=document.createElement('div');s.className='rsub';s.textContent=m.subtitle;area.appendChild(s)}}
+ const logoPreview=$('logoPreview');if(logoPreview){logoPreview.innerHTML='';if(m.logo){const img=document.createElement('img');img.src=m.logo;img.alt='Prévia do logotipo';logoPreview.appendChild(img)}else logoPreview.textContent='Nenhum logotipo selecionado'}
+}
+function setModel(m){m={...defaultModel,...(m||{})};$('mCompany').value=m.company;$('mSubtitle').value=m.subtitle;$('mFooter').value=m.footer;$('mConf').value=m.conf;$('mColor').value=m.color;logoData=m.logo||'';modelCache=m;applyModelDOM(m)}
+function preview(){
+ text('pvType',val('type')||'Relatório técnico');text('pClient',val('client'));text('pDate',fmtDate(val('date')));text('pEquipment',val('equipment'));text('pResponsible',val('responsible'));text('pLocation',val('location'));text('pBranch',val('branch'));
+ [['pObjective','objective'],['pObservations','observations'],['pActivities','activities'],['pResults','results'],['pConclusion','conclusion']].forEach(([a,b])=>text(a,val(b),''));const area=$('pPhotos');area.innerHTML='';
+ if(!photos.length){area.textContent='Nenhuma foto adicionada.';area.className='rphotos muted'}else{area.className='rphotos';photos.forEach(p=>{const f=document.createElement('figure');f.className='rphoto';const i=document.createElement('img');i.src=p.data;i.alt=p.caption||'Foto';f.appendChild(i);if(p.caption){const c=document.createElement('figcaption');c.textContent=p.caption;f.appendChild(c)}area.appendChild(f)})}
+}
+function draft(){if(restoring)return;$('draftStatus').textContent='Alterações no formulário ainda não salvas.'}
+function schedule(){draft()}
+function renderPhotos(){
+ const box=$('photoList');box.innerHTML='';if(!photos.length){box.innerHTML='<div class="empty">Nenhuma foto adicionada.</div>';return}
+ photos.forEach((p,i)=>{const row=document.createElement('div');row.className='photoitem';const img=document.createElement('img');img.src=p.data;img.alt='Foto';const input=document.createElement('input');input.value=p.caption||'';input.placeholder='Legenda da foto';input.addEventListener('input',()=>{photos[i].caption=input.value;preview();schedule()});const del=document.createElement('button');del.className='danger';del.textContent='Remover';del.onclick=()=>{photos.splice(i,1);renderPhotos();preview();schedule()};row.append(img,input,del);box.appendChild(row)})
+}
+function imageData(file){
+ return new Promise((resolve,reject)=>{
+  if(!file)return reject(Error('Selecione um arquivo.'));
+  if(!file.type.startsWith('image/'))return reject(Error('O arquivo selecionado não é uma imagem reconhecida.'));
+  if(file.size>15*1024*1024)return reject(Error('O arquivo tem mais de 15 MB. Reduza o tamanho e tente novamente.'));
+  const r=new FileReader();r.onerror=()=>reject(Error('Não foi possível ler o arquivo.'));
+  r.onload=()=>{const data=String(r.result||'');const img=new Image();img.onerror=()=>reject(Error('Formato de imagem incompatível. Use PNG ou JPG.'));
+   img.onload=()=>{try{const scale=Math.min(1,800/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');if(!ctx)throw Error('Não foi possível preparar a imagem.');ctx.drawImage(img,0,0,canvas.width,canvas.height);const out=canvas.toDataURL('image/webp',.65);if(out.length>650000)throw Error('A imagem comprimida ainda está muito grande. Escolha uma foto menor.');resolve(out)}catch(err){reject(err)}};
+   img.src=data;
+  };r.readAsDataURL(file)
+ })
+}
+$('photoFiles').addEventListener('change',async e=>{
+ const files=[...e.target.files];let count=0;$('photoStatus').textContent='Preparando imagens...';
+ for(const f of files){try{photos.push({data:await imageData(f),caption:f.name.replace(/\.[^.]+$/,'')});count++}catch(err){$('photoStatus').textContent=err.message||'Falha ao processar uma imagem.'}}
+ renderPhotos();preview();draft();if(count)$('photoStatus').textContent=count+' imagem(ns) adicionada(s). Salve o relatório para guardar as fotos.';e.target.value=''
+});
+async function loadPhotos(reportId){
+ const snap=await getDocs(collection(reportRef(reportId),'photos'));
+ return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+}
+async function saveReport(){
+ if(!activeUser){alert('Faça login antes de salvar.');return}
+ if(editingId&&!can('reports.edit')){requirePermission('reports.edit');return}
+ if(!editingId&&!can('reports.create')){requirePermission('reports.create');return}
+ const button=$('saveBtn');button.disabled=true;$('draftStatus').textContent='Salvando relatório...';
+ try{
+  const id=editingId||('rpt-'+Date.now().toString(36));
+  const r={...getFields(),id,model:getModel(),updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp(),ownerUid:activeUser.uid};
+  await setDoc(reportRef(id),r,{merge:true});
+  const photoCollection=collection(reportRef(id),'photos');
+  const oldPhotos=await getDocs(photoCollection);
+  const keepIds=new Set(photos.filter(p=>p.id).map(p=>p.id));
+  await Promise.all(oldPhotos.docs.filter(d=>!keepIds.has(d.id)).map(d=>deleteDoc(d.ref)));
+  for(let i=0;i<photos.length;i++){
+   const p=photos[i],photoId=p.id||('photo-'+i+'-'+Date.now().toString(36));
+   await setDoc(doc(photoCollection,photoId),{data:p.data,caption:p.caption||'',order:i,updatedAt:new Date().toISOString()});
+   p.id=photoId;
+  }
+  editingId=id;
+  await loadSavedReports();
+  $('draftStatus').textContent='Relatório e fotos salvos com sucesso.';
+  alert('Relatório salvo com sucesso.');
+ }catch(error){console.error(error);$('draftStatus').textContent='Falha ao salvar o relatório: '+friendlyAuthError(error);alert('Não foi possível salvar o relatório. '+friendlyAuthError(error))}
+ finally{button.disabled=false}
+}
+async function loadSavedReports(){
+ const box=$('savedList');box.innerHTML='<div class="empty">Carregando relatórios...</div>';
+ try{
+  const snap=await getDocs(userReportsRef());
+  reportCache=snap.docs.map(d=>({id:d.id,ownerUid:d.ref.parent.parent?.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  renderSaved();
+ }catch(error){console.error(error);box.innerHTML='<div class="empty">Erro ao consultar relatórios: '+escapeHtml(friendlyAuthError(error))+'</div>'}
+}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderSaved(){
+ const q=val('search').toLowerCase().trim(),type=val('filter'),box=$('savedList');box.innerHTML='';
+ const list=reportCache.filter(r=>(!type||r.type===type)&&(!q||[r.client,r.equipment,r.responsible,r.location,r.id].join(' ').toLowerCase().includes(q)));
+ if(!list.length){box.innerHTML='<div class="empty">Nenhum relatório encontrado.</div>';return}
+ list.forEach(r=>{
+  const card=document.createElement('div');card.className='saved';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=r.client||'Cliente não informado';const meta=document.createElement('small');meta.textContent=(r.type||'Relatório')+' | '+fmtDate(r.date)+' | '+(r.equipment||'Equipamento não informado');
+  info.append(title,meta);const actions=document.createElement('div');actions.className='actions';
+  [['Abrir relatório','primary',()=>loadReport(r.id,r.ownerUid)],['Imprimir','light',async()=>{await loadReport(r.id,r.ownerUid);setTimeout(()=>window.print(),150)}],...(can('reports.delete')?[['Excluir','danger',async()=>{if(confirm('Deseja excluir este relatório?')){try{const ps=await getDocs(collection(reportRef(r.id,r.ownerUid),'photos'));await Promise.all(ps.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(reportRef(r.id,r.ownerUid));await loadSavedReports()}catch(e){alert('Não foi possível excluir: '+friendlyAuthError(e))}}}]]:[])].forEach(([label,cls,fn])=>{const b=document.createElement('button');b.className=cls;b.textContent=label;b.onclick=fn;actions.appendChild(b)});
+  card.append(info,actions);box.appendChild(card)
+ })
+}
+async function loadReport(id,ownerUid=activeUser?.uid){
+ const snap=await getDoc(reportRef(id,ownerUid));if(!snap.exists()){alert('Este relatório não foi encontrado.');return}
+ const r={id:snap.id,ownerUid,...snap.data()};restoring=true;setFields(r);photos=await getDocs(collection(reportRef(id,ownerUid),'photos')).then(s=>s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0)));editingId=id;
+ if(isSystemAdmin()){setModel(r.model||defaultModel);$('editor').classList.add('readonly-report')}else{const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);$('editor').classList.remove('readonly-report')}
+ renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
+}
+function showPage(id){if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
+function newReport(){
+ if(!requirePermission('reports.create'))return;
+ if((Object.values(getFields()).some(v=>String(v||'').trim())||photos.length)&&!confirm('Iniciar novo relatório? Salve antes se precisar manter o conteúdo atual.'))return;
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;setModel(modelCache);renderPhotos();preview();restoring=false;draft();showPage('editor')
+}
+function printNow(){if(!requirePermission('reports.print'))return;preview();window.print()}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPage(t.dataset.page)));
+fields.forEach(id=>{ $(id).addEventListener('input',()=>{preview();schedule()});$(id).addEventListener('change',()=>{preview();schedule()})});
+$('saveBtn').onclick=saveReport;$('saveTop').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('printTop').onclick=printNow;$('refresh').onclick=preview;
+$('clearBtn').onclick=()=>{if(!confirm('Limpar campos e fotos do formulário?'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();restoring=false;draft()};
+$('applyModel').onclick=async()=>{
+ if(!requirePermission('model.edit'))return;
+ const m=getModel();$('modelStatus').textContent='Salvando identidade visual...';
+ try{await setDoc(modelRef(),{...m,updatedAt:new Date().toISOString(),updatedAtServer:serverTimestamp()});modelCache=m;applyModelDOM(m);preview();$('modelStatus').textContent='Identidade visual salva e aplicada aos novos relatórios.'}
+ catch(error){$('modelStatus').textContent='Não foi possível salvar o modelo: '+friendlyAuthError(error)}
+};
+$('resetModel').onclick=()=>{if(confirm('Restaurar identidade visual padrão?')){setModel(defaultModel);$('applyModel').click()}};
+$('mLogo').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{logoData=await imageData(f);applyModelDOM(getModel());$('modelStatus').textContent='Logotipo carregado. Clique em Salvar e aplicar modelo.'}catch(err){$('modelStatus').textContent=err.message||'Falha ao carregar o logotipo.'}e.target.value=''});
+$('removeLogo').onclick=()=>{logoData='';applyModelDOM(getModel());$('modelStatus').textContent='Logotipo removido. Clique em Salvar e aplicar modelo.'};
+
+function buildGPTPayload(mode){return {mode,client:$('client').value.trim(),equipment:$('equipment').value.trim(),type:$('type').value,fields:{objective:$('objective').value.trim(),observations:$('observations').value.trim(),activities:$('activities').value.trim(),results:$('results').value.trim(),conclusion:$('conclusion').value.trim()}}}
+function sendToGPT(mode){
+ const status=$('gptStatus'),buttons=[$('improveWithGPT'),$('suggestStructure')];buttons.forEach(b=>b.disabled=true);$('gptResultWrap').style.display='none';
+ try{
+  const result={...buildGPTPayload(mode).fields};
+  if(mode==='structure'){
+   if(!result.objective)result.objective='Objetivo: descrever a finalidade da visita, inspeção ou manutenção realizada.';
+   if(!result.observations)result.observations='Registrar as condições encontradas, os sintomas relatados e as constatações verificadas durante a atividade.';
+   if(!result.activities)result.activities='• Preparação e verificação inicial.\n• Execução das atividades previstas.\n• Registro das observações e evidências.';
+   if(!result.results)result.results='Registrar os resultados observados, as pendências identificadas e as recomendações aplicáveis.';
+   if(!result.conclusion)result.conclusion='Concluir com base nos fatos e evidências registrados, indicando os próximos passos quando necessário.';
+  }else{
+   if(result.objective&&!/^(objetivo|assunto|resumo)\s*:/i.test(result.objective))result.objective='Objetivo: '+result.objective;
+   for(const key of ['observations','activities','results'])if(result[key])result[key]=result[key].split('\n').map(line=>line.trim()).filter(Boolean).map(line=>/^(\d+[.)]|[-•])/.test(line)?line:'• '+line).join('\n');
+  }
+  gptPendingResult=result;const labels={objective:'OBJETIVO',observations:'PONTOS DE OBSERVAÇÃO',activities:'ATIVIDADES REALIZADAS',results:'RESULTADOS E RECOMENDAÇÕES',conclusion:'CONCLUSÃO'};
+  $('gptResult').value=Object.entries(labels).map(([k,label])=>label+'\n'+(result[k]||'')).join('\n\n');$('gptResultWrap').style.display='block';
+  status.textContent=mode==='structure'?'Estrutura sugerida localmente. Revise e adapte ao caso real. Nenhuma chamada externa foi feita.':'Texto organizado localmente. Revise os dados técnicos antes de aplicar. Nenhuma chamada externa foi feita.';
+ }catch(e){status.textContent='Não foi possível organizar o texto. Seus campos originais foram preservados.'}finally{buttons.forEach(b=>b.disabled=false)}
+}
+$('improveWithGPT').addEventListener('click',()=>sendToGPT('improve'));$('suggestStructure').addEventListener('click',()=>sendToGPT('structure'));
+$('applyGPTResult').addEventListener('click',()=>{if(!gptPendingResult)return;for(const key of ['objective','observations','activities','results','conclusion'])if(typeof gptPendingResult[key]==='string')$(key).value=gptPendingResult[key];preview();draft();$('gptStatus').textContent='Texto aplicado aos campos. Confira os dados técnicos antes de salvar ou emitir.'});
+$('copyGPTResult').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('gptResult').value);$('gptStatus').textContent='Resultado copiado.'}catch(e){$('gptResult').select();$('gptStatus').textContent='Selecione e copie o texto manualmente.'}});
+$('search').addEventListener('input',renderSaved);$('filter').addEventListener('change',renderSaved);
+
+$('newTop').insertAdjacentHTML('afterend','<button class="light" id="logoutBtn" type="button">Sair</button>');
+$('logoutBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){alert(friendlyAuthError(e))}});
+async function initializeUser(user){
+ activeUser=user;if(!user){$('simulateBtn').hidden=true;closeSimulation();currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}
+ try{const ps=await getDoc(doc(db,'userProfiles',user.uid));
+ if(user.uid===MASTER_UID){$('simulateBtn').hidden=false;currentProfile={uid:user.uid,name:'Mestre do sistema',email:user.email||'',role:'mestre',roleLabel:'Mestre do sistema',permissions:PERMISSIONS.map(p=>p[0]),active:true};if(!ps.exists())await setDoc(doc(db,'userProfiles',user.uid),{...currentProfile,createdAt:new Date().toISOString()})}
+ else{if(!ps.exists()){await signOut(auth);throw new Error('Login autenticado, mas sem perfil autorizado. Solicite cadastro ao mestre.')}currentProfile={uid:ps.id,...ps.data()};if(currentProfile.active===false){await signOut(auth);throw new Error('Seu acesso está desativado. Procure o mestre do sistema.')}}
+ if(currentProfile.mustChangePassword){$('authGate').hidden=true;$('appShell').hidden=true;$('changePasswordGate').hidden=false;return}
+ $('changePasswordGate').hidden=true;$('authGate').hidden=true;$('appShell').hidden=false;applyAccessControl();
+ if(can('model.view')||can('model.edit')){const ms=await getDoc(modelRef());modelCache=ms.exists()?ms.data():{...defaultModel};if(!ms.exists()&&can('model.edit'))await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()})}else modelCache={...defaultModel};
+ setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();if(isSystemAdmin()&&!isMaster())showPage('model');else if(isSystemAdmin())showPage('saved');try{if(!localStorage.getItem('relatoriopro-tour-complete-'+user.uid))openTour()}catch(e){openTour()}
+ }catch(error){console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
+}
+$('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);await setDoc(doc(db,'userProfiles',auth.currentUser.uid),{mustChangePassword:false,passwordChangedAt:new Date().toISOString()},{merge:true});$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
+onAuthStateChanged(auth,user=>{if(user&&!manualLoginRequested){signOut(auth).catch(console.error);$('appShell').hidden=true;$('authGate').hidden=false;return}if(!user){activeUser=null;currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
+
+/* Guia interativo: aparece no primeiro acesso por usuário e pode ser reaberto pelo botão Ajuda. */
+let tourSteps=[],tourIndex=0,tourSpotlight=null;
+function makeTourSteps(){
+ const steps=[
+  {title:'Bem-vindo ao RelatorioPro',text:'Olá, '+(currentProfile?.name||'bem-vindo')+'! Este guia foi adaptado ao seu perfil ('+(currentProfile?.roleLabel||currentProfile?.role||'usuário')+') e mostra somente as funções disponíveis para sua conta.',target:'#appShell header'},
+  {title:'Conheça o menu',text:'As abas do menu são liberadas conforme as permissões do seu perfil. Se uma função não aparecer, ela pode não estar habilitada para sua conta.',target:'.tabs'},
+ ];
+ if(can('reports.create')||can('reports.edit')){
+  steps.push({title:'Criar e preencher relatórios',text:'Na aba “Relatório técnico”, preencha identificação, equipamento, objetivo, observações, atividades, resultados e conclusão. Adicione fotos quando necessário e registre apenas informações verificadas.',target:'[data-page="editor"]'});
+  steps.push({title:'Salvar e revisar',text:'Revise as informações e a prévia. Use “Salvar relatório” para guardar o registro. Para gerar uma cópia, utilize “Imprimir / PDF”.',target:'#saveTop'});
+ }
+ if(can('reports.view')) steps.push({title:'Consultar relatórios',text:'Na aba “Relatórios salvos”, localize registros anteriores e abra o relatório desejado. As opções de edição dependem das permissões da sua conta.',target:'[data-page="saved"]'});
+ if(can('reports.print')) steps.push({title:'Imprimir ou gerar PDF',text:'Use “Imprimir / PDF” para abrir as opções de impressão do navegador e salvar uma cópia em PDF, quando disponível.',target:'#printTop'});
+ if(document.querySelector('[data-page="trainings"]')) steps.push({title:'Menu Treinamentos — central de conhecimento',text:'A aba “Treinamentos” foi planejada para reunir em um só lugar os treinamentos técnicos, slides das aulas, manuais das máquinas SANY e materiais de apoio. O instrutor poderá criar um treinamento, anexar materiais e enviá-lo para aprovação. Depois que o conteúdo for aprovado e publicado, a proposta é que os instrutores tenham acesso à biblioteca para consultar os materiais aprovados. Importante: esta centralização ainda está em desenvolvimento e não está totalmente funcional; este passo apenas explica a finalidade planejada do menu.',target:'[data-page="trainings"]'});
+ if(can('model.view')||can('model.edit')) steps.push({title:'Configurar layout e textos do relatório',text:'Esta área permite ajustar o modelo visual do relatório: nome da empresa, subtítulo, texto do rodapé, aviso de confidencialidade, cor de destaque e logotipo. Confira as alterações e clique em “Salvar e aplicar modelo”. Essas configurações afetam a apresentação dos relatórios conforme o escopo configurado no sistema.',target:'[data-page="model"]'});
+ if(isSystemAdmin()) steps.push({title:'Administrar usuários e acessos',text:'Na aba “Usuários e acessos”, o perfil administrativo pode consultar e gerenciar contas conforme as permissões disponíveis. Confira o perfil e o estado de acesso antes de realizar alterações.',target:'[data-page="users"]'});
+ if(isMaster()) {
+  steps.push({title:'Ferramentas do mestre',text:'Sua conta mestre também tem acesso às ferramentas administrativas exclusivas que aparecem no menu. Utilize-as com cuidado, especialmente ao testar permissões e configurações.',target:'#sessionInfo'});
+ }
+ steps.push({title:'Ajuda sempre disponível',text:'Você pode rever estas orientações quando quiser: clique em “? Ajuda” no topo da tela. O conteúdo do guia muda conforme a conta conectada.',target:'#helpLaunch'});
+ return steps;
+}
+function clearTourSpotlight(){if(tourSpotlight){tourSpotlight.classList.remove('tour-spotlight');tourSpotlight=null}}
+function renderTourStep(){
+ if(!tourSteps.length)return;
+ clearTourSpotlight();
+ const s=tourSteps[tourIndex],target=s.target?document.querySelector(s.target):null;
+ $('tourTitle').textContent=s.title;$('tourText').textContent=s.text;
+ $('tourCount').textContent='Passo '+(tourIndex+1)+' de '+tourSteps.length;
+ $('tourProgressBar').style.width=((tourIndex+1)/tourSteps.length*100)+'%';
+ $('tourBack').hidden=tourIndex===0;
+ $('tourNext').textContent=tourIndex===tourSteps.length-1?'Concluir':'Próximo';
+ $('tourSkip').hidden=tourIndex===tourSteps.length-1;
+ if(target&&!target.hidden){tourSpotlight=target;target.classList.add('tour-spotlight')}
+}
+function openTour(){
+ tourSteps=makeTourSteps();tourIndex=0;
+ if(!tourSteps.length)return;
+ $('tourBackdrop').hidden=false;document.body.style.overflow='hidden';renderTourStep();
+}
+function closeTour(completed=false){
+ clearTourSpotlight();$('tourBackdrop').hidden=true;document.body.style.overflow='';
+ if(completed&&activeUser){try{localStorage.setItem('relatoriopro-tour-complete-'+activeUser.uid,'1')}catch(e){}}
+}
+function nextTourStep(){
+ if(tourIndex>=tourSteps.length-1){closeTour(true);return}
+ tourIndex++;renderTourStep();
+}
+$('helpLaunch').addEventListener('click',openTour);
+$('tourClose').addEventListener('click',()=>closeTour(false));
+$('tourSkip').addEventListener('click',()=>closeTour(true));
+$('tourNext').addEventListener('click',nextTourStep);
+$('tourBack').addEventListener('click',()=>{if(tourIndex>0){tourIndex--;renderTourStep()}});
+$('tourBackdrop').addEventListener('click',e=>{if(e.target===$('tourBackdrop'))closeTour(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('tourBackdrop').hidden)closeTour(false)});
+
+</script>
+</div>
+</body>
+</html>

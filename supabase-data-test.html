@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Homologação Supabase — RelatorioPro IRMEN</title>
+<body style="font:16px Arial;max-width:760px;margin:32px auto;padding:0 16px">
+<h1>Homologação de relatórios — Supabase</h1>
+<p>Teste isolado de CRUD. O Firebase e a aplicação principal não são alterados.</p>
+<label>E-mail <input id="email" type="email"></label><br><br>
+<label>Senha <input id="password" type="password"></label><br><br>
+<button id="login">Autenticar</button> <button id="test" disabled>Testar CRUD</button>
+<pre id="out" style="white-space:pre-wrap;background:#f3f4f6;padding:16px">Aguardando autenticação.</pre>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const db=createClient('https://vwvesygsudhbaqmayhsz.supabase.co','sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw',{auth:{persistSession:false}});
+const out=document.querySelector('#out');let user;
+const say=t=>out.textContent=t;
+document.querySelector('#login').onclick=async()=>{
+ const {data,error}=await db.auth.signInWithPassword({email:document.querySelector('#email').value.trim(),password:document.querySelector('#password').value});
+ if(error){say('FALHA LOGIN: '+error.message);return}
+ user=data.user;
+ const p=await db.from('profiles').select('role,active').eq('id',user.id).single();
+ if(p.error||p.data.role!=='super_admin'||!p.data.active){say('Perfil não autorizado para o teste. '+(p.error?.message||''));await db.auth.signOut();return}
+ document.querySelector('#test').disabled=false;say('Login confirmado. Perfil super_admin ativo. Pronto para teste CRUD.');
+};
+document.querySelector('#test').onclick=async()=>{
+ const id='homologacao-'+Date.now();let made=false;let log=[];
+ try{
+  let r=await db.from('reports').insert({id,owner_id:user.id,type:'Teste Supabase',responsible:'Homologação IRMEN',client:'DADO DE TESTE',equipment:'Equipamento de teste',observations:'Registro temporário',model:{temporary:true}});
+  if(r.error)throw Error('INSERT: '+r.error.message);made=true;log.push('CREATE: OK');
+  r=await db.from('reports').select('id,observations').eq('owner_id',user.id).eq('id',id).single();
+  if(r.error)throw Error('SELECT: '+r.error.message);log.push('READ: OK');
+  r=await db.from('reports').update({observations:'Alteração de teste'}).eq('owner_id',user.id).eq('id',id);
+  if(r.error)throw Error('UPDATE: '+r.error.message);log.push('UPDATE: OK');
+  r=await db.from('reports').delete().eq('owner_id',user.id).eq('id',id);
+  if(r.error)throw Error('DELETE: '+r.error.message);made=false;log.push('DELETE: OK');
+  r=await db.from('reports').select('id').eq('owner_id',user.id).eq('id',id).maybeSingle();
+  if(r.error||r.data)throw Error('Verificação final da exclusão falhou.');
+  say('SUCESSO CRUD\n'+log.join('\n')+'\nRegistro temporário removido. Fotos, treinamentos, anexos e agenda ainda não testados.');
+ }catch(e){
+  if(made){const clean=await db.from('reports').delete().eq('owner_id',user.id).eq('id',id);log.push(clean.error?'LIMPEZA MANUAL NECESSÁRIA; ID: '+id:'Limpeza automática: OK');}
+  say('FALHA CRUD\n'+e.message+'\n'+log.join('\n'));
+ }
+};
+</script>
+</body></html>
