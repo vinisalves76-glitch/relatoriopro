@@ -348,6 +348,77 @@ body{background:#f3f6f9}
   }
   #appShell.training-page-active #trainings .training-card-grid{grid-template-columns:1fr!important}
 }
+
+
+/* Redesign premium da Central de Treinamentos IRMEN | SANY */
+#appShell.training-page-active #trainings{background:#f4f6f8}
+#appShell.training-page-active #trainings .training-hero{
+  position:relative!important;isolation:isolate;display:flex!important;align-items:center!important;
+  justify-content:flex-start!important;box-sizing:border-box;width:auto!important;min-height:330px!important;
+  margin:0 -28px 24px!important;padding:42px clamp(26px,4vw,58px)!important;overflow:hidden;
+  border:0!important;border-radius:0 0 20px 20px!important;border-bottom:4px solid #e4a900!important;
+  color:#fff;background-color:#151d27!important;
+  background-image:linear-gradient(90deg,rgba(13,20,29,.98) 0%,rgba(13,20,29,.91) 35%,rgba(13,20,29,.56) 58%,rgba(13,20,29,.10) 100%),url("https://www.sanydobrasil.com/wp-content/uploads/2026/10/SANY-escavadeira-SY750H-1024x653.webp")!important;
+  background-repeat:no-repeat!important;background-position:center,right 42%!important;background-size:cover,cover!important;
+  box-shadow:0 12px 30px rgba(22,31,42,.12)
+}
+#appShell.training-page-active #trainings .training-hero:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(10,16,24,.35),transparent 45%);pointer-events:none}
+#appShell.training-page-active #trainings .training-hero:after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#e4a900;z-index:2}
+#appShell.training-page-active #trainings .training-hero-copy{position:relative;z-index:3;width:min(100%,610px);max-width:610px}
+#appShell.training-page-active #trainings .training-hero-kicker{display:inline-flex;align-items:center;gap:9px;color:#f4c63d;font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+#appShell.training-page-active #trainings .training-live-dot{width:7px;height:7px;border-radius:50%;background:#e4a900;box-shadow:0 0 0 4px rgba(228,169,0,.18)}
+#appShell.training-page-active #trainings .training-hero h1{font-size:clamp(30px,3.4vw,43px)!important;line-height:1.08!important;letter-spacing:-.035em;margin:15px 0 12px!important;color:#fff!important}
+#appShell.training-page-active #trainings .training-hero p{max-width:510px;color:#dce2e9!important;font-size:14px!important;line-height:1.7!important;margin:0}
+#appShell.training-page-active #trainings .training-hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+#appShell.training-page-active #trainings .training-hero-actions button{min-height:43px;padding:11px 16px;border-radius:9px;font-size:12px;font-weight:800;transition:transform .18s,filter .18s}
+#appShell.training-page-active #trainings .training-hero-actions button:hover{transform:translateY(-2px);filter:brightness(1.06)}
+#appShell.training-page-active #trainings .training-hero-primary{background:#e4a900;color:#20242b;box-shadow:0 6px 18px rgba(228,169,0,.22)}
+#appShell.training-page-active #trainings .training-hero-primary span{font-size:17px;margin-left:8px}
+#appShell.training-page-active #trainings .training-hero-secondary{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.35);color:#fff;backdrop-filter:blur(8px)}
+#appShell.training-page-active #trainings .training-hero-caption{position:absolute;z-index:2;right:28px;bottom:25px;display:flex;flex-direction:column;gap:5px;max-width:245px;text-align:right;color:#fff;text-shadow:0 2px 10px #0008}
+#appShell.training-page-active #trainings .training-hero-caption span{font-size:8px;font-weight:900;letter-spacing:.16em;color:#f4c63d}
+#appShell.training-page-active #trainings .training-hero-caption strong{font-size:12px;line-height:1.45}
+#appShell.training-page-active #trainings .training-hub-nav{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;margin:0 0 20px!important}
+#appShell.training-page-active #trainings .training-hub-link{display:flex;align-items:center;gap:12px;min-height:82px;padding:14px 16px!important;background:#fff;border:1px solid #e5e9ee;border-radius:13px;text-align:left;box-shadow:0 4px 14px rgba(26,39,55,.045);transition:transform .18s,border-color .18s,box-shadow .18s}
+#appShell.training-page-active #trainings .training-hub-link:hover{transform:translateY(-2px);border-color:#e4a900;box-shadow:0 9px 20px rgba(26,39,55,.09)}
+#appShell.training-page-active #trainings .training-hub-icon{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:11px;background:#fff5d8;color:#8a6500;font-size:21px}
+#appShell.training-page-active #trainings .training-hub-link b{display:block;color:#252b33;font-size:12px;line-height:1.35}
+#appShell.training-page-active #trainings .training-hub-link small{display:block;margin-top:4px;color:#7a8490;font-size:10px;line-height:1.35}
+#appShell.training-page-active #trainings .training-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:0 0 22px}
+#appShell.training-page-active #trainings .training-stat{position:relative;min-height:104px;padding:17px 19px 15px 22px;border:1px solid #e6eaf0;border-radius:13px;background:#fff;box-shadow:0 3px 12px rgba(26,39,55,.035)}
+#appShell.training-page-active #trainings .training-stat:before{content:"";position:absolute;left:0;top:17px;bottom:17px;width:3px;border-radius:0 4px 4px 0;background:#e4a900}
+#appShell.training-page-active #trainings .training-stat strong{font-size:29px;letter-spacing:-.04em;color:#202832}
+#appShell.training-page-active #trainings>.panel{border:1px solid #e6eaf0;border-radius:14px!important;padding:23px!important;margin:0 0 18px!important;box-shadow:0 4px 16px rgba(26,39,55,.04)}
+#appShell.training-page-active #trainings .training-section-heading h2{font-size:19px;letter-spacing:-.02em;color:#252b33}
+#appShell.training-page-active #trainings .training-filters{background:#f7f8fa;border-color:#e9edf1;border-radius:11px;padding:14px}
+#appShell.training-page-active #trainings .training-card{border-color:#e6eaf0;border-radius:13px;box-shadow:0 3px 12px rgba(26,39,55,.035);transition:transform .18s,box-shadow .18s}
+#appShell.training-page-active #trainings .training-card:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(26,39,55,.09)}
+@media(max-width:1100px){
+ #appShell.training-page-active #trainings .training-hub-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #appShell.training-page-active #trainings .training-hero-caption{right:20px;max-width:190px}
+}
+@media(max-width:760px){
+ #appShell.training-page-active #trainings .training-hero{min-height:330px!important;margin:0 -14px 16px!important;padding:30px 20px 86px!important;background-position:center,right center!important;background-size:cover,cover!important;border-radius:0 0 15px 15px!important}
+ #appShell.training-page-active #trainings .training-hero-copy{max-width:100%;width:100%}
+ #appShell.training-page-active #trainings .training-hero h1{font-size:30px!important;max-width:440px}
+ #appShell.training-page-active #trainings .training-hero p{max-width:430px;font-size:13px!important}
+ #appShell.training-page-active #trainings .training-hero-caption{right:18px;bottom:15px;max-width:210px}
+ #appShell.training-page-active #trainings .training-hub-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+ #appShell.training-page-active #trainings .training-hub-link{min-height:72px;padding:10px!important;gap:8px}
+ #appShell.training-page-active #trainings .training-hub-icon{width:34px;height:34px;flex-basis:34px}
+ #appShell.training-page-active #trainings .training-stats{grid-template-columns:1fr;gap:9px}
+ #appShell.training-page-active #trainings>.panel{padding:16px!important}
+}
+@media(max-width:420px){
+ #appShell.training-page-active #trainings .training-hero{min-height:350px!important;padding:26px 16px 88px!important}
+ #appShell.training-page-active #trainings .training-hero h1{font-size:27px!important}
+ #appShell.training-page-active #trainings .training-hero-actions{gap:8px}
+ #appShell.training-page-active #trainings .training-hero-actions button{font-size:11px;padding:10px 12px}
+ #appShell.training-page-active #trainings .training-hero-caption{left:16px;right:16px;text-align:left}
+ #appShell.training-page-active #trainings .training-hub-link b{font-size:11px}
+ #appShell.training-page-active #trainings .training-hub-link small{font-size:9px}
+}
+
 </style>
 </head>
 <body>
@@ -458,6 +529,18 @@ body{background:#f3f6f9}
 </main>
 <section class="page" id="simulation"><div class="simulation-head"><div><h1 id="simulationTitle">Simulação do RelatorioPro</h1><p class="muted">Ambiente de demonstração integrado ao sistema, com dados fictícios.</p></div><button id="closeSimulation" class="light" type="button">Voltar ao sistema</button></div><div class="simulation-warning">MODO TESTE LOCAL: funcionários, relatórios e agendas são fictícios. Nada é gravado no Supabase. Ao sair, os dados de demonstração são descartados.</div><div class="simulation-stats" id="simulationStats"></div><nav class="simulation-tabs" aria-label="Seções da simulação"><button class="simulation-tab active" data-simpage="employees">Funcionários</button><button class="simulation-tab" data-simpage="reports">Relatórios prontos</button><button class="simulation-tab" data-simpage="agenda">Agenda por funcionário</button></nav><section class="simulation-page active" id="sim-employees"><div class="simulation-toolbar"><div><h3>Equipe técnica de demonstração</h3><p>Selecione um funcionário para ver seus dados e atividades.</p></div><input id="simEmployeeSearch" placeholder="Pesquisar funcionário..." aria-label="Pesquisar funcionário"></div><div id="simulationEmployees" class="simulation-grid"></div></section><section class="simulation-page" id="sim-reports" hidden><div class="simulation-toolbar"><div><h3>Relatórios técnicos de exemplo</h3><p>15 relatórios completos de demonstração, um por funcionário.</p></div><input id="simReportSearch" placeholder="Pesquisar cliente, equipamento ou responsável..." aria-label="Pesquisar relatório"></div><div id="simulationReports" class="simulation-report-list"></div><div id="simulationReportDetail" class="simulation-report-detail" hidden></div></section><section class="simulation-page" id="sim-agenda" hidden><div class="simulation-toolbar"><div><h3>Agenda individual</h3><p>Consulte compromissos agrupados por profissional.</p></div><select id="simAgendaPerson" aria-label="Filtrar agenda por funcionário"><option value="">Todos os funcionários</option></select></div><div id="simulationAgenda" class="simulation-agenda-list"></div></section></section>
 <section class="page" id="trainings">
+<div class="training-hero">
+  <div class="training-hero-copy">
+    <span class="training-hero-kicker"><span class="training-live-dot"></span> IRMEN · UNIVERSIDADE TÉCNICA SANY</span>
+    <h1>Conhecimento que move<br>máquinas e resultados.</h1>
+    <p>Seu espaço de aprendizagem técnica: treinamentos, materiais de apoio e conhecimento aplicado ao dia a dia de oficina e campo.</p>
+    <div class="training-hero-actions">
+      <button class="training-hero-primary" type="button" data-training-scroll="trainingLibraryPanel">Explorar treinamentos <span aria-hidden="true">→</span></button>
+      <button class="training-hero-secondary" type="button" data-training-scroll="trainingCreatePanel">＋ Cadastrar conteúdo</button>
+    </div>
+  </div>
+  <div class="training-hero-caption"><span>TECNOLOGIA · OPERAÇÃO · MANUTENÇÃO</span><strong>Treinamento que transforma conhecimento em performance.</strong></div>
+</div>
 <nav class="training-hub-nav" aria-label="Atalhos da central"><button class="training-hub-link" type="button" data-training-scroll="trainingLibraryPanel"><span class="training-hub-icon">⌕</span><span><b>Explorar treinamentos</b><small>Pesquisar na biblioteca</small></span></button><button class="training-hub-link" type="button" data-training-scroll="trainingFavoritesPanel"><span class="training-hub-icon">☆</span><span><b>Meus favoritos</b><small>Conteúdos salvos</small></span></button><button class="training-hub-link" type="button" data-training-scroll="myTrainingsPanel"><span class="training-hub-icon">◷</span><span><b>Meus treinamentos</b><small>Rascunhos e envios</small></span></button><button class="training-hub-link" type="button" data-training-scroll="trainingCreatePanel"><span class="training-hub-icon">＋</span><span><b>Cadastrar conteúdo</b><small>Novo treinamento técnico</small></span></button></nav>
 <div class="training-stats"><div class="training-stat"><span>Conteúdos publicados</span><strong id="trainingPublishedCount">—</strong><small>Disponíveis para consulta</small></div><div class="training-stat"><span>Meus treinamentos</span><strong id="trainingMineCount">—</strong><small>Conteúdos cadastrados por você</small></div><div class="training-stat"><span>Aguardando aprovação</span><strong id="trainingPendingCount">—</strong><small>Na fila administrativa</small></div></div>
 <div class="panel training-create-panel" id="trainingCreatePanel"><div class="training-section-heading"><div><span class="training-eyebrow">GESTÃO DE CONTEÚDO</span><h2>Cadastrar treinamento</h2><p class="muted">Assistente de cadastro em quatro etapas. Os campos obrigatórios garantem uma biblioteca padronizada.</p></div><span class="training-section-icon">＋</span></div><div class="training-wizard-head"><strong id="trainingWizardLabel">Etapa 1 de 4 · Identificação</strong><span class="muted" id="trainingWizardPercent">25%</span></div><div class="training-steps" aria-hidden="true"><span class="training-step-line active"></span><span class="training-step-line"></span><span class="training-step-line"></span><span class="training-step-line"></span></div>
