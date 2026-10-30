@@ -283,6 +283,17 @@ body{background:#f3f6f9}
  #appShell.training-page-active #trainings .training-hero h1{font-size:23px}
  #appShell.training-page-active #trainings .training-hero-logo{width:64px}
 }
+
+/* Alinhamento exato entre menu lateral e área de conteúdo */
+#appShell>nav.tabs{box-sizing:border-box!important;width:var(--sidebar-width)!important;left:0!important;right:auto!important}
+#appShell.training-page-active>main{box-sizing:border-box!important;width:calc(100% - var(--sidebar-width))!important;margin-left:var(--sidebar-width)!important;margin-right:0!important;position:relative;left:0;transform:none}
+#appShell.training-page-active #trainings{box-sizing:border-box!important;width:100%!important;max-width:100%!important}
+#appShell.training-page-active #trainings .training-hero{width:auto!important;margin-left:-28px!important;margin-right:-28px!important}
+@media(max-width:760px){
+ #appShell>nav.tabs{box-sizing:border-box!important;width:100%!important}
+ #appShell.training-page-active>main{width:100%!important;margin-left:0!important;margin-right:0!important}
+ #appShell.training-page-active #trainings .training-hero{margin-left:-14px!important;margin-right:-14px!important}
+}
 </style>
 </head>
 <body>
