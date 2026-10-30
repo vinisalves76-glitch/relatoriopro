@@ -240,6 +240,49 @@ body{background:#f3f6f9}
  #appShell #trainings .training-hub-icon{width:32px;height:32px;flex-basis:32px}
 }
 
+
+/* Correção estrutural definitiva da Central de Treinamentos */
+#appShell.training-page-active>header{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important}
+#appShell.training-page-active>main{margin-left:var(--sidebar-width);max-width:none;width:auto;padding:0 28px 36px!important;min-height:100vh;overflow:visible}
+#appShell.training-page-active #trainings{display:block;width:100%;max-width:none;margin:0;padding:0 0 36px;min-width:0;overflow:visible}
+#appShell.training-page-active #trainings .training-hero{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;width:auto;min-height:310px;margin:0 -28px 24px;padding:42px 44px;overflow:hidden;border:0;border-radius:0 0 14px 14px;border-bottom:4px solid var(--gold);background-color:#111c26;background-image:linear-gradient(90deg,rgba(9,17,25,.98) 0%,rgba(9,17,25,.88) 36%,rgba(9,17,25,.38) 68%,rgba(9,17,25,.08) 100%),url("https://www.sanydobrasil.com/wp-content/uploads/2026/10/SANY-escavadeira-SY750H-1024x653.webp");background-repeat:no-repeat;background-position:center,right center;background-size:100% 100%,auto 100%}
+#appShell.training-page-active #trainings .training-hero:before{content:"";position:absolute;z-index:0;inset:0 0 0 auto;width:48%;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(8,15,22,.12))}
+#appShell.training-page-active #trainings .training-hero:after{content:"";position:absolute;z-index:1;left:0;right:0;bottom:0;height:4px;background:var(--gold)}
+#appShell.training-page-active #trainings .training-hero-copy{position:relative;z-index:2;width:min(100%,560px);max-width:560px;min-width:0}
+#appShell.training-page-active #trainings .training-hero-logo{position:absolute;z-index:2;right:26px;top:20px;width:112px;max-width:22%;max-height:58px;object-fit:contain;filter:brightness(0) invert(1)}
+#appShell.training-page-active #trainings .training-hub-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;width:100%;margin:0 0 20px;padding:0}
+#appShell.training-page-active #trainings .training-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:100%;margin:0 0 22px}
+#appShell.training-page-active #trainings>.panel{display:block;width:100%;min-width:0;margin:0 0 20px;padding:22px;box-sizing:border-box}
+#appShell.training-page-active #trainings .training-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:100%}
+#appShell.training-page-active #trainings .training-card{min-width:0;height:100%}
+#appShell.training-page-active #trainings .training-filters{grid-template-columns:minmax(180px,2fr) repeat(3,minmax(120px,1fr)) auto}
+#appShell.training-page-active #trainings input,#appShell.training-page-active #trainings select,#appShell.training-page-active #trainings textarea{max-width:100%;min-width:0}
+@media(max-width:1100px){
+ #appShell.training-page-active #trainings .training-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #appShell.training-page-active #trainings .training-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ #appShell.training-page-active>main{margin-left:0;padding:0 14px 26px!important;min-height:calc(100vh - 54px)}
+ #appShell.training-page-active #trainings{padding-bottom:24px}
+ #appShell.training-page-active #trainings .training-hero{width:auto;min-height:250px;margin:0 -14px 18px;padding:30px 20px 26px;background-position:center,right center;background-size:100% 100%,auto 100%;border-radius:0 0 12px 12px}
+ #appShell.training-page-active #trainings .training-hero-copy{max-width:78%}
+ #appShell.training-page-active #trainings .training-hero h1{font-size:25px}
+ #appShell.training-page-active #trainings .training-hero p{font-size:13px;line-height:1.5}
+ #appShell.training-page-active #trainings .training-hero-logo{right:12px;top:12px;width:76px;max-width:22%;max-height:42px}
+ #appShell.training-page-active #trainings .training-hub-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ #appShell.training-page-active #trainings .training-stats{grid-template-columns:1fr;gap:9px}
+ #appShell.training-page-active #trainings>.panel{padding:16px;margin-bottom:14px}
+ #appShell.training-page-active #trainings .training-card-grid{grid-template-columns:1fr}
+ #appShell.training-page-active #trainings .training-filters{grid-template-columns:1fr}
+ #appShell.training-page-active #trainings .training-field-grid{grid-template-columns:1fr}
+ #appShell.training-page-active #trainings .training-field-grid .full{grid-column:auto}
+}
+@media(max-width:420px){
+ #appShell.training-page-active #trainings .training-hero{min-height:230px;padding:26px 15px}
+ #appShell.training-page-active #trainings .training-hero-copy{max-width:82%}
+ #appShell.training-page-active #trainings .training-hero h1{font-size:23px}
+ #appShell.training-page-active #trainings .training-hero-logo{width:64px}
+}
 </style>
 </head>
 <body>
@@ -927,7 +970,7 @@ async function loadReport(id,ownerUid=activeUser?.uid){
  if(isSystemAdmin()){setModel(r.model||defaultModel);$('editor').classList.add('readonly-report')}else{const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);$('editor').classList.remove('readonly-report')}
  renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
 }
-function showPage(id){$('appShell').classList.toggle('report-editor-active',id==='editor');if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
+function showPage(id){$('appShell').classList.toggle('report-editor-active',id==='editor');$('appShell').classList.toggle('training-page-active',id==='trainings');if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
 function newReport(){
  if(!requirePermission('reports.create'))return;
  if((Object.values(getFields()).some(v=>String(v||'').trim())||photos.length)&&!confirm('Iniciar novo relatório? Salve antes se precisar manter o conteúdo atual.'))return;
