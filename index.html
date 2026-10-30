@@ -336,8 +336,13 @@ async function createUserWithEmailAndPassword(_auth,email,password) {
   return {user:normalizeUser(data.user)};
 }
 function onAuthStateChanged(_auth,callback) {
-  supabase.auth.getSession().then(({data})=>{currentSupabaseUser=normalizeUser(data.session?.user);callback(currentSupabaseUser);});
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{currentSupabaseUser=normalizeUser(session?.user);callback(currentSupabaseUser);});
+  // O Supabase já emite INITIAL_SESSION ao registrar o listener.
+  // Consultar getSession() em paralelo dispara duas inicializações concorrentes
+  // e pode fazer uma delas ocultar o app depois que a outra conclui o login.
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+    currentSupabaseUser=normalizeUser(session?.user);
+    callback(currentSupabaseUser);
+  });
   return ()=>subscription.unsubscribe();
 }
 function storageRef(_storage,path) { return {path}; }
