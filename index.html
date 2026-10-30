@@ -313,7 +313,18 @@ async function createUserProfile(uid,data) {
   if(error)throw error;
   return {id:uid};
 }
-async function updateDoc(ref,data) { return setDoc(ref,data,{merge:true}); }
+async function updateDoc(ref,data) {
+  if (ref.table === "trainings") {
+    const existing = await getDoc(ref);
+    if (!existing.exists()) throw new Error("Treinamento não encontrado para atualização.");
+    const merged = {...existing.data(), ...data};
+    const payload = mapWrite(ref, merged);
+    const {error} = await supabase.from("trainings").update(payload).eq("id", ref.id);
+    if (error) throw error;
+    return {id:ref.id};
+  }
+  return setDoc(ref,data,{merge:true});
+}
 async function deleteDoc(ref) {
   let q=supabase.from(ref.table).delete();
   if(ref.id)q=q.eq(ref.table==="profiles"?"id":ref.table==="user_settings"?"setting_key":"id",ref.id);
