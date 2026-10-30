@@ -122,6 +122,46 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 @media(max-width:600px){.app-irmen-logo{width:104px;height:44px}.logohead{gap:10px}.training-hero{gap:14px}.training-hero-logo{width:112px;max-height:65px}}
 
 
+/* Página inicial RelatorioPro */
+#appShell #home{padding:0 0 28px;max-width:none}
+#appShell #home .home-hero{position:relative;isolation:isolate;display:flex;align-items:center;min-height:390px;margin:-24px -28px 30px;padding:54px 58px;overflow:hidden;background:#111c26 url("https://sanyglobal-img.sany.com.cn/prod/20240614/%E5%B0%81%E9%9D%A2_172514.jpg?x-oss-process=image%2Fformat%2Cwebp") center 54%/cover no-repeat}
+#appShell #home .home-hero-overlay{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,15,23,.94) 0%,rgba(7,15,23,.78) 42%,rgba(7,15,23,.12) 100%)}
+#appShell #home .home-hero-content{max-width:650px;color:#fff}
+#appShell #home .home-kicker,.home-section-kicker{font-size:10px;font-weight:900;letter-spacing:.18em;color:#f3c431}
+#appShell #home .home-hero h1{font-size:clamp(38px,5vw,58px);line-height:1.02;letter-spacing:-.04em;margin:18px 0;color:#fff}
+#appShell #home .home-hero h1 em{font-style:normal;color:#f3c431}
+#appShell #home .home-hero p{max-width:470px;color:#e0e5e9;font-size:16px;line-height:1.65;margin:0 0 26px}
+#appShell #home .home-primary{background:#f2bd18;color:#17212a;border:0;border-radius:8px;padding:14px 18px;font-size:12px;font-weight:900;box-shadow:0 8px 24px #0003}
+#appShell #home .home-primary span{font-size:18px;margin-left:12px}
+#appShell #home .home-hero-caption{position:absolute;right:28px;bottom:24px;color:#fff;font-size:9px;font-weight:900;letter-spacing:.17em;text-shadow:0 2px 10px #000}
+#appShell #home .home-welcome-row{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:0 0 18px}
+#appShell #home .home-welcome-row h2{margin:7px 0 4px;color:#202832;font-size:23px;letter-spacing:-.025em}
+#appShell #home .home-welcome-row p{margin:0;color:#687482;font-size:13px}
+#appShell #home .home-section-kicker{color:#9b7600}
+#appShell #home .home-mark{font-size:12px;font-weight:900;letter-spacing:.12em;color:#34414c;white-space:nowrap}
+#appShell #home .home-mark b{color:#d8a400;margin:0 5px}
+#appShell #home .home-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+#appShell #home .home-shortcut{display:flex;align-items:center;gap:14px;min-height:90px;padding:17px;background:#fff;border:1px solid #e3e8ed;border-radius:12px;text-align:left;color:#26313b;box-shadow:0 4px 14px #1b293508;transition:transform .18s,border-color .18s,box-shadow .18s}
+#appShell #home .home-shortcut:hover{transform:translateY(-2px);border-color:#e1b326;box-shadow:0 9px 22px #1b293510}
+#appShell #home .home-shortcut-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:11px;background:#fff4cf;color:#795b00;font-size:22px}
+#appShell #home .home-shortcut strong{display:block;font-size:13px;margin-bottom:5px}
+#appShell #home .home-shortcut small{display:block;color:#76818d;font-size:11px;line-height:1.45}
+#appShell #home .home-shortcut>b{margin-left:auto;color:#a17a00;font-size:19px}
+#appShell #home .home-footer-line{display:flex;justify-content:space-between;gap:12px;margin-top:30px;padding-top:14px;border-top:1px solid #e1e6eb;color:#89939e;font-size:9px;font-weight:800;letter-spacing:.14em}
+@media(max-width:760px){
+ #appShell #home{padding-bottom:22px}
+ #appShell #home .home-hero{min-height:340px;margin:-14px -14px 22px;padding:35px 23px;background-position:58% center}
+ #appShell #home .home-hero-overlay{background:linear-gradient(90deg,rgba(7,15,23,.91),rgba(7,15,23,.55) 75%,rgba(7,15,23,.22))}
+ #appShell #home .home-hero h1{font-size:39px}
+ #appShell #home .home-hero p{font-size:13px;max-width:330px}
+ #appShell #home .home-hero-caption{right:15px;bottom:14px;font-size:7px}
+ #appShell #home .home-shortcuts{grid-template-columns:1fr;gap:9px}
+ #appShell #home .home-shortcut{min-height:78px;padding:13px}
+ #appShell #home .home-welcome-row h2{font-size:20px}
+ #appShell #home .home-mark{display:none}
+ #appShell #home .home-footer-line{font-size:8px}
+}
+
 /* Layout institucional com navegação lateral */
 /* Ações globais na barra lateral: disponíveis em todas as páginas */
 #appShell>nav.tabs .sidebar-footer{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:12px 4px 4px;border-top:1px solid #2a3945}
@@ -506,9 +546,29 @@ body{background:#f3f6f9}
 <div id="appShell" hidden>
 <header><div class="logohead"><img class="app-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button></div></header>
 <nav class="tabs">
-<div class="sidebar-brand"><img src="./Logo%20Irmen.webp" alt="IRMEN"><span>Central de<br><strong>Treinamentos</strong></span></div><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div><div class="sidebar-footer"><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir guia rápido"><span class="help-dot">?</span><span>Guia rápido</span></button><button class="sidebar-logout" id="logoutBtn" type="button">↪ Sair</button></div></nav>
+<div class="sidebar-brand"><img src="./Logo%20Irmen.webp" alt="IRMEN"><span>Central de<br><strong>Treinamentos</strong></span></div><button class="tab" data-page="home">⌂ &nbsp; Home</button><button class="tab" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div><div class="sidebar-footer"><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir guia rápido"><span class="help-dot">?</span><span>Guia rápido</span></button><button class="sidebar-logout" id="logoutBtn" type="button">↪ Sair</button></div></nav>
 <main>
-<section class="page active" id="editor"><h1>Relatório técnico</h1><p class="muted">Preencha os dados do atendimento, adicione fotos e confira a prévia antes de imprimir.</p><div class="layout"><div>
+<section class="page" id="home">
+ <div class="home-hero">
+  <div class="home-hero-overlay"></div>
+  <div class="home-hero-content">
+   <span class="home-kicker">IRMEN · SOLUÇÕES TÉCNICAS SANY</span>
+   <h1>Bem-vindo ao<br><em>RelatorioPro</em></h1>
+   <p>Conhecimento técnico, atendimento e capacitação reunidos em um só lugar.</p>
+   <button class="home-primary" type="button" data-home-page="trainings">Acessar Central de Treinamentos <span>→</span></button>
+  </div>
+  <div class="home-hero-caption">TECNOLOGIA · DESEMPENHO · CONFIANÇA</div>
+ </div>
+ <div class="home-welcome-row"><div><span class="home-section-kicker">AMBIENTE DE TRABALHO</span><h2>O que você deseja fazer?</h2><p>Escolha uma área para continuar suas atividades.</p></div><div class="home-mark">IRMEN <b>×</b> SANY</div></div>
+ <div class="home-shortcuts">
+  <button class="home-shortcut" type="button" data-home-page="editor"><span class="home-shortcut-icon">▤</span><span><strong>Novo relatório</strong><small>Registre atendimentos, inspeções e atividades técnicas.</small></span><b>→</b></button>
+  <button class="home-shortcut" type="button" data-home-page="saved"><span class="home-shortcut-icon">▣</span><span><strong>Relatórios salvos</strong><small>Consulte e continue relatórios já registrados.</small></span><b>→</b></button>
+  <button class="home-shortcut" type="button" data-home-page="trainings"><span class="home-shortcut-icon">▥</span><span><strong>Central de Treinamentos</strong><small>Acesse treinamentos, materiais e manuais técnicos.</small></span><b>→</b></button>
+  <button class="home-shortcut" type="button" data-home-page="model"><span class="home-shortcut-icon">⚙</span><span><strong>Modelo e identidade</strong><small>Configure a identidade visual dos relatórios.</small></span><b>→</b></button>
+ </div>
+ <div class="home-footer-line"><span>RELATORIOPRO</span><span>IRMEN · REPRESENTANTE SANY</span></div>
+</section>
+<section class="page" id="editor"><h1>Relatório técnico</h1><p class="muted">Preencha os dados do atendimento, adicione fotos e confira a prévia antes de imprimir.</p><div class="layout"><div>
 <div class="panel"><h3>1. Identificação</h3><div class="grid">
 <div class="field"><label>Tipo de atendimento</label><select id="type"><option>Relatório de campo</option><option>Relatório de manutenção</option><option>Relatório de entrega técnica</option><option>Relatório de treinamento</option><option>Relatório de inspeção</option><option>Relatório de diagnóstico</option><option>Relatório de garantia</option><option>Outro</option></select></div>
 <div class="field"><label>Data</label><input id="date" type="date"></div><div class="field"><label>Responsável técnico</label><input id="responsible" placeholder="Nome do responsável"></div>
@@ -1198,8 +1258,8 @@ async function loadReport(id,ownerUid=activeUser?.uid){
  if(isSystemAdmin()){setModel(r.model||defaultModel);$('editor').classList.add('readonly-report')}else{const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);$('editor').classList.remove('readonly-report')}
  renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
 }
-function pageAllowed(id){if(id==='agenda'||id==='simulation')return isMaster();if(id==='users')return isSystemAdmin();if(id==='model')return can('model.view')||can('model.edit');if(id==='saved')return can('reports.view');if(id==='editor')return can('reports.create')||can('reports.edit');return ['trainings'].includes(id)}
-function getInitialPage(user){let id='editor';try{const saved=localStorage.getItem('relatoriopro-last-page-'+(user?.uid||user?.id));if(saved&&document.getElementById(saved)&&pageAllowed(saved))id=saved}catch(e){}return pageAllowed(id)?id:'editor'}
+function pageAllowed(id){if(id==='agenda'||id==='simulation')return isMaster();if(id==='users')return isSystemAdmin();if(id==='model')return can('model.view')||can('model.edit');if(id==='saved')return can('reports.view');if(id==='editor')return can('reports.create')||can('reports.edit');return ['home','trainings'].includes(id)}
+function getInitialPage(user){return 'home'}
 function showPage(id){if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')&&!can('model.edit')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}if(!document.getElementById(id)||!pageAllowed(id))return;$('appShell').classList.toggle('report-editor-active',id==='editor');$('appShell').classList.toggle('training-page-active',id==='trainings');document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));try{if(activeUser)localStorage.setItem('relatoriopro-last-page-'+activeUser.uid,id)}catch(e){}if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
 function newReport(){
  if(!requirePermission('reports.create'))return;
@@ -1208,6 +1268,7 @@ function newReport(){
 }
 function printNow(){if(!requirePermission('reports.print'))return;preview();window.print()}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPage(t.dataset.page)));
+document.querySelectorAll('[data-home-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.homePage)));
 fields.forEach(id=>{ $(id).addEventListener('input',()=>{preview();schedule()});$(id).addEventListener('change',()=>{preview();schedule()})});
 $('saveBtn').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('refresh').onclick=preview;
 $('clearBtn').onclick=()=>{if(!confirm('Limpar campos e fotos do formulário?'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();restoring=false;draft()};
