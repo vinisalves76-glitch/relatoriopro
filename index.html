@@ -1259,22 +1259,22 @@ onAuthStateChanged(auth,user=>{if(!user){activeUser=null;currentProfile=null;$('
 let tourSteps=[],tourIndex=0,tourSpotlight=null;
 function makeTourSteps(){
  const steps=[
-  {title:'Bem-vindo ao RelatorioPro',text:'Olá, '+(currentProfile?.name||'bem-vindo')+'! Este guia foi adaptado ao seu perfil ('+(currentProfile?.roleLabel||currentProfile?.role||'usuário')+') e mostra somente as funções disponíveis para sua conta.',target:'#appShell header'},
+  {title:'Bem-vindo ao RelatorioPro',text:'Olá, '+(currentProfile?.name||'bem-vindo')+'! Este guia foi adaptado ao seu perfil ('+(currentProfile?.roleLabel||currentProfile?.role||'usuário')+') e mostra somente as funções disponíveis para sua conta.',target:'.sidebar-brand'},
   {title:'Conheça o menu',text:'As abas do menu são liberadas conforme as permissões do seu perfil. Se uma função não aparecer, ela pode não estar habilitada para sua conta.',target:'.tabs'},
  ];
  if(can('reports.create')||can('reports.edit')){
   steps.push({title:'Criar e preencher relatórios',text:'Na aba “Relatório técnico”, preencha identificação, equipamento, objetivo, observações, atividades, resultados e conclusão. Adicione fotos quando necessário e registre apenas informações verificadas.',target:'[data-page="editor"]'});
-  steps.push({title:'Salvar e revisar',text:'Revise as informações e a prévia. Use “Salvar relatório” para guardar o registro. Para gerar uma cópia, utilize “Imprimir / PDF”.',target:'#saveTop'});
+  steps.push({title:'Salvar e revisar',text:'Revise as informações e a prévia. Use “Salvar relatório” para guardar o registro. Para gerar uma cópia, utilize “Imprimir / PDF”.',target:'#saveBtn'});
  }
  if(can('reports.view')) steps.push({title:'Consultar relatórios',text:'Na aba “Relatórios salvos”, localize registros anteriores e abra o relatório desejado. As opções de edição dependem das permissões da sua conta.',target:'[data-page="saved"]'});
- if(can('reports.print')) steps.push({title:'Imprimir ou gerar PDF',text:'Use “Imprimir / PDF” para abrir as opções de impressão do navegador e salvar uma cópia em PDF, quando disponível.',target:'#printTop'});
+ if(can('reports.print')) steps.push({title:'Imprimir ou gerar PDF',text:'Use “Imprimir / PDF” para abrir as opções de impressão do navegador e salvar uma cópia em PDF, quando disponível.',target:'#printBtn'});
  if(document.querySelector('[data-page="trainings"]')) steps.push({title:'Central de Conhecimento — Treinamentos',text:'Na aba “Treinamentos”, os perfis autorizados podem cadastrar um conteúdo, informar título, categoria, público-alvo e descrição, anexar slides, manuais SANY e outros materiais e salvar como rascunho ou enviar para aprovação. O conteúdo enviado fica na fila de aprovação administrativa. O administrador pode aprovar e publicar ou devolver para correção com um comentário. Após publicado, o treinamento e seus anexos ficam disponíveis na Biblioteca publicada para consulta da equipe. Em “Meus treinamentos”, o autor acompanha o status e pode reenviar conteúdos devolvidos após os ajustes.',target:'[data-page="trainings"]'});
  if(can('model.view')||can('model.edit')) steps.push({title:'Configurar layout e textos do relatório',text:'Esta área permite ajustar o modelo visual do relatório: nome da empresa, subtítulo, texto do rodapé, aviso de confidencialidade, cor de destaque e logotipo. Confira as alterações e clique em “Salvar e aplicar modelo”. Essas configurações afetam a apresentação dos relatórios conforme o escopo configurado no sistema.',target:'[data-page="model"]'});
  if(isSystemAdmin()) steps.push({title:'Administrar usuários e acessos',text:'Na aba “Usuários e acessos”, o perfil administrativo pode consultar e gerenciar contas conforme as permissões disponíveis. Confira o perfil e o estado de acesso antes de realizar alterações.',target:'[data-page="users"]'});
  if(isMaster()) {
   steps.push({title:'Ferramentas do mestre',text:'Sua conta mestre também tem acesso às ferramentas administrativas exclusivas que aparecem no menu. Utilize-as com cuidado, especialmente ao testar permissões e configurações.',target:'#sessionInfo'});
  }
- steps.push({title:'Ajuda sempre disponível',text:'Você pode rever estas orientações quando quiser: clique em “? Ajuda” no topo da tela. O conteúdo do guia muda conforme a conta conectada.',target:'#helpLaunch'});
+ steps.push({title:'Ajuda sempre disponível',text:'Você pode rever estas orientações quando quiser: clique em “Guia rápido” no menu lateral. O conteúdo do guia muda conforme a conta conectada.',target:'#helpLaunch'});
  return steps;
 }
 function clearTourSpotlight(){if(tourSpotlight){tourSpotlight.classList.remove('tour-spotlight');tourSpotlight=null}}
