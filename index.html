@@ -1202,7 +1202,7 @@ function newReport(){
 function printNow(){if(!requirePermission('reports.print'))return;preview();window.print()}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPage(t.dataset.page)));
 fields.forEach(id=>{ $(id).addEventListener('input',()=>{preview();schedule()});$(id).addEventListener('change',()=>{preview();schedule()})});
-$('saveBtn').onclick=saveReport;$('saveTop').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('printTop').onclick=printNow;$('refresh').onclick=preview;
+$('saveBtn').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('refresh').onclick=preview;
 $('clearBtn').onclick=()=>{if(!confirm('Limpar campos e fotos do formulário?'))return;restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();restoring=false;draft()};
 $('applyModel').onclick=async()=>{
  if(!requirePermission('model.edit'))return;
