@@ -123,6 +123,16 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 
 
 /* Layout institucional com navegação lateral */
+/* Ações globais na barra lateral: disponíveis em todas as páginas */
+#appShell>nav.tabs .sidebar-footer{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:12px 4px 4px;border-top:1px solid #2a3945}
+#appShell>nav.tabs .sidebar-footer button{width:100%;justify-content:center;min-height:42px}
+#appShell>nav.tabs .sidebar-footer .help-launch{background:#172633;border:1px solid #52616d;color:#f3c64a;border-radius:8px}
+#appShell>nav.tabs .sidebar-footer .sidebar-logout{background:#263541;border:1px solid #43515d;color:#f1f4f6}
+@media(max-width:760px){
+ #appShell>nav.tabs .sidebar-footer{flex:0 0 auto;flex-direction:row;align-items:center;margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid #43515d}
+ #appShell>nav.tabs .sidebar-footer button{width:auto;min-height:38px;white-space:nowrap;padding:8px 10px}
+}
+
 :root{--sidebar-width:238px;--navy:#101b25;--navy2:#172633;--gold:#f2bd18}
 body{background:#f3f6f9}
 #appShell{min-height:100vh}
@@ -494,9 +504,9 @@ body{background:#f3f6f9}
   </section>
 </div>
 <div id="appShell" hidden>
-<header><div class="logohead"><img class="app-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button><button class="primary" id="saveTop">Salvar relatório</button><button class="light" id="printTop">Imprimir / PDF</button><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir tutorial do sistema"><span class="help-dot">?</span><span>Ajuda</span></button></div></header>
+<header><div class="logohead"><img class="app-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button></div></header>
 <nav class="tabs">
-<div class="sidebar-brand"><img src="./Logo%20Irmen.webp" alt="IRMEN"><span>Central de<br><strong>Treinamentos</strong></span></div><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div></nav>
+<div class="sidebar-brand"><img src="./Logo%20Irmen.webp" alt="IRMEN"><span>Central de<br><strong>Treinamentos</strong></span></div><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div><div class="sidebar-footer"><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir guia rápido"><span class="help-dot">?</span><span>Guia rápido</span></button><button class="sidebar-logout" id="logoutBtn" type="button">↪ Sair</button></div></nav>
 <main>
 <section class="page active" id="editor"><h1>Relatório técnico</h1><p class="muted">Preencha os dados do atendimento, adicione fotos e confira a prévia antes de imprimir.</p><div class="layout"><div>
 <div class="panel"><h3>1. Identificação</h3><div class="grid">
@@ -1181,7 +1191,9 @@ async function loadReport(id,ownerUid=activeUser?.uid){
  if(isSystemAdmin()){setModel(r.model||defaultModel);$('editor').classList.add('readonly-report')}else{const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);$('editor').classList.remove('readonly-report')}
  renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
 }
-function showPage(id){$('appShell').classList.toggle('report-editor-active',id==='editor');$('appShell').classList.toggle('training-page-active',id==='trainings');if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
+function pageAllowed(id){if(id==='agenda'||id==='simulation')return isMaster();if(id==='users')return isSystemAdmin();if(id==='model')return can('model.view')||can('model.edit');if(id==='saved')return can('reports.view');if(id==='editor')return can('reports.create')||can('reports.edit');return ['trainings'].includes(id)}
+function getInitialPage(user){let id='editor';try{const saved=localStorage.getItem('relatoriopro-last-page-'+(user?.uid||user?.id));if(saved&&document.getElementById(saved)&&pageAllowed(saved))id=saved}catch(e){}return pageAllowed(id)?id:'editor'}
+function showPage(id){if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')&&!can('model.edit')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}if(!document.getElementById(id)||!pageAllowed(id))return;$('appShell').classList.toggle('report-editor-active',id==='editor');$('appShell').classList.toggle('training-page-active',id==='trainings');document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));try{if(activeUser)localStorage.setItem('relatoriopro-last-page-'+activeUser.uid,id)}catch(e){}if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
 function newReport(){
  if(!requirePermission('reports.create'))return;
  if((Object.values(getFields()).some(v=>String(v||'').trim())||photos.length)&&!confirm('Iniciar novo relatório? Salve antes se precisar manter o conteúdo atual.'))return;
@@ -1227,7 +1239,6 @@ $('applyGPTResult').addEventListener('click',()=>{if(!gptPendingResult)return;fo
 $('copyGPTResult').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('gptResult').value);$('gptStatus').textContent='Resultado copiado.'}catch(e){$('gptResult').select();$('gptStatus').textContent='Selecione e copie o texto manualmente.'}});
 $('search').addEventListener('input',renderSaved);$('filter').addEventListener('change',renderSaved);
 
-$('newTop').insertAdjacentHTML('afterend','<button class="light" id="logoutBtn" type="button">Sair</button>');
 $('logoutBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){alert(friendlyAuthError(e))}});
 async function initializeUser(user){
  activeUser=user;if(!user){closeSimulation();currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}
@@ -1238,7 +1249,7 @@ async function initializeUser(user){
  $('changePasswordGate').hidden=true;$('authGate').hidden=true;$('appShell').hidden=false;applyAccessControl();$('appShell').classList.toggle('report-editor-active',!!document.querySelector('#editor.active'));
  if(can('model.view')||can('model.edit')){const ms=await getDoc(modelRef());modelCache=ms.exists()?ms.data():{...defaultModel};if(!ms.exists()&&can('model.edit'))await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()})}else modelCache={...defaultModel};
  setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
- restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();if(isSystemAdmin()&&!isMaster())showPage('model');else if(isSystemAdmin())showPage('saved');try{if(!localStorage.getItem('relatoriopro-tour-complete-'+user.uid))openTour()}catch(e){openTour()}
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();showPage(getInitialPage(user));
  }catch(error){console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
 }
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
