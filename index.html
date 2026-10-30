@@ -165,6 +165,7 @@ body{background:#f3f6f9}
  #appShell .training-card-grid{grid-template-columns:1fr}
 }
 
+#appShell>header{display:none}#appShell.report-editor-active>header{display:flex}
 </style>
 </head>
 <body>
@@ -852,7 +853,7 @@ async function loadReport(id,ownerUid=activeUser?.uid){
  if(isSystemAdmin()){setModel(r.model||defaultModel);$('editor').classList.add('readonly-report')}else{const modelSnap=await getDoc(modelRef());setModel(modelSnap.exists()?modelSnap.data():r.model||defaultModel);$('editor').classList.remove('readonly-report')}
  renderPhotos();preview();restoring=false;draft();showPage('editor');window.scrollTo({top:0,behavior:'smooth'})
 }
-function showPage(id){if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
+function showPage(id){$('appShell').classList.toggle('report-editor-active',id==='editor');if(id==='agenda'&&!isMaster()){alert('A agenda técnica está em desenvolvimento e disponível apenas para o usuário mestre.');return}if(id==='simulation'&&!isMaster()){alert('A simulação está disponível apenas para o usuário mestre.');return}if(id==='users'&&!isSystemAdmin()){alert('Apenas usuários administrativos podem gerenciar usuários.');return}if(id==='model'&&!can('model.view')){requirePermission('model.view');return}if(id==='saved'&&!can('reports.view')){requirePermission('reports.view');return}if(id==='editor'&&!can('reports.create')&&!can('reports.edit')){requirePermission('reports.create');return}document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===id));if(id==='saved')loadSavedReports();if(id==='trainings')loadTrainings();if(id==='users')loadUsers();if(id==='agenda')loadAgenda();if(id==='editor')preview()}
 function newReport(){
  if(!requirePermission('reports.create'))return;
  if((Object.values(getFields()).some(v=>String(v||'').trim())||photos.length)&&!confirm('Iniciar novo relatório? Salve antes se precisar manter o conteúdo atual.'))return;
