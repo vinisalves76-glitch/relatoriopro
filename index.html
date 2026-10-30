@@ -419,6 +419,44 @@ body{background:#f3f6f9}
  #appShell.training-page-active #trainings .training-hub-link small{font-size:9px}
 }
 
+
+/* Correção visual robusta do banner da Central de Treinamentos */
+#appShell.training-page-active #trainings>.training-hero{
+  display:flex!important;position:relative!important;isolation:isolate!important;
+  width:auto!important;min-height:340px!important;height:auto!important;
+  margin:0 -28px 24px!important;padding:46px clamp(26px,4vw,58px)!important;
+  overflow:hidden!important;background:#17212c!important;
+  border:0!important;border-bottom:4px solid #e4a900!important;
+  border-radius:0 0 18px 18px!important;box-shadow:0 12px 30px rgba(22,31,42,.12)!important;
+}
+#appShell.training-page-active #trainings>.training-hero>.training-hero-photo{
+  display:block!important;position:absolute!important;z-index:0!important;
+  inset:0!important;width:100%!important;height:100%!important;
+  max-width:none!important;object-fit:cover!important;object-position:center 43%!important;
+}
+#appShell.training-page-active #trainings>.training-hero:before{
+  content:""!important;display:block!important;position:absolute!important;z-index:1!important;
+  inset:0!important;width:100%!important;height:100%!important;
+  background:linear-gradient(90deg,rgba(10,17,25,.96) 0%,rgba(10,17,25,.88) 35%,rgba(10,17,25,.45) 68%,rgba(10,17,25,.12) 100%)!important;
+  pointer-events:none!important;
+}
+#appShell.training-page-active #trainings>.training-hero:after{
+  content:""!important;display:block!important;position:absolute!important;z-index:4!important;
+  left:0!important;right:0!important;bottom:0!important;height:4px!important;
+  background:#e4a900!important;
+}
+#appShell.training-page-active #trainings .training-hero-copy{position:relative!important;z-index:3!important;max-width:610px!important}
+#appShell.training-page-active #trainings .training-hero-caption{z-index:3!important}
+@media(max-width:760px){
+ #appShell.training-page-active #trainings>.training-hero{
+  min-height:340px!important;margin:0 -14px 18px!important;padding:30px 20px 88px!important;
+ }
+ #appShell.training-page-active #trainings>.training-hero>.training-hero-photo{object-position:62% center!important}
+ #appShell.training-page-active #trainings>.training-hero:before{
+  background:linear-gradient(90deg,rgba(10,17,25,.90),rgba(10,17,25,.58)),linear-gradient(0deg,rgba(10,17,25,.35),transparent 60%)!important;
+ }
+}
+
 </style>
 </head>
 <body>
@@ -530,6 +568,7 @@ body{background:#f3f6f9}
 <section class="page" id="simulation"><div class="simulation-head"><div><h1 id="simulationTitle">Simulação do RelatorioPro</h1><p class="muted">Ambiente de demonstração integrado ao sistema, com dados fictícios.</p></div><button id="closeSimulation" class="light" type="button">Voltar ao sistema</button></div><div class="simulation-warning">MODO TESTE LOCAL: funcionários, relatórios e agendas são fictícios. Nada é gravado no Supabase. Ao sair, os dados de demonstração são descartados.</div><div class="simulation-stats" id="simulationStats"></div><nav class="simulation-tabs" aria-label="Seções da simulação"><button class="simulation-tab active" data-simpage="employees">Funcionários</button><button class="simulation-tab" data-simpage="reports">Relatórios prontos</button><button class="simulation-tab" data-simpage="agenda">Agenda por funcionário</button></nav><section class="simulation-page active" id="sim-employees"><div class="simulation-toolbar"><div><h3>Equipe técnica de demonstração</h3><p>Selecione um funcionário para ver seus dados e atividades.</p></div><input id="simEmployeeSearch" placeholder="Pesquisar funcionário..." aria-label="Pesquisar funcionário"></div><div id="simulationEmployees" class="simulation-grid"></div></section><section class="simulation-page" id="sim-reports" hidden><div class="simulation-toolbar"><div><h3>Relatórios técnicos de exemplo</h3><p>15 relatórios completos de demonstração, um por funcionário.</p></div><input id="simReportSearch" placeholder="Pesquisar cliente, equipamento ou responsável..." aria-label="Pesquisar relatório"></div><div id="simulationReports" class="simulation-report-list"></div><div id="simulationReportDetail" class="simulation-report-detail" hidden></div></section><section class="simulation-page" id="sim-agenda" hidden><div class="simulation-toolbar"><div><h3>Agenda individual</h3><p>Consulte compromissos agrupados por profissional.</p></div><select id="simAgendaPerson" aria-label="Filtrar agenda por funcionário"><option value="">Todos os funcionários</option></select></div><div id="simulationAgenda" class="simulation-agenda-list"></div></section></section>
 <section class="page" id="trainings">
 <div class="training-hero">
+  <img class="training-hero-photo" src="https://www.sanydobrasil.com/wp-content/uploads/2026/10/SANY-escavadeira-SY750H-1024x653.webp" alt="Escavadeira SANY em operação" loading="eager" fetchpriority="high">
   <div class="training-hero-copy">
     <span class="training-hero-kicker"><span class="training-live-dot"></span> IRMEN · UNIVERSIDADE TÉCNICA SANY</span>
     <h1>Conhecimento que move<br>máquinas e resultados.</h1>
