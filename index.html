@@ -694,6 +694,8 @@ function tableRef(table, id=null, ownerId=null, reportId=null) {
   const parent = ownerId ? { id: ownerId, parent: { id: ownerId } } : null;
   return { __sb:true, table, id, ownerId, reportId, parent };
 }
+// Referência global dos perfis cadastrados; usada pela gestão de usuários e pela agenda.
+const profilesRef = tableRef("profiles");
 function collection(_db, ...parts) {
   if (_db && _db.__sb && _db.table === "reports" && parts[0] === "photos") return tableRef("report_photos",null,_db.ownerId,_db.id);
   if (parts[0] === "userProfiles") return tableRef("profiles");
