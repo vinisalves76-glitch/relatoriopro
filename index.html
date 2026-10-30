@@ -106,7 +106,7 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 .training-card-meta span{font-size:10px;background:#f0f2f4;color:#56606c;border-radius:20px;padding:5px 8px}
 .training-favorite{margin-left:auto;background:#fff;border:1px solid #e1e5ea;color:#68717d;padding:6px 9px}
 .training-favorite.active{color:#8a6500;background:#fff4ce;border-color:#e4c45e}
-.training-card-actions{padding-top:9px}
+.training-card-actions{padding-top:9px;display:flex;gap:8px;flex-wrap:wrap}.training-card-actions .training-action{flex:1;min-width:115px}.training-material-overlay{position:fixed;inset:0;z-index:10050;background:rgba(12,18,27,.68);display:flex;align-items:center;justify-content:center;padding:18px}.training-material-dialog{width:min(620px,100%);max-height:85vh;overflow:auto;background:#fff;color:#202832;border-radius:14px;padding:22px;box-shadow:0 20px 60px #0005}.training-material-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.training-material-head h2{margin:0 0 6px}.training-material-close{border:0;background:#eef1f4;border-radius:8px;padding:8px 11px;cursor:pointer}.training-material-list{display:grid;gap:9px;margin-top:16px}.training-material-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px;border:1px solid #e5e9ee;border-radius:9px}.training-material-row small{display:block;color:#66717d;margin-top:3px}.training-material-row a{white-space:nowrap}.training-material-description{color:#56616e;line-height:1.5}
 .training-library-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .training-empty{padding:24px;border:1px dashed #cfd4da;border-radius:10px;text-align:center;color:var(--muted);background:#fafbfc}
 .training-review-input{width:100%}
@@ -802,7 +802,7 @@ function trainingFavoriteIds(){try{return JSON.parse(localStorage.getItem('irmen
 function trainingToggleFavorite(id){const ids=trainingFavoriteIds(),next=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id];localStorage.setItem('irmen-training-favorites-'+activeUser.uid,JSON.stringify(next));renderPublishedTrainingLibrary();renderFavoriteTrainings()}
 function trainingCard(t,mode='library'){
  const status=t.status||'draft',meta=[t.category,t.audience,t.equipment].filter(Boolean).map(trainingEscape).join(' • '),fav=trainingFavoriteIds().includes(t.id);let actions='';
- if(mode==='library'||mode==='favorites')actions+='<button class="training-favorite '+(fav?'active':'')+'" data-training-favorite="'+trainingEscape(t.id)+'" type="button" aria-label="'+(fav?'Remover dos favoritos':'Adicionar aos favoritos')+'">'+(fav?'★ Favoritado':'☆ Favoritar')+'</button>';
+ if(mode==='library'||mode==='favorites'){actions+='<button class="training-favorite '+(fav?'active':'')+'" data-training-favorite="'+trainingEscape(t.id)+'" type="button" aria-label="'+(fav?'Remover dos favoritos':'Adicionar aos favoritos')+'">'+(fav?'★ Favoritado':'☆ Favoritar')+'</button>';actions+='<button class="primary training-action" data-training-access="'+trainingEscape(t.id)+'" type="button">Acessar treinamento</button><button class="light training-action" data-training-download="'+trainingEscape(t.id)+'" type="button">Baixar materiais</button>'}
  if(mode==='mine'&&(status==='draft'||status==='returned'))actions+='<button class="primary" data-training-submit="'+trainingEscape(t.id)+'" type="button">Enviar para aprovação</button>';
  if(mode==='pending')actions+='<button class="light" data-training-return="'+trainingEscape(t.id)+'" type="button">Devolver para correção</button><button class="primary" data-training-approve="'+trainingEscape(t.id)+'" type="button">Aprovar e publicar</button>';
  actions+=trainingDeleteButton(t.id);
@@ -834,6 +834,29 @@ async function loadTrainings(){
   $('trainingPendingCount').textContent=trainingAdmin()?'0':'—';
   if(trainingAdmin()){const ps=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=ps.docs.map(d=>({id:d.id,...d.data()}));$('trainingPendingCount').textContent=pend.length;pending.innerHTML=pend.length?pend.map(t=>trainingCard(t,'pending')).join(''):'<div class="training-empty">Nenhum treinamento aguardando aprovação.</div>'}
  }catch(e){pub.innerHTML='<p class="muted">Não foi possível carregar os treinamentos. Verifique as permissões do Supabase.</p>';mine.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>';if(trainingAdmin())pending.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>'}
+}
+async function trainingOpenMaterials(trainingId,mode='access'){
+ const training=publishedTrainingItems.find(t=>t.id===trainingId);
+ if(!training)throw new Error('Treinamento publicado não encontrado.');
+ const files=Array.isArray(training.attachments)?training.attachments:[];
+ const overlay=document.createElement('div');overlay.className='training-material-overlay';overlay.setAttribute('role','presentation');
+ const title=mode==='download'?'Baixar materiais':'Acessar treinamento';
+ overlay.innerHTML='<section class="training-material-dialog" role="dialog" aria-modal="true" aria-label="'+title+'"><div class="training-material-head"><div><span class="training-eyebrow">BIBLIOTECA IRMEN</span><h2>'+trainingEscape(training.title)+'</h2><p class="muted">'+title+'</p></div><button type="button" class="training-material-close" aria-label="Fechar">✕</button></div>'+(mode==='access'?'<p class="training-material-description">'+trainingEscape(training.description||'Sem descrição cadastrada.')+'</p><p class="training-meta">'+[training.equipment,training.category,training.level,training.duration?training.duration+' h':''].filter(Boolean).map(trainingEscape).join(' · ')+'</p>':'<p class="training-material-description">Selecione os arquivos deste treinamento que deseja baixar.</p>')+'<div class="training-material-list">'+(files.length?files.map((f,i)=>'<div class="training-material-row"><div><strong>'+trainingEscape(f.name||('Material '+(i+1)))+'</strong><small>'+trainingEscape(f.kind||'Arquivo')+(f.size?' · '+(f.size/1024/1024).toFixed(1)+' MB':'')+'</small></div><span class="muted">Preparando...</span></div>').join(''):'<p class="muted">Este treinamento não possui arquivos anexados.</p>')+'</div></section>';
+ document.body.appendChild(overlay);
+ const close=()=>overlay.remove();overlay.querySelector('.training-material-close').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ if(!files.length)return;
+ const rows=overlay.querySelectorAll('.training-material-row');
+ for(let i=0;i<files.length;i++){
+  const f=files[i],row=rows[i],label=mode==='download'?'Baixar arquivo':'Abrir arquivo';
+  try{
+   if(!f.path)throw new Error('Caminho do arquivo indisponível');
+   const options=mode==='download'?{download:f.name||true}:{};
+   const {data,error}=await supabase.storage.from('training-attachments-private').createSignedUrl(f.path,900,options);
+   if(error||!data?.signedUrl)throw error||new Error('Não foi possível gerar o link');
+   const link=document.createElement('a');link.href=data.signedUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent=label;if(mode==='download')link.setAttribute('download',f.name||'material');
+   row.querySelector('span').replaceWith(link);
+  }catch(err){row.querySelector('span').textContent='Indisponível: '+(err.message||'erro ao acessar')}
+ }
 }
 function trainingAttachmentLinks(files){
  const list=Array.isArray(files)?files:[];
@@ -893,7 +916,7 @@ $('trainingLibrarySearch').addEventListener('input',renderPublishedTrainingLibra
 $('trainingCategoryFilter').addEventListener('change',renderPublishedTrainingLibrary);
 $('trainingAudienceFilter').addEventListener('change',renderPublishedTrainingLibrary);$('trainingEquipmentFilter').addEventListener('change',renderPublishedTrainingLibrary);$('trainingLevelFilter').addEventListener('change',renderPublishedTrainingLibrary);
 $('trainingClearFilters').addEventListener('click',()=>{$('trainingLibrarySearch').value='';$('trainingCategoryFilter').value='';$('trainingAudienceFilter').value='';$('trainingEquipmentFilter').value='';$('trainingLevelFilter').value='';renderPublishedTrainingLibrary()});
-$('trainings').addEventListener('click',async e=>{const submit=e.target.closest('[data-training-submit]'),approve=e.target.closest('[data-training-approve]'),ret=e.target.closest('[data-training-return]'),del=e.target.closest('[data-training-delete]'),favorite=e.target.closest('[data-training-favorite]');try{if(favorite){trainingToggleFavorite(favorite.dataset.trainingFavorite);return}
+$('trainings').addEventListener('click',async e=>{const submit=e.target.closest('[data-training-submit]'),approve=e.target.closest('[data-training-approve]'),ret=e.target.closest('[data-training-return]'),del=e.target.closest('[data-training-delete]'),favorite=e.target.closest('[data-training-favorite]'),access=e.target.closest('[data-training-access]'),download=e.target.closest('[data-training-download]');try{if(access){await trainingOpenMaterials(access.dataset.trainingAccess,'access');return}if(download){await trainingOpenMaterials(download.dataset.trainingDownload,'download');return}if(favorite){trainingToggleFavorite(favorite.dataset.trainingFavorite);return}
  if(del){if(!trainingAdmin())throw new Error('Apenas ADM ou Mestre ADM pode excluir treinamentos.');const id=del.dataset.trainingDelete;if(!confirm('Tem certeza que deseja excluir este treinamento? Esta ação não pode ser desfeita.'))return;del.disabled=true;const ref=doc(db,TRAININGS,id),snap=await getDoc(ref);if(!snap.exists())throw new Error('Treinamento não encontrado.');const files=Array.isArray(snap.data().attachments)?snap.data().attachments:[],paths=files.map(x=>x.path).filter(Boolean);if(paths.length){const {error}=await supabase.storage.from('training-attachments-private').remove(paths);if(error)throw error;}await deleteDoc(ref);await loadTrainings();alert('Treinamento excluído com sucesso.');return}
  if(submit){const ref=doc(db,TRAININGS,submit.dataset.trainingSubmit),snap=await getDoc(ref);if(!snap.exists()||snap.data().ownerUid!==activeUser.uid||!['draft','returned'].includes(snap.data().status))throw new Error('Este treinamento não pode ser enviado.');await updateDoc(ref,{status:'pending',reviewComment:'',updatedAt:serverTimestamp()});await loadTrainings();alert('Enviado para aprovação.')}
  if(approve){if(!trainingAdmin())throw new Error('Apenas administrador pode aprovar.');await updateDoc(doc(db,TRAININGS,approve.dataset.trainingApprove),{status:'published',reviewComment:$('review-'+approve.dataset.trainingApprove).value.trim(),approvedBy:activeUser.uid,approvedAt:serverTimestamp(),updatedAt:serverTimestamp()});await loadTrainings();alert('Treinamento publicado.')}
