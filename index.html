@@ -121,6 +121,50 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 .training-hero-logo{position:relative;z-index:1;display:block;width:min(25%,210px);max-height:100px;height:auto;object-fit:contain;flex:0 0 auto;background:transparent;filter:brightness(0) invert(1)}
 @media(max-width:600px){.app-irmen-logo{width:104px;height:44px}.logohead{gap:10px}.training-hero{gap:14px}.training-hero-logo{width:112px;max-height:65px}}
 
+
+/* Layout institucional com navegação lateral */
+:root{--sidebar-width:238px;--navy:#101b25;--navy2:#172633;--gold:#f2bd18}
+body{background:#f3f6f9}
+#appShell{min-height:100vh}
+#appShell>header{position:sticky;top:0;z-index:50;margin-left:var(--sidebar-width);min-height:72px;padding:10px 26px;background:#111c26;border-bottom:2px solid var(--gold);box-shadow:0 3px 14px #10182018}
+#appShell>header .logohead{display:none}
+#appShell>header:before{content:"IRMEN  |  RELATORIOPRO";font-size:13px;font-weight:800;letter-spacing:.09em;color:#f6f8fa}
+#appShell>nav.tabs{position:fixed;z-index:60;left:0;top:0;bottom:0;width:var(--sidebar-width);height:100vh;overflow-y:auto;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:5px;padding:22px 12px 18px;background:linear-gradient(180deg,#101b25,#0b141c);border:0;border-right:1px solid #263440;box-shadow:5px 0 22px #0b172012}
+.sidebar-brand{display:flex;align-items:center;gap:12px;min-height:92px;padding:8px 10px 22px;margin-bottom:16px;border-bottom:1px solid #2a3945;color:#fff;font-size:13px;line-height:1.35;letter-spacing:.02em}
+.sidebar-brand img{width:82px;height:42px;object-fit:contain;filter:brightness(0) invert(1)}
+.sidebar-brand span{padding-left:11px;border-left:1px solid #81909b}
+.sidebar-brand strong{font-size:14px;color:#fff}
+#appShell>nav.tabs .tab{width:100%;min-height:48px;display:flex;align-items:center;text-align:left;padding:12px 14px;border-radius:7px;color:#d4dce3;background:transparent;font-size:13px;font-weight:600;border-left:3px solid transparent}
+#appShell>nav.tabs .tab:hover{background:#ffffff0d;color:#fff}
+#appShell>nav.tabs .tab.active{background:linear-gradient(90deg,#f2bd1828,#f2bd1808);color:#ffd33e;border-left-color:var(--gold);border-radius:6px}
+#appShell>nav.tabs #sessionInfo{margin-top:auto!important;padding:12px!important;background:#172633!important;color:#aebbc5!important;border-radius:8px;font-size:11px!important;overflow-wrap:anywhere}
+#appShell>main{margin-left:var(--sidebar-width);max-width:none;padding:24px 28px;min-height:calc(100vh - 72px)}
+#appShell .training-hero{position:relative;min-height:285px;padding:42px 44px;border:0;border-radius:0;margin:-24px -28px 22px;background:linear-gradient(90deg,rgba(5,13,20,.97) 0%,rgba(5,13,20,.83) 42%,rgba(5,13,20,.12) 100%),url("https://www.sanydobrasil.com/wp-content/uploads/2026/10/SANY-escavadeira-SY750H-1024x653.webp") center 48%/cover no-repeat;overflow:hidden}
+#appShell .training-hero:after{content:"";position:absolute;inset:auto 0 0;height:5px;background:var(--gold)}
+#appShell .training-hero-copy{max-width:610px}
+#appShell .training-hero h1{font-size:32px;letter-spacing:-.02em}
+#appShell .training-hero p{font-size:15px;max-width:420px;line-height:1.6}
+#appShell .training-hero-logo{width:190px;max-height:100px;filter:brightness(0) invert(1)}
+#appShell .training-card-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+#appShell .training-card{border-radius:10px;box-shadow:0 5px 18px #1d293910}
+#appShell .training-filters{background:#fff;box-shadow:0 3px 14px #1d293908}
+@media(max-width:1050px){#appShell .training-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ :root{--sidebar-width:0px}
+ #appShell>header{margin-left:0;padding:12px 14px;min-height:64px}
+ #appShell>header:before{font-size:11px}
+ #appShell>nav.tabs{position:sticky;top:0;width:100%;height:auto;max-height:none;flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:5px;padding:8px;background:#101b25}
+ .sidebar-brand{display:none}
+ #appShell>nav.tabs .tab{width:auto;min-width:max-content;min-height:40px;padding:9px 12px;border-left:0;border-bottom:2px solid transparent}
+ #appShell>nav.tabs .tab.active{border-left:0;border-bottom-color:var(--gold)}
+ #appShell>nav.tabs #sessionInfo{display:none}
+ #appShell>main{margin-left:0;padding:14px;min-height:calc(100vh - 110px)}
+ #appShell .training-hero{margin:-14px -14px 18px;min-height:235px;padding:26px 22px;background-position:58% center}
+ #appShell .training-hero-logo{width:100px}
+ #appShell .training-hero h1{font-size:24px}
+ #appShell .training-card-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -159,7 +203,8 @@ header{background:#20242b;color:white;padding:16px 22px;border-bottom:4px solid 
 </div>
 <div id="appShell" hidden>
 <header><div class="logohead"><img class="app-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button><button class="primary" id="saveTop">Salvar relatório</button><button class="light" id="printTop">Imprimir / PDF</button><button class="light" id="simulateBtn" type="button" hidden>Simular sistema</button><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir tutorial do sistema"><span class="help-dot">?</span><span>Ajuda</span></button></div></header>
-<nav class="tabs"><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><button class="tab" data-page="simulation" id="simulationTab" hidden>Simulação</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div></nav>
+<nav class="tabs">
+<div class="sidebar-brand"><img src="./Logo%20Irmen.webp" alt="IRMEN"><span>Central de<br><strong>Treinamentos</strong></span></div><button class="tab active" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button><button class="tab" data-page="simulation" id="simulationTab" hidden>Simulação</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div></nav>
 <main>
 <section class="page active" id="editor"><h1>Relatório técnico</h1><p class="muted">Preencha os dados do atendimento, adicione fotos e confira a prévia antes de imprimir.</p><div class="layout"><div>
 <div class="panel"><h3>1. Identificação</h3><div class="grid">
