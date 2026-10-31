@@ -1182,7 +1182,7 @@ const agendaDemoData=agendaDemoRows.map((r,i)=>{const m=String(r[3]||'').match(/
 function agendaRef(ownerUid,id){return doc(db,'users',ownerUid,'agenda',id)}
 function agendaDateLabel(v){if(!v)return 'Data não definida';const p=String(v).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:v}
 function agendaLocalISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function agendaCategoryOf(a){if(a.category)return a.category;const m=String(a.type||a.client||'').match(/^\s*([A-Z]{2,3})\s*-/);return m?m[1]:(a.type||'OUT')}
+function agendaCategoryOf(a){const known=['CLI','ATR','VRE','INT','REC','PRE','OUT','ONL','AUJ'];if(known.includes(String(a.category||'').toUpperCase()))return String(a.category).toUpperCase();const raw=String(a.type||a.client||'');const m=raw.match(/^\s*([A-Z]{2,3})\s*-/);if(m&&known.includes(m[1]))return m[1];const n=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(n.includes('trein'))return 'REC';if(n.includes('desloc'))return 'VRE';if(n.includes('feria')||n.includes('ausencia')||n.includes('compens'))return 'AUJ';if(n.includes('intern'))return 'INT';if(n.includes('online')||n.includes('onl'))return 'ONL';if(n.includes('prepar')||n.includes('planej'))return 'PRE';if(n.includes('cliente')||n.includes('atendimento')||n.includes('entrega')||n.includes('inspec'))return 'CLI';return 'OUT'}
 function agendaRoleEligible(u){
  const values=Object.entries(u||{}).filter(([key])=>/(role|cargo|perfil|funcao|função|position|title|tipo_usuario|tipousuario)/i.test(key)).map(([,value])=>value).flatMap(value=>Array.isArray(value)?value:[value]).filter(value=>typeof value==='string'&&value.trim()).map(value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
  return values.some(role=>role.includes('instrutor')||role.includes('consultor'));
@@ -1321,7 +1321,7 @@ $('agendaForm').addEventListener('submit',async e=>{
  const btn=$('agendaSaveBtn');btn.disabled=true;$('agendaFormStatus').textContent='Salvando compromisso...';
  try{
   const assigneeUid=$('agendaAssignee').value,person=userProfilesCache.find(u=>u.uid===assigneeUid);
-  if(!person||person.active===false||!agendaRoleEligible(person))throw new Error('Selecione um instrutor ou consultor ativo já cadastrado no sistema.');
+  const eligibleProfiles=userProfilesCache.filter(u=>u.active!==false&&agendaRoleEligible(u));if(!person||person.active===false||(eligibleProfiles.length>0&&!agendaRoleEligible(person)))throw new Error('Selecione um instrutor ou consultor ativo já cadastrado no sistema.');
   const oldId=$('agendaId').value,oldOwner=$('agendaOwnerUid').value,id=oldId||('ag-'+Date.now().toString(36)),category=$('agendaType').value;
   const data={id,date:$('agendaDate').value,time:$('agendaTime').value||'',client:$('agendaClient').value.trim(),location:$('agendaLocation').value.trim(),equipment:$('agendaEquipment').value.trim(),type:category,category,focus:$('agendaFocus').value.trim(),status:$('agendaStatus').value,notes:$('agendaNotes').value.trim(),assigneeUid,assigneeName:person.name||person.email||'Usuário',ownerUid:assigneeUid,updatedAt:new Date().toISOString(),updatedBy:activeUser.uid};
   if(!data.date||!data.client)throw new Error('Preencha pelo menos a data e a descrição da atividade.');
