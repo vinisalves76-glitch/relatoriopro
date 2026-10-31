@@ -770,7 +770,7 @@ body{background:#f3f6f9}
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Upload } from "https://esm.sh/tus-js-client@4";
+import { Upload } from "https://esm.sh/tus-js-client@4.3.1/lib.esm/browser/index.js";
 
 const SUPABASE_URL = "https://vwvesygsudhbaqmayhsz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw";
@@ -950,34 +950,53 @@ function onAuthStateChanged(_auth,callback) {
 function storageRef(_storage,path) { return {path}; }
 async function uploadBytes(ref,file,options={}) {
   const bucket="training-attachments-private";
-  // Uploads acima de 6 MB usam TUS (resumable/chunked), evitando uma única
-  // requisição HTTP grande e permitindo retomada em caso de instabilidade.
+  // Arquivos acima de 6 MB usam a implementação TUS exclusiva para navegador.
+  // O import aponta explicitamente para lib.esm/browser para impedir que o
+  // bundler/CDN selecione a implementação Node.js (Buffer/Readable).
   if(file.size>6*1024*1024){
     const {data:{session},error:sessionError}=await supabase.auth.getSession();
     if(sessionError)throw sessionError;
     if(!session?.access_token)throw new Error("Sessão expirada. Entre novamente para enviar arquivos.");
-    await new Promise((resolve,reject)=>{
-      const upload=new Upload(file,{
-        endpoint:SUPABASE_URL+"/storage/v1/upload/resumable",
-        retryDelays:[0,1000,3000,5000,10000],
-        chunkSize:6*1024*1024,
-        headers:{authorization:"Bearer "+session.access_token,apikey:SUPABASE_ANON_KEY,"x-upsert":"true"},
-        metadata:{
-          bucketName:bucket,
-          objectName:ref.path,
-          contentType:options.contentType||file.type||"application/octet-stream",
-          cacheControl:"3600",
-          metadata:JSON.stringify(options.customMetadata||{})
-        },
-        onError:reject,
-        onSuccess:resolve
+    const endpoint=SUPABASE_URL.replace(".supabase.co",".storage.supabase.co")+"/storage/v1/upload/resumable";
+    let upload=null;
+    try{
+      await new Promise((resolve,reject)=>{
+        upload=new Upload(file,{
+          endpoint,
+          retryDelays:[0,3000,5000,10000,20000],
+          chunkSize:6*1024*1024,
+          uploadDataDuringCreation:true,
+          removeFingerprintOnSuccess:true,
+          fingerprint:async()=> "relatoriopro:"+bucket+":"+ref.path+":"+file.size+":"+(file.lastModified||0),
+          headers:{authorization:"Bearer "+session.access_token,apikey:SUPABASE_ANON_KEY,"x-upsert":"true"},
+          metadata:{
+            bucketName:bucket,
+            objectName:ref.path,
+            contentType:options.contentType||file.type||"application/octet-stream",
+            cacheControl:"3600",
+            metadata:JSON.stringify(options.customMetadata||{})
+          },
+          onError:reject,
+          onProgress:(sent,total)=>{
+            const status=$("trainingFilesStatus");
+            if(status&&total)status.textContent="Enviando "+file.name+" · "+Math.round(sent/total*100)+"%";
+          },
+          onSuccess:resolve
+        });
+        upload.findPreviousUploads().then(previous=>{
+          if(previous.length)upload.resumeFromPreviousUpload(previous[0]);
+          upload.start();
+        }).catch(reject);
       });
-      upload.start();
-    });
+    }catch(error){
+      try{if(upload)await upload.abort(true)}catch(_){}
+      throw error;
+    }
     return {path:ref.path};
   }
   const {error}=await supabase.storage.from(bucket).upload(ref.path,file,{contentType:options.contentType,upsert:true});
-  if(error)throw error; return {path:ref.path};
+  if(error)throw error;
+  return {path:ref.path};
 }
 async function getDownloadURL(ref) {
   const {data,error}=await supabase.storage.from("training-attachments-private").createSignedUrl(ref.path,3600);
@@ -1074,7 +1093,7 @@ function trainingFileKind(file){
  const ext=(file.name.split('.').pop()||'').toLowerCase();
  return ({pdf:'PDF',ppt:'PowerPoint',pptx:'PowerPoint',doc:'Word',docx:'Word',xls:'Excel',xlsx:'Excel',jpg:'Imagem',jpeg:'Imagem',png:'Imagem',webp:'Imagem',mp4:'Vídeo'})[ext]||'Arquivo';
 }
-async function uploadTrainingFiles(trainingId){
+async function uploadTrainingFiles(trainingId,uploadedPaths=[]){
  const selected=Array.from($('trainingFiles').files||[]);
  if(!selected.length)return [];
  const allowed=/\.(pdf|ppt|pptx|doc|docx|xls|xlsx|jpg|jpeg|png|webp|mp4)$/i;
@@ -1087,8 +1106,14 @@ async function uploadTrainingFiles(trainingId){
   const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
   const path=activeUser.uid+'/'+trainingId+'/'+Date.now()+'-'+safeName;
   const fileRef=storageRef(storage,path);
-  await uploadBytes(fileRef,file,{contentType:file.type||'application/octet-stream',customMetadata:{trainingId,uploadedBy:activeUser.uid,originalName:file.name}});
-  uploaded.push({name:file.name,path,url:await getDownloadURL(fileRef),kind:trainingFileKind(file),size:file.size,contentType:file.type||''});
+  try{
+   await uploadBytes(fileRef,file,{contentType:file.type||'application/octet-stream',customMetadata:{trainingId,uploadedBy:activeUser.uid,originalName:file.name}});
+   uploadedPaths.push(path);
+   const url=await getDownloadURL(fileRef);
+   uploaded.push({name:file.name,path,url,kind:trainingFileKind(file),size:file.size,contentType:file.type||''});
+  }catch(error){
+   throw new Error('Arquivo "'+file.name+'" ('+(file.size/1024/1024).toFixed(1)+' MB): '+(error?.message||String(error)));
+  }
  }
  $('trainingFilesStatus').textContent=uploaded.length+' arquivo(s) anexado(s).';
  return uploaded;
@@ -1097,24 +1122,43 @@ let trainingWizardStep=0;
 function trainingWizardShow(step){trainingWizardStep=Math.max(0,Math.min(3,step));document.querySelectorAll('[data-training-step]').forEach((el,i)=>el.hidden=i!==trainingWizardStep);document.querySelectorAll('.training-step-line').forEach((el,i)=>el.classList.toggle('active',i<=trainingWizardStep));$('trainingWizardLabel').textContent=['Etapa 1 de 4 · Identificação','Etapa 2 de 4 · Classificação','Etapa 3 de 4 · Materiais','Etapa 4 de 4 · Revisão'][trainingWizardStep];$('trainingWizardPercent').textContent=((trainingWizardStep+1)*25)+'%';$('trainingWizardBack').disabled=trainingWizardStep===0;$('trainingWizardNext').hidden=trainingWizardStep===3;$('trainingSaveDraft').hidden=trainingWizardStep!==3;$('trainingSubmit').hidden=trainingWizardStep!==3;if(trainingWizardStep===3)trainingBuildReview()}
 function trainingValidateStep(step){const ids=step===0?['trainingTitle','trainingDescription','trainingEquipment','trainingDuration']:step===1?['trainingCategory','trainingLevel','trainingAudience','trainingKeywords']:[];for(const id of ids){const el=$(id);if(!el.value.trim()||(id==='trainingDuration'&&Number(el.value)<=0)){el.focus();alert('Preencha corretamente o campo obrigatório: '+(el.labels?.[0]?.textContent||id));return false}}if(step===0){const cover=$('trainingCover').files?.[0];if(!cover){$('trainingCover').focus();alert('A imagem de capa é obrigatória.');return false}if(!/^image\/(jpeg|png|webp)$/.test(cover.type)||cover.size>8*1024*1024){alert('A capa deve ser JPG, PNG ou WebP e ter no máximo 8 MB.');return false}}return true}
 function trainingBuildReview(){const cover=$('trainingCover').files?.[0],url=cover?URL.createObjectURL(cover):'';$('trainingReviewPreview').innerHTML='<div class="training-card" style="max-width:520px">'+(url?'<img class="training-card-cover" src="'+url+'" alt="Prévia da capa">':'')+'<div class="training-card-body"><span class="training-status draft">Pré-visualização</span><h3>'+trainingEscape($('trainingTitle').value)+'</h3><p class="training-description">'+trainingEscape($('trainingDescription').value)+'</p><div class="training-card-meta"><span>'+trainingEscape($('trainingEquipment').value)+'</span><span>'+trainingEscape($('trainingLevel').value)+'</span><span>'+trainingEscape($('trainingDuration').value)+' h</span></div><p class="training-meta">'+trainingEscape($('trainingCategory').value)+' • '+trainingEscape($('trainingAudience').value)+'</p><p class="training-meta">Palavras-chave: '+trainingEscape($('trainingKeywords').value)+'</p></div></div>'}
-async function uploadTrainingCover(trainingId){const file=$('trainingCover').files?.[0];if(!file)throw new Error('A imagem de capa é obrigatória.');const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),path=activeUser.uid+'/'+trainingId+'/cover-'+Date.now()+'-'+safeName;const ref=storageRef(storage,path);await uploadBytes(ref,file,{contentType:file.type||'image/jpeg',customMetadata:{trainingId,uploadedBy:activeUser.uid,originalName:file.name}});return path}
+async function uploadTrainingCover(trainingId,uploadedPaths=[]){const file=$('trainingCover').files?.[0];if(!file)throw new Error('A imagem de capa é obrigatória.');const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),path=activeUser.uid+'/'+trainingId+'/cover-'+Date.now()+'-'+safeName;const ref=storageRef(storage,path);await uploadBytes(ref,file,{contentType:file.type||'image/jpeg',customMetadata:{trainingId,uploadedBy:activeUser.uid,originalName:file.name}});uploadedPaths.push(path);return path}
 async function createTraining(status){
  if(!trainingCanCreate()){alert('Seu perfil não pode criar treinamentos.');return}
  if(!trainingValidateStep(0)||!trainingValidateStep(1))return;
  const title=$('trainingTitle').value.trim(),buttons=[$('trainingSaveDraft'),$('trainingSubmit')];buttons.forEach(b=>b.disabled=true);
- let trainingStage='criar registro do treinamento';
+ let trainingStage='criar registro do treinamento',trainingId=null,trainingRef=null;
+ const uploadedPaths=[];
  try{
-  const id=doc(collection(db,TRAININGS)).id,trainingRef=doc(db,TRAININGS,id);
+  trainingId=doc(collection(db,TRAININGS)).id;
+  trainingRef=doc(db,TRAININGS,trainingId);
   await setDoc(trainingRef,{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),equipment:$('trainingEquipment').value.trim(),level:$('trainingLevel').value,duration:Number($('trainingDuration').value),keywords:$('trainingKeywords').value.split(',').map(x=>x.trim()).filter(Boolean),coverPath:'',attachments:[],ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status:'draft',createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:2});
   trainingStage='enviar a capa';
-  const coverPath=await uploadTrainingCover(id);
+  const coverPath=await uploadTrainingCover(trainingId,uploadedPaths);
   trainingStage='enviar anexos';
-  const attachments=await uploadTrainingFiles(id);
+  const attachments=await uploadTrainingFiles(trainingId,uploadedPaths);
   trainingStage='concluir cadastro e enviar para aprovação';
   await updateDoc(trainingRef,{coverPath,attachments,status,updatedAt:serverTimestamp()});
+  // A gravação final foi concluída. Falha ao atualizar a listagem não deve
+  // informar incorretamente que o treinamento não foi enviado.
   ['trainingTitle','trainingCategory','trainingAudience','trainingDescription','trainingEquipment','trainingDuration','trainingLevel','trainingKeywords','trainingFiles','trainingCover'].forEach(id=>$(id).value='');$('trainingFilesStatus').textContent='';$('trainingCoverPreview').src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22100%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e9edf0%22/%3E%3C/svg%3E';trainingWizardShow(0);
-  await loadTrainings();alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.');
- }catch(e){$('trainingFilesStatus').textContent='';const detail=[e.message,e.statusCode?'HTTP '+e.statusCode:'',e.error?String(e.error):''].filter(Boolean).join(' | ');alert('Falha ao '+trainingStage+': '+detail)}
+  try{await loadTrainings()}catch(refreshError){console.error('Treinamento salvo, mas a listagem não atualizou:',refreshError)}
+  alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.');
+ }catch(e){
+  $('trainingFilesStatus').textContent='';
+  const detail=[e.message,e.statusCode?'HTTP '+e.statusCode:'',e.error?String(e.error):''].filter(Boolean).join(' | ');
+  let cleanupDetail='';
+  if(uploadedPaths.length){
+   const {error:removeError}=await supabase.storage.from('training-attachments-private').remove(uploadedPaths);
+   if(removeError)cleanupDetail=' Não foi possível limpar todos os arquivos enviados: '+removeError.message;
+  }
+  if(trainingRef&&!cleanupDetail){
+   try{await deleteDoc(trainingRef)}catch(cleanupError){cleanupDetail=' O rascunho '+trainingId+' permaneceu salvo para recuperação: '+cleanupError.message}
+  }else if(trainingRef&&cleanupDetail){
+   cleanupDetail+=' O rascunho '+trainingId+' foi mantido para não deixar os arquivos sem referência.';
+  }
+  alert('Falha ao '+trainingStage+': '+detail+cleanupDetail);
+ }
  finally{buttons.forEach(b=>b.disabled=false)}
 }
 async function loadTechnicalManuals(){const host=$('trainingManualsList');if(!host)return;try{const snap=await getDocs(collection(db,TRAININGS));const items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(m=>m.docType==='technical_manual').sort((a,b)=>String(b.updatedOn||'').localeCompare(String(a.updatedOn||'')));host.innerHTML=items.length?items.map(m=>'<article class="training-card"><div class="training-card-body"><span class="training-status published">Manual disponível</span><h3>'+trainingEscape(m.title)+'</h3>'+(m.description?'<p class="training-description">'+trainingEscape(m.description)+'</p>':'')+'<div class="manual-card-meta"><span>Equipamento: '+trainingEscape(m.equipment)+'</span><span>Atualizado em: '+trainingEscape(m.updatedOn)+'</span><span>Idioma: '+trainingEscape(m.language)+'</span></div><p class="training-meta">'+trainingEscape(m.fileName||'Documento')+' · '+trainingEscape(m.ownerName||'Equipe IRMEN')+'</p><div class="manual-card-actions"><button class="primary" type="button" data-manual-open="'+trainingEscape(m.id)+'">Abrir manual</button><button class="light" type="button" data-manual-download="'+trainingEscape(m.id)+'">Baixar manual</button>'+(trainingAdmin()?'<button class="danger" type="button" data-manual-delete="'+trainingEscape(m.id)+'">Excluir</button>':'')+'</div></div></article>').join(''):'<div class="training-empty">Nenhum manual compartilhado ainda. Utilize “Compartilhar manual” para adicionar o primeiro documento.</div>';window.__irmenTechnicalManuals=items}catch(e){host.innerHTML='<div class="training-empty">Não foi possível carregar os manuais: '+trainingEscape(e.message)+'</div>'}}
