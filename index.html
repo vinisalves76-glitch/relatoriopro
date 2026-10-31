@@ -1308,7 +1308,7 @@ async function loadAgenda(){
  if(!$('agendaMonth').value){const n=new Date();$('agendaMonth').value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')}
  refreshAgendaModeUI();
  const box=$('agendaList');box.innerHTML='<div class="empty">Carregando programação...</div>';
- if(agendaDemoMode){agendaCache=agendaDemoData.slice();$('agendaCategoryFilter').value='';$('agendaStatusFilter').value='';renderAgenda();return}
+ if(agendaDemoMode){agendaCache=agendaDemoData.slice();const demoNames=[...new Set(agendaDemoData.map(a=>String(a.assigneeName||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));$('agendaPersonFilter').innerHTML='<option value="">Todos os profissionais</option>'+demoNames.map(name=>'<option value="'+escapeHtml(name)+'">'+escapeHtml(name)+'</option>').join('');$('agendaPersonFilter').value='';$('agendaCategoryFilter').value='';$('agendaStatusFilter').value='';renderAgenda();return}
  try{
   if(isSystemAdmin())await refreshAgendaPeople();
   const snap=await getDocs(isSystemAdmin()?collectionGroup(db,'agenda'):collection(db,'users',activeUser.uid,'agenda'));
