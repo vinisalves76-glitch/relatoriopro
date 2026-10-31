@@ -1102,10 +1102,11 @@ async function createTraining(status){
  if(!trainingCanCreate()){alert('Seu perfil não pode criar treinamentos.');return}
  if(!trainingValidateStep(0)||!trainingValidateStep(1))return;
  const title=$('trainingTitle').value.trim(),buttons=[$('trainingSaveDraft'),$('trainingSubmit')];buttons.forEach(b=>b.disabled=true);
+ let trainingStage='criar registro do treinamento';
  try{
   const id=doc(collection(db,TRAININGS)).id,trainingRef=doc(db,TRAININGS,id);
   await setDoc(trainingRef,{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),equipment:$('trainingEquipment').value.trim(),level:$('trainingLevel').value,duration:Number($('trainingDuration').value),keywords:$('trainingKeywords').value.split(',').map(x=>x.trim()).filter(Boolean),coverPath:'',attachments:[],ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status:'draft',createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:2});
-  let trainingStage='enviar a capa';
+  trainingStage='enviar a capa';
   const coverPath=await uploadTrainingCover(id);
   trainingStage='enviar anexos';
   const attachments=await uploadTrainingFiles(id);
@@ -1113,7 +1114,7 @@ async function createTraining(status){
   await updateDoc(trainingRef,{coverPath,attachments,status,updatedAt:serverTimestamp()});
   ['trainingTitle','trainingCategory','trainingAudience','trainingDescription','trainingEquipment','trainingDuration','trainingLevel','trainingKeywords','trainingFiles','trainingCover'].forEach(id=>$(id).value='');$('trainingFilesStatus').textContent='';$('trainingCoverPreview').src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22100%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e9edf0%22/%3E%3C/svg%3E';trainingWizardShow(0);
   await loadTrainings();alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.');
- }catch(e){$('trainingFilesStatus').textContent='';alert('Falha ao '+(typeof trainingStage==='string'?trainingStage:'salvar o treinamento')+': '+e.message)}
+ }catch(e){$('trainingFilesStatus').textContent='';const detail=[e.message,e.statusCode?'HTTP '+e.statusCode:'',e.error?String(e.error):''].filter(Boolean).join(' | ');alert('Falha ao '+trainingStage+': '+detail)}
  finally{buttons.forEach(b=>b.disabled=false)}
 }
 async function loadTechnicalManuals(){const host=$('trainingManualsList');if(!host)return;try{const snap=await getDocs(collection(db,TRAININGS));const items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(m=>m.docType==='technical_manual').sort((a,b)=>String(b.updatedOn||'').localeCompare(String(a.updatedOn||'')));host.innerHTML=items.length?items.map(m=>'<article class="training-card"><div class="training-card-body"><span class="training-status published">Manual disponível</span><h3>'+trainingEscape(m.title)+'</h3>'+(m.description?'<p class="training-description">'+trainingEscape(m.description)+'</p>':'')+'<div class="manual-card-meta"><span>Equipamento: '+trainingEscape(m.equipment)+'</span><span>Atualizado em: '+trainingEscape(m.updatedOn)+'</span><span>Idioma: '+trainingEscape(m.language)+'</span></div><p class="training-meta">'+trainingEscape(m.fileName||'Documento')+' · '+trainingEscape(m.ownerName||'Equipe IRMEN')+'</p><div class="manual-card-actions"><button class="primary" type="button" data-manual-open="'+trainingEscape(m.id)+'">Abrir manual</button><button class="light" type="button" data-manual-download="'+trainingEscape(m.id)+'">Baixar manual</button>'+(trainingAdmin()?'<button class="danger" type="button" data-manual-delete="'+trainingEscape(m.id)+'">Excluir</button>':'')+'</div></div></article>').join(''):'<div class="training-empty">Nenhum manual compartilhado ainda. Utilize “Compartilhar manual” para adicionar o primeiro documento.</div>';window.__irmenTechnicalManuals=items}catch(e){host.innerHTML='<div class="training-empty">Não foi possível carregar os manuais: '+trainingEscape(e.message)+'</div>'}}
