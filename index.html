@@ -940,18 +940,25 @@ async function createUserWithEmailAndPassword(_auth,email,password) {
   return {user:normalizeUser(data.user)};
 }
 function onAuthStateChanged(_auth,callback) {
-  // Cada evento recebe uma versão. Se outro evento chegar antes do despacho,
-  // o callback antigo é descartado (ex.: INITIAL_SESSION null seguido de SIGNED_IN).
+  // Descarta callbacks antigos quando chega um evento de autenticação mais novo.
   let authEventVersion=0;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
     const nextUser=normalizeUser(session?.user);
-    // Um INITIAL_SESSION vazio pode chegar durante um login manual. Nesse caso,
-    // não apagar o usuário que signInWithPassword acabou de confirmar.
+    // Guarda o número da tentativa no momento em que o evento foi recebido.
+    // Assim, um INITIAL_SESSION null agendado antes do clique em Entrar também
+    // não consegue derrubar a sessão se seu setTimeout executar depois do login.
+    const loginAttemptAtEvent=manualLoginAttempt;
+    const ignoreEmptyEvent= !nextUser && manualLoginRequested;
     if(nextUser||!manualLoginRequested)currentSupabaseUser=nextUser;
     const eventVersion=++authEventVersion;
-    // O callback retorna imediatamente; consultas são executadas fora do lock do Auth.
+
+    // O listener retorna imediatamente; consultas Supabase ocorrem fora do callback.
     setTimeout(()=>{
       if(eventVersion!==authEventVersion)return;
+      if(!nextUser && (ignoreEmptyEvent || manualLoginRequested || loginAttemptAtEvent!==manualLoginAttempt)){
+        console.info('[RelatorioPro] Evento de sessão vazio descartado por pertencer a uma inicialização anterior ao login manual.');
+        return;
+      }
       callback(nextUser);
     },0);
   });
@@ -1210,11 +1217,15 @@ function friendlyAuthError(error){
  };
  const message=String(error?.message||'');if(/invalid login credentials/i.test(message))return 'E-mail ou senha incorretos.';if(/email not confirmed/i.test(message))return 'Confirme seu e-mail antes de entrar.';if(/user already registered/i.test(message))return 'Este e-mail já possui uma conta.';if(/row-level security|permission denied/i.test(message))return 'Acesso bloqueado pelas permissões do Supabase. Confira as políticas RLS.';return codes[error?.code] || message || 'Ocorreu um erro. Tente novamente.';
 }
-// Um único handler de login evita duas autenticações concorrentes e mudanças de estado em sequência.
+// Um único handler de login evita autenticações concorrentes.
+// O contador permite descartar INITIAL_SESSION null que tenha sido agendado
+// antes ou durante uma tentativa de login manual, mas executado depois dela.
 let manualLoginRequested=false;
+let manualLoginAttempt=0;
 $('authForm').addEventListener('submit',async e=>{
  e.preventDefault();
  if($('authSubmit').disabled)return;
+ manualLoginAttempt++;
  manualLoginRequested=true;
  setAuthError('');
  $('authSubmit').disabled=true;
