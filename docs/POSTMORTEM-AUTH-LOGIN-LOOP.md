@@ -124,3 +124,83 @@ Nunca solicitar senha, tokens ou chaves. Se necessário, pedir captura da mensag
 - [ ] Confirmar que a regressão não ocorre mais.
 
 **Atenção:** não declarar o problema resolvido antes de completar os testes pendentes. Não promover para produção sem autorização expressa.
+
+
+## 8. Comparação direta: produção funcional × desenvolvimento
+
+Comparação realizada em 2026-11-03 entre:
+
+- Produção: `1a5f2590c712e5b7e44d06520692bd600f818503`.
+- Desenvolvimento: branch `supabase-runtime-switch`.
+
+### O que permaneceu igual
+
+- URL e chave pública do mesmo projeto Supabase.
+- Criação do cliente principal com `createClient(SUPABASE_URL, SUPABASE_ANON_KEY)`.
+- Cliente separado de criação de usuário com persistência desativada.
+- `normalizeUser()`.
+- `signInWithEmailAndPassword()`, que chama `supabase.auth.signInWithPassword()`.
+- Consulta de perfil via `getDoc(doc(db,'userProfiles',uid))`, traduzida para `profiles.select('*').eq('id',uid).maybeSingle()`.
+- Handler de submit do formulário de login.
+
+### Diferenças relevantes encontradas
+
+**A. Listener de autenticação**
+
+Produção chama `callback(currentSupabaseUser)` diretamente dentro do callback de `supabase.auth.onAuthStateChange`.
+
+Desenvolvimento passou a:
+- deduplicar eventos apenas pelo UID;
+- descartar eventos sucessivos quando o UID não muda;
+- agendar o callback com `setTimeout(...,0)`.
+
+Essa mudança altera a ordem e o tratamento dos eventos de autenticação. É uma diferença de comportamento relevante e deve ser isolada em teste A/B controlado. A implementação da produção é a referência conhecida como funcional, mas executar consultas assíncronas dentro do callback do Supabase pode contrariar a recomendação do SDK e provocar deadlock. Portanto, não copiar cegamente sem teste.
+
+**B. Novo controle single-flight em initializeUser**
+
+Desenvolvimento adicionou:
+```js
+if (initializedUserId === uid || initializingUserId === uid) return;
+```
+
+Também adicionou contador de execução e verificações de UID para invalidar tarefas antigas. Produção não possui esse bloqueio.
+
+**C. Saída antecipada sem liberar o bloqueio**
+
+No desenvolvimento, existe o caminho:
+```js
+if(currentProfile.mustChangePassword){
+  $('authGate').hidden=true;
+  $('appShell').hidden=true;
+  $('changePasswordGate').hidden=false;
+  return;
+}
+```
+
+Esse retorno ocorre antes de:
+```js
+if(run===authInitializationRun){
+  initializedUserId=uid;
+  initializingUserId=null;
+}
+```
+
+Consequência confirmada por inspeção estática: `initializingUserId` permanece com o UID. Após a troca obrigatória de senha, o código chama `initializeUser(auth.currentUser)` novamente, mas a proteção single-flight pode retornar imediatamente por encontrar o mesmo UID ainda marcado como inicializando. Isso pode impedir a conclusão do fluxo após a troca de senha.
+
+**D. Tratamento de falhas**
+
+Produção mostra novamente o login em qualquer erro capturado na inicialização. Desenvolvimento mantém a sessão e mostra uma tela `startupErrorGate`. Essa diferença muda a apresentação do erro, mas não prova que seja a causa do login não avançar.
+
+### Conclusão da comparação
+
+A autenticação primária (credenciais e cliente Supabase) não apresenta diferença textual relevante. As mudanças de maior risco estão no listener de eventos e no novo estado single-flight de `initializeUser`.
+
+O defeito do caminho `mustChangePassword` está confirmado, mas só explica a falha quando a conta passa por esse caminho. Para o login normal, a principal suspeita a testar é a interação entre deduplicação por UID, agendamento com `setTimeout` e o controle single-flight.
+
+### Próxima investigação recomendada — sem tocar em produção
+
+1. Reproduzir com a mesma conta de teste na Preview e verificar se `mustChangePassword` está ativo no perfil.
+2. Registrar eventos Auth com nome do evento e UID truncado, sem tokens.
+3. Registrar entrada/saída de `initializeUser`, valor de `authInitializationRun`, `initializingUserId` e resultado da leitura de `profiles`.
+4. Em Preview isolada, testar uma alteração por vez: primeiro corrigir a liberação do single-flight no caminho `mustChangePassword`; depois comparar o listener com a implementação de produção.
+5. Não promover qualquer mudança para produção sem autorização expressa e sem teste funcional com a conta afetada.
