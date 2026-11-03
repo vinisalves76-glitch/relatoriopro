@@ -32,36 +32,64 @@ function buildUserPrompt(report) {
 }
 
 async function generateWithGemini(report, apiKey) {
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey), {
+  const schema = {
+    type: "object",
+    properties: {
+      objective: { type: "string" },
+      observations: { type: "string" },
+      activities: { type: "string" },
+      results: { type: "string" },
+      conclusion: { type: "string" }
+    },
+    required: ["objective", "observations", "activities", "results", "conclusion"]
+  };
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ role: "user", parts: [{ text: buildUserPrompt(report) }] }],
-      generationConfig: { temperature: 0.2, responseMimeType: "application/json" }
+      model: "gemini-3.8-flash",
+      store: false,
+      system_instruction: SYSTEM_PROMPT,
+      input: buildUserPrompt(report),
+      response_format: { type: "text", mime_type: "application/json", schema }
     })
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.message || "Falha na geração com Gemini.");
-  const content = result.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "{}";
+  if (!response.ok) throw new Error(result.error?.message || "Falha na geração com Gemini 3.8 Flash.");
+  const content = (result.steps || [])
+    .filter(step => step.type === "model_output")
+    .flatMap(step => step.content || [])
+    .filter(item => item.type === "text")
+    .map(item => item.text || "")
+    .join("");
+  if (!content) throw new Error("Gemini 3.8 Flash não retornou conteúdo para o relatório.");
   return JSON.parse(content);
 }
 
 async function transcribeWithGemini(audio, mime, apiKey) {
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey), {
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [
-        { inline_data: { mime_type: mime, data: audio.toString("base64") } },
-        { text: "Transcreva fielmente este áudio em português brasileiro. Retorne somente o texto falado, sem resumir, corrigir ou acrescentar informações." }
-      ] }],
-      generationConfig: { temperature: 0.1 }
+      model: "gemini-3.8-flash",
+      store: false,
+      input: [
+        { type: "text", text: "Transcreva fielmente este áudio em português brasileiro. Retorne somente o texto falado, sem resumir, corrigir ou acrescentar informações." },
+        { type: "audio", data: audio.toString("base64"), mime_type: mime }
+      ]
     })
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.message || "Não foi possível transcrever o áudio com Gemini.");
-  return result.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim() || "";
+  if (!response.ok) throw new Error(result.error?.message || "Não foi possível transcrever o áudio com Gemini 3.8 Flash.");
+  const text = (result.steps || [])
+    .filter(step => step.type === "model_output")
+    .flatMap(step => step.content || [])
+    .filter(item => item.type === "text")
+    .map(item => item.text || "")
+    .join("")
+    .trim();
+  if (!text) throw new Error("Gemini 3.8 Flash não retornou a transcrição do áudio.");
+  return text;
 }
 
 function normalizeFields(fields) {
