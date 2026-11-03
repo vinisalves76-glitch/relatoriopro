@@ -1625,7 +1625,18 @@ async function initializeUser(user){
   panel.hidden=false;
 }
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
-onAuthStateChanged(auth,user=>{if(!user){activeUser=null;currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
+onAuthStateChanged(auth,user=>{
+ if(!user){
+  // REGRA DE PREVENÇÃO DE LOOP: não limpar somente a interface no evento null.
+  // Uma inicialização anterior pode estar aguardando uma consulta Supabase.
+  // initializeUser(null) invalida essa execução e libera initializingUserId,
+  // impedindo que a tentativa antiga bloqueie o próximo login da mesma conta.
+  manualLoginRequested=false;
+  initializeUser(null);
+  return;
+ }
+ initializeUser(user).catch(error=>{console.error('[RelatorioPro] Erro não tratado no listener de autenticação:',error);setAuthError(friendlyAuthError(error))});
+});
 
 /* Guia interativo: aparece no primeiro acesso por usuário e pode ser reaberto pelo botão Ajuda. */
 let tourSteps=[],tourIndex=0,tourSpotlight=null;
