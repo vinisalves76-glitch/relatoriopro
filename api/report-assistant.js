@@ -31,21 +31,6 @@ function buildUserPrompt(report) {
     "\nRelato livre: " + String(report.notes || "");
 }
 
-async function generateWithOpenAI(report, apiKey) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "gpt-4.1-mini", temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: buildUserPrompt(report) }]
-    })
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.message || "Falha na geração com GPT.");
-  return JSON.parse(result.choices?.[0]?.message?.content || "{}");
-}
-
 async function generateWithGemini(report, apiKey) {
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey), {
     method: "POST",
@@ -60,20 +45,6 @@ async function generateWithGemini(report, apiKey) {
   if (!response.ok) throw new Error(result.error?.message || "Falha na geração com Gemini.");
   const content = result.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "{}";
   return JSON.parse(content);
-}
-
-async function transcribeWithOpenAI(audio, mime, apiKey) {
-  const extensions = { "audio/webm": "webm", "audio/mp4": "m4a", "audio/mpeg": "mp3", "audio/wav": "wav", "audio/ogg": "ogg" };
-  const form = new FormData();
-  form.append("file", new Blob([audio], { type: mime }), "relato." + extensions[mime]);
-  form.append("model", "gpt-transcribe");
-  form.append("language", "pt");
-  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST", headers: { Authorization: "Bearer " + apiKey }, body: form
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.message || "Não foi possível transcrever o áudio com GPT.");
-  return result.text || "";
 }
 
 async function transcribeWithGemini(audio, mime, apiKey) {
@@ -105,7 +76,6 @@ module.exports = async function handler(req, res) {
   try {
     await authenticate(req);
     const body = req.body || {};
-    const openAIKey = process.env.OPENAI_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
 
     if (body.action === "transcribe") {
@@ -116,24 +86,16 @@ module.exports = async function handler(req, res) {
       if (!supported.includes(mime)) return res.status(400).json({ error: "Formato não suportado. Grave em WebM, MP4, MP3, WAV ou OGG." });
       const audio = Buffer.from(encoded, "base64");
       if (!audio.length || audio.length > 2.5 * 1024 * 1024) return res.status(400).json({ error: "Áudio vazio ou acima do limite de 2,5 MB." });
-      if (geminiKey) {
-        try { return res.status(200).json({ text: await transcribeWithGemini(audio, mime, geminiKey), provider: "Gemini" }); }
-        catch (error) { if (!openAIKey) throw error; console.warn("Gemini transcription failed; trying OpenAI:", error.message); }
-      }
-      if (openAIKey) return res.status(200).json({ text: await transcribeWithOpenAI(audio, mime, openAIKey), provider: "GPT" });
-      return res.status(503).json({ error: "Configure GEMINI_API_KEY ou OPENAI_API_KEY nas variáveis de ambiente da Vercel." });
+      if (!geminiKey) return res.status(503).json({ error: "GEMINI_API_KEY não está configurada na Vercel para este ambiente." });
+      const text = await transcribeWithGemini(audio, mime, geminiKey);
+      return res.status(200).json({ text, provider: "Gemini" });
     }
 
     if (body.action !== "generate") return res.status(400).json({ error: "Ação não reconhecida." });
     const report = body.report || {};
-    let fields, provider;
-    if (geminiKey) {
-      try { fields = await generateWithGemini(report, geminiKey); provider = "Gemini"; }
-      catch (error) { if (!openAIKey) throw error; console.warn("Gemini generation failed; trying OpenAI:", error.message); }
-    }
-    if (!fields && openAIKey) { fields = await generateWithOpenAI(report, openAIKey); provider = "GPT"; }
-    if (!fields) return res.status(503).json({ error: "Configure GEMINI_API_KEY ou OPENAI_API_KEY nas variáveis de ambiente da Vercel." });
-    return res.status(200).json({ fields: normalizeFields(fields), provider });
+    if (!geminiKey) return res.status(503).json({ error: "GEMINI_API_KEY não está configurada na Vercel para este ambiente." });
+    const fields = await generateWithGemini(report, geminiKey);
+    return res.status(200).json({ fields: normalizeFields(fields), provider: "Gemini" });
   } catch (error) {
     console.error("report-assistant:", error);
     return res.status(400).json({ error: error.message || "Falha ao processar a solicitação." });
