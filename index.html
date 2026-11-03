@@ -945,7 +945,9 @@ function onAuthStateChanged(_auth,callback) {
   let authEventVersion=0;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
     const nextUser=normalizeUser(session?.user);
-    currentSupabaseUser=nextUser;
+    // Um INITIAL_SESSION vazio pode chegar durante um login manual. Nesse caso,
+    // não apagar o usuário que signInWithPassword acabou de confirmar.
+    if(nextUser||!manualLoginRequested)currentSupabaseUser=nextUser;
     const eventVersion=++authEventVersion;
     // O callback retorna imediatamente; consultas são executadas fora do lock do Auth.
     setTimeout(()=>{
