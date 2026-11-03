@@ -940,25 +940,35 @@ async function createUserWithEmailAndPassword(_auth,email,password) {
   return {user:normalizeUser(data.user)};
 }
 function onAuthStateChanged(_auth,callback) {
-  // Descarta callbacks antigos quando chega um evento de autenticação mais novo.
+  // Só um SIGNED_OUT explícito pode encerrar uma sessão já autenticada.
+  // INITIAL_SESSION sem usuário pode ser entregue tardiamente pelo Supabase;
+  // tratá-lo como logout causa o flash de tela branca e retorno ao login.
   let authEventVersion=0;
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
     const nextUser=normalizeUser(session?.user);
-    // Guarda o número da tentativa no momento em que o evento foi recebido.
-    // Assim, um INITIAL_SESSION null agendado antes do clique em Entrar também
-    // não consegue derrubar a sessão se seu setTimeout executar depois do login.
     const loginAttemptAtEvent=manualLoginAttempt;
-    const ignoreEmptyEvent= !nextUser && manualLoginRequested;
-    if(nextUser||!manualLoginRequested)currentSupabaseUser=nextUser;
-    const eventVersion=++authEventVersion;
 
-    // O listener retorna imediatamente; consultas Supabase ocorrem fora do callback.
+    // Eventos sem usuário que não sejam SIGNED_OUT são apenas estados de
+    // inicialização/recuperação. Não apagam o usuário atual nem invalidam
+    // callbacks SIGNED_IN já agendados.
+    if(!nextUser && event!=="SIGNED_OUT"){
+      console.info('[RelatorioPro] Evento vazio ignorado:',event);
+      return;
+    }
+
+    // Um SIGNED_OUT antigo não pode cancelar uma tentativa de login mais nova.
+    if(!nextUser && (manualLoginRequested || loginAttemptAtEvent!==manualLoginAttempt)){
+      console.info('[RelatorioPro] SIGNED_OUT antigo ignorado durante login manual.');
+      return;
+    }
+
+    if(nextUser)currentSupabaseUser=nextUser;
+    else currentSupabaseUser=null;
+
+    const eventVersion=++authEventVersion;
     setTimeout(()=>{
       if(eventVersion!==authEventVersion)return;
-      if(!nextUser && (ignoreEmptyEvent || manualLoginRequested || loginAttemptAtEvent!==manualLoginAttempt)){
-        console.info('[RelatorioPro] Evento de sessão vazio descartado por pertencer a uma inicialização anterior ao login manual.');
-        return;
-      }
+      if(!nextUser && (manualLoginRequested || loginAttemptAtEvent!==manualLoginAttempt))return;
       callback(nextUser);
     },0);
   });
