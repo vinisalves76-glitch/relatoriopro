@@ -940,11 +940,19 @@ async function createUserWithEmailAndPassword(_auth,email,password) {
   return {user:normalizeUser(data.user)};
 }
 function onAuthStateChanged(_auth,callback) {
-  // O Supabase já emite INITIAL_SESSION ao registrar o listener.
-  // Consultar getSession() em paralelo dispara duas inicializações concorrentes
-  // e pode fazer uma delas ocultar o app depois que a outra conclui o login.
+  // REGRA PERMANENTE DE AUTENTICAÇÃO:
+  // 1) Não chamar getSession() aqui: INITIAL_SESSION já entrega a sessão inicial.
+  // 2) Entregar somente mudanças reais de usuário (UID), ignorando TOKEN_REFRESHED
+  //    e outros eventos repetidos da mesma conta para não reinicializar a Home.
+  // 3) initializeUser também possui proteção single-flight como segunda barreira.
+  let hasDeliveredState=false;
+  let deliveredUid=null;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
     currentSupabaseUser=normalizeUser(session?.user);
+    const nextUid=currentSupabaseUser?.uid||null;
+    if(hasDeliveredState&&nextUid===deliveredUid)return;
+    hasDeliveredState=true;
+    deliveredUid=nextUid;
     callback(currentSupabaseUser);
   });
   return ()=>subscription.unsubscribe();
