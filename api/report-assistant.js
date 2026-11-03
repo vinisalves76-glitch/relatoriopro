@@ -6,7 +6,7 @@ async function authenticate(req) {
   if (!authorization.startsWith("Bearer ")) throw new Error("Faça login para utilizar o assistente.");
   const response = await fetch(SUPABASE_URL + "/auth/v1/user", {
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: authorization },
-    signal: AbortSignal.timeout(10000)
+    signal: AbortSignal.timeout(8000)
   });
   if (!response.ok) throw new Error("Sessão inválida ou expirada. Entre novamente.");
   return response.json();
@@ -48,7 +48,7 @@ async function requestGemini(payload, apiKey, model) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({ ...payload, model }),
-      signal: AbortSignal.timeout(20000)
+      signal: AbortSignal.timeout(16000)
     });
   } catch (cause) {
     const error = new Error(cause?.name === "TimeoutError" || cause?.name === "AbortError"
@@ -113,7 +113,7 @@ async function generateWithGemini(report, apiKey) {
     response_format: { type: "text", mime_type: "application/json", schema: reportSchema() }
   };
   let lastError;
-  for (const model of [PRIMARY_MODEL, FALLBACK_MODEL]) {
+  for (const model of [PRIMARY_MODEL]) {
     try {
       const result = await requestGemini(payload, apiKey, model);
       return { fields: parseFields(extractGeminiText(result), "Gemini"), model, provider: "Gemini" };
@@ -210,8 +210,6 @@ module.exports = async function handler(req, res) {
   try {
     await authenticate(req);
     const body = req.body || {};
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
-
     if (body.action !== "generate") return res.status(400).json({ error: "Ação não reconhecida." });
     const report = body.report || {};
     const generated = await generateReport(report);
