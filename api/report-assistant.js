@@ -116,23 +116,23 @@ module.exports = async function handler(req, res) {
       if (!supported.includes(mime)) return res.status(400).json({ error: "Formato não suportado. Grave em WebM, MP4, MP3, WAV ou OGG." });
       const audio = Buffer.from(encoded, "base64");
       if (!audio.length || audio.length > 2.5 * 1024 * 1024) return res.status(400).json({ error: "Áudio vazio ou acima do limite de 2,5 MB." });
-      if (openAIKey) {
-        try { return res.status(200).json({ text: await transcribeWithOpenAI(audio, mime, openAIKey), provider: "GPT" }); }
-        catch (error) { if (!geminiKey) throw error; console.warn("GPT transcription failed; trying Gemini:", error.message); }
+      if (geminiKey) {
+        try { return res.status(200).json({ text: await transcribeWithGemini(audio, mime, geminiKey), provider: "Gemini" }); }
+        catch (error) { if (!openAIKey) throw error; console.warn("Gemini transcription failed; trying OpenAI:", error.message); }
       }
-      if (geminiKey) return res.status(200).json({ text: await transcribeWithGemini(audio, mime, geminiKey), provider: "Gemini" });
-      return res.status(503).json({ error: "Configure OPENAI_API_KEY ou GEMINI_API_KEY nas variáveis de ambiente da Vercel." });
+      if (openAIKey) return res.status(200).json({ text: await transcribeWithOpenAI(audio, mime, openAIKey), provider: "GPT" });
+      return res.status(503).json({ error: "Configure GEMINI_API_KEY ou OPENAI_API_KEY nas variáveis de ambiente da Vercel." });
     }
 
     if (body.action !== "generate") return res.status(400).json({ error: "Ação não reconhecida." });
     const report = body.report || {};
     let fields, provider;
-    if (openAIKey) {
-      try { fields = await generateWithOpenAI(report, openAIKey); provider = "GPT"; }
-      catch (error) { if (!geminiKey) throw error; console.warn("GPT generation failed; trying Gemini:", error.message); }
+    if (geminiKey) {
+      try { fields = await generateWithGemini(report, geminiKey); provider = "Gemini"; }
+      catch (error) { if (!openAIKey) throw error; console.warn("Gemini generation failed; trying OpenAI:", error.message); }
     }
-    if (!fields && geminiKey) { fields = await generateWithGemini(report, geminiKey); provider = "Gemini"; }
-    if (!fields) return res.status(503).json({ error: "Configure OPENAI_API_KEY ou GEMINI_API_KEY nas variáveis de ambiente da Vercel." });
+    if (!fields && openAIKey) { fields = await generateWithOpenAI(report, openAIKey); provider = "GPT"; }
+    if (!fields) return res.status(503).json({ error: "Configure GEMINI_API_KEY ou OPENAI_API_KEY nas variáveis de ambiente da Vercel." });
     return res.status(200).json({ fields: normalizeFields(fields), provider });
   } catch (error) {
     console.error("report-assistant:", error);
