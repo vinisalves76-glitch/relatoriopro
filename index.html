@@ -933,10 +933,7 @@ async function signInWithEmailAndPassword(_auth,email,password) {
 async function signOut() {
   const {error}=await supabase.auth.signOut();
   if(error)throw error;
-  currentSupabaseUser=null;
-  // O encerramento visual é explícito e controlado pelo app; não depende
-  // do evento assíncrono SIGNED_OUT do listener do Supabase.
-  await initializeUser(null);
+  // O evento SIGNED_OUT é a única fonte de transição visual do encerramento.
 }
 async function updatePassword(user,password) { const {data,error}=await supabase.auth.updateUser({password}); if(error)throw error; currentSupabaseUser=normalizeUser(data.user); return data; }
 async function sendPasswordResetEmail(_auth,email) { const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin}); if(error)throw error; }
@@ -947,37 +944,12 @@ async function createUserWithEmailAndPassword(_auth,email,password) {
   return {user:normalizeUser(data.user)};
 }
 function onAuthStateChanged(_auth,callback) {
-  // Só um SIGNED_OUT explícito pode encerrar uma sessão já autenticada.
-  // INITIAL_SESSION sem usuário pode ser entregue tardiamente pelo Supabase;
-  // tratá-lo como logout causa o flash de tela branca e retorno ao login.
-  let authEventVersion=0;
+  // O Supabase é a fonte de verdade da sessão. Não atrasamos nem descartamos
+  // eventos: a inicialização é protegida por single-flight em initializeUser().
   const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
     const nextUser=normalizeUser(session?.user);
-    const loginAttemptAtEvent=manualLoginAttempt;
-
-    // Eventos sem usuário que não sejam SIGNED_OUT são apenas estados de
-    // inicialização/recuperação. Não apagam o usuário atual nem invalidam
-    // callbacks SIGNED_IN já agendados.
-    if(!nextUser && event!=="SIGNED_OUT"){
-      console.info('[RelatorioPro] Evento vazio ignorado:',event);
-      return;
-    }
-
-    // Um SIGNED_OUT antigo não pode cancelar uma tentativa de login mais nova.
-    if(!nextUser && (manualLoginRequested || loginAttemptAtEvent!==manualLoginAttempt)){
-      console.info('[RelatorioPro] SIGNED_OUT antigo ignorado durante login manual.');
-      return;
-    }
-
-    if(nextUser)currentSupabaseUser=nextUser;
-    else currentSupabaseUser=null;
-
-    const eventVersion=++authEventVersion;
-    setTimeout(()=>{
-      if(eventVersion!==authEventVersion)return;
-      if(!nextUser && (manualLoginRequested || loginAttemptAtEvent!==manualLoginAttempt))return;
-      callback(nextUser);
-    },0);
+    currentSupabaseUser=nextUser;
+    callback(nextUser,event);
   });
   return ()=>subscription.unsubscribe();
 }
@@ -1613,7 +1585,28 @@ $('search').addEventListener('input',renderSaved);$('filter').addEventListener('
 
 $('logoutBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){alert(friendlyAuthError(e))}});
 let authInitializationRun=0,initializingUserId=null,initializedUserId=null;
-async function initializeUser(user){
+const initializationPromises=new Map();
+
+// Todas as origens (login manual, restauração de sessão e refresh de token)
+// compartilham a mesma inicialização por UID. Chamadas concorrentes aguardam
+// a mesma Promise em vez de iniciar carregamentos paralelos ou retornar cedo.
+function initializeUser(user){
+ const uid=user?.id||user?.uid||null;
+ if(!user){
+  initializationPromises.clear();
+  return initializeUserOnce(null);
+ }
+ if(initializedUserId===uid)return Promise.resolve();
+ const pending=initializationPromises.get(uid);
+ if(pending)return pending;
+ const promise=initializeUserOnce(user);
+ initializationPromises.set(uid,promise);
+ promise.finally(()=>{
+  if(initializationPromises.get(uid)===promise)initializationPromises.delete(uid);
+ }).catch(()=>{});
+ return promise;
+}
+async function initializeUserOnce(user){
  const uid=user?.id||user?.uid||null;
  if(!user){
   authInitializationRun++;
@@ -1629,8 +1622,6 @@ async function initializeUser(user){
   if(startupPanel)startupPanel.hidden=true;
   return;
  }
- if(initializedUserId===uid||initializingUserId===uid)return;
-
  const run=++authInitializationRun;
  initializingUserId=uid;
  initializedUserId=null;
@@ -1749,18 +1740,17 @@ async function initializeUser(user){
  }
 }
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
-onAuthStateChanged(auth,user=>{
+onAuthStateChanged(auth,(user,event)=>{
  if(!user){
-  // Estados vazios e SIGNED_OUT do listener não controlam a interface.
-  // Logout legítimo passa por signOut(), que limpa a sessão e a interface
-  // explicitamente. Isso impede eventos tardios/duplicados de derrubarem login.
-  console.info('[RelatorioPro] Evento sem usuário ignorado pelo listener; logout é tratado pelo fluxo explícito.');
+  // INITIAL_SESSION sem sessão mantém a tela inicial de login. SIGNED_OUT
+  // encerra a interface; ambos são estados distintos e tratados explicitamente.
+  if(event==="SIGNED_OUT")initializeUser(null);
   return;
  }
- // Durante o login manual, o próprio formulário aguarda a inicialização.
- // Evita duas chamadas concorrentes para o mesmo UID.
- if(manualLoginRequested)return;
- initializeUser(user).catch(error=>{console.error('[RelatorioPro] Erro não tratado no listener de autenticação:',error);setAuthError(friendlyAuthError(error))});
+ initializeUser(user).catch(error=>{
+  console.error('[RelatorioPro] Erro não tratado ao processar evento '+event+':',error);
+  setAuthError(friendlyAuthError(error));
+ });
 });
 
 /* Guia interativo: aparece no primeiro acesso por usuário e pode ser reaberto pelo botão Ajuda. */
