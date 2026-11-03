@@ -21,12 +21,12 @@ module.exports = async function handler(req, res) {
     const body = req.body || {};
     if (body.action === "transcribe") {
       const encoded = String(body.audioBase64 || "");
-      if (!encoded || encoded.length > 4.2 * 1024 * 1024) return res.status(400).json({ error: "Áudio vazio ou acima do limite de 3 MB." });
+      if (!encoded || encoded.length > 3.6 * 1024 * 1024) return res.status(400).json({ error: "Áudio vazio ou acima do limite de 2,5 MB." });
       const mime = String(body.mimeType || "audio/webm").split(";")[0];
       const extensions = { "audio/webm": "webm", "audio/mp4": "m4a", "audio/mpeg": "mp3", "audio/wav": "wav", "audio/ogg": "ogg" };
       if (!extensions[mime]) return res.status(400).json({ error: "Formato de áudio não suportado. Grave em WebM, MP4, MP3, WAV ou OGG." });
       const audio = Buffer.from(encoded, "base64");
-      if (audio.length > 3 * 1024 * 1024) return res.status(400).json({ error: "Áudio acima do limite de 20 MB." });
+      if (audio.length > 2.5 * 1024 * 1024) return res.status(400).json({ error: "Áudio acima do limite de 20 MB." });
       const form = new FormData();
       form.append("file", new Blob([audio], { type: mime }), "relato." + extensions[mime]);
       form.append("model", "gpt-transcribe");
@@ -76,3 +76,4 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: error.message || "Falha ao processar a solicitação." });
   }
 };
+module.exports.config = { api: { bodyParser: { sizeLimit: "4mb" } } };
