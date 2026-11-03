@@ -204,3 +204,28 @@ O defeito do caminho `mustChangePassword` está confirmado, mas só explica a fa
 3. Registrar entrada/saída de `initializeUser`, valor de `authInitializationRun`, `initializingUserId` e resultado da leitura de `profiles`.
 4. Em Preview isolada, testar uma alteração por vez: primeiro corrigir a liberação do single-flight no caminho `mustChangePassword`; depois comparar o listener com a implementação de produção.
 5. Não promover qualquer mudança para produção sem autorização expressa e sem teste funcional com a conta afetada.
+
+
+## 9. Correção aplicada em desenvolvimento — 2026-11-03
+
+Commit: `4cfcf4bcc4262def57b53370105acb542e648ed5`.
+
+### Alterações
+
+1. O listener agora numera todos os eventos Auth. O callback agendado só executa se ainda corresponder ao evento mais recente. Isso impede que um `INITIAL_SESSION` antigo com usuário nulo seja processado depois de um `SIGNED_IN` mais novo.
+2. Foi removida a deduplicação exclusiva por UID. Eventos de renovação de token com o mesmo UID podem ser entregues, mas a inicialização single-flight impede recargas concorrentes desnecessárias.
+3. `initializeUser` agora libera `initializingUserId` em um bloco `finally`, inclusive em retornos antecipados e no caminho `mustChangePassword`.
+4. As verificações de execução atual foram ampliadas após leituras/escritas assíncronas, impedindo uma inicialização antiga de atualizar a interface depois de uma troca de sessão.
+5. A tela de diagnóstico continua preservando a sessão em falhas de carregamento.
+
+### Validação
+
+- Commit gravado na branch `supabase-runtime-switch`.
+- Preview Vercel: `dpl_D7SjUeXe6tkYJ8S8wZQSWwSeMARh`.
+- URL: https://relatoriopro-9kzw1vxyq-vinicius-alves-projects-fdea38e8.vercel.app
+- Estado Vercel: READY.
+- Produção não foi alterada.
+
+### Limite da validação
+
+READY confirma que o deployment foi criado, não que o login foi validado com credenciais reais. O teste funcional final depende da conta de teste do usuário: login normal, atualização de página com sessão ativa, logout/login, troca obrigatória de senha e perfil sem autorização.
