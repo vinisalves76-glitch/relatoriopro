@@ -44,29 +44,29 @@ function wait(ms) {
 }
 
 async function requestGemini(payload, apiKey) {
-  const delays = [800, 1800, 3500];
-  let lastError;
-  for (let attempt = 0; attempt <= delays.length; attempt++) {
-    try {
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify(payload)
-      });
-      const result = await response.json().catch(() => ({}));
-      if (response.ok) return result;
-      const message = result.error?.message || "Falha na solicitação ao Gemini.";
-      const error = new Error(message);
-      error.status = response.status;
-      error.temporary = isTemporaryGeminiError(response.status, message);
-      throw error;
-    } catch (error) {
-      lastError = error;
-      if (!error.temporary || attempt === delays.length) break;
-      await wait(delays[attempt]);
-    }
+  let response;
+  try {
+    response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(25000)
+    });
+  } catch (cause) {
+    const error = new Error(cause?.name === "TimeoutError" || cause?.name === "AbortError"
+      ? "O Gemini demorou mais que 25 segundos para responder."
+      : "Não foi possível conectar ao serviço Gemini.");
+    error.status = 503;
+    error.temporary = true;
+    throw error;
   }
-  throw lastError;
+  const result = await response.json().catch(() => ({}));
+  if (response.ok) return result;
+  const message = result.error?.message || "Falha na solicitação ao Gemini.";
+  const error = new Error(message);
+  error.status = response.status;
+  error.temporary = isTemporaryGeminiError(response.status, message);
+  throw error;
 }
 
 async function runWithModelFallback(payload, apiKey) {
