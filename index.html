@@ -1600,7 +1600,29 @@ async function initializeUser(user){
  setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());if(run!==authInitializationRun||activeUser?.uid!==uid)return;reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
  restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();showPage(getInitialPage(user));try{if(!localStorage.getItem('relatoriopro-tour-complete-'+uid))openTour()}catch(e){openTour()}
  if(run===authInitializationRun){initializedUserId=uid;initializingUserId=null}
- }catch(error){if(run!==authInitializationRun)return;initializingUserId=null;initializedUserId=null;console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
+ }catch(error){
+  if(run!==authInitializationRun)return;
+  initializingUserId=null;initializedUserId=null;
+  console.error('[RelatorioPro] Falha ao inicializar usuário autenticado:',error);
+  // ERRO DE CARREGAMENTO NÃO É LOGOUT:
+  // Uma falha de leitura de perfil/modelo/relatórios não prova que a sessão expirou.
+  // Não exibir novamente o login nem apagar a sessão; mostrar diagnóstico e permitir retry.
+  const message=error?.message||String(error||'Erro desconhecido');
+  $('authGate').hidden=true;
+  $('appShell').hidden=true;
+  $('changePasswordGate').hidden=true;
+  let panel=document.getElementById('startupErrorGate');
+  if(!panel){
+    panel=document.createElement('section');
+    panel.id='startupErrorGate';
+    panel.style.cssText='position:fixed;inset:0;z-index:10001;background:#111720;color:#f8fafc;display:grid;place-items:center;padding:24px;font:14px system-ui';
+    panel.innerHTML='<div style="width:min(100%,620px);background:#1b2532;border:1px solid #465366;border-radius:14px;padding:26px"><h2 style="margin:0 0 12px">Não foi possível carregar sua área de trabalho</h2><p id="startupErrorMessage" style="color:#d5dce5;line-height:1.6;overflow-wrap:anywhere"></p><p style="color:#aeb9c7;font-size:12px">Sua sessão não foi encerrada. O erro abaixo será usado para identificar a etapa que falhou.</p><button id="startupRetryBtn" type="button" style="padding:12px 18px;border:0;border-radius:8px;background:#f2b705;color:#171a1f;font-weight:700;cursor:pointer">Tentar carregar novamente</button><button id="startupBackLoginBtn" type="button" style="margin-left:10px;padding:12px 18px;border:1px solid #718096;border-radius:8px;background:transparent;color:#fff;cursor:pointer">Voltar ao login</button></div>';
+    document.body.appendChild(panel);
+    document.getElementById('startupRetryBtn').addEventListener('click',()=>{panel.remove();if(auth.currentUser)initializeUser(auth.currentUser);else{panel.remove();$('authGate').hidden=false}});
+    document.getElementById('startupBackLoginBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){console.error(e)}panel.remove();$('authGate').hidden=false});
+  }
+  document.getElementById('startupErrorMessage').textContent=message;
+  panel.hidden=false;
 }
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
 onAuthStateChanged(auth,user=>{if(!user){activeUser=null;currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
