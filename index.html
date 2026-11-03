@@ -930,7 +930,14 @@ async function signInWithEmailAndPassword(_auth,email,password) {
   const {data,error}=await supabase.auth.signInWithPassword({email,password});
   if(error)throw error; currentSupabaseUser=normalizeUser(data.user); return {user:currentSupabaseUser};
 }
-async function signOut() { const {error}=await supabase.auth.signOut(); if(error)throw error; currentSupabaseUser=null; }
+async function signOut() {
+  const {error}=await supabase.auth.signOut();
+  if(error)throw error;
+  currentSupabaseUser=null;
+  // O encerramento visual é explícito e controlado pelo app; não depende
+  // do evento assíncrono SIGNED_OUT do listener do Supabase.
+  await initializeUser(null);
+}
 async function updatePassword(user,password) { const {data,error}=await supabase.auth.updateUser({password}); if(error)throw error; currentSupabaseUser=normalizeUser(data.user); return data; }
 async function sendPasswordResetEmail(_auth,email) { const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:location.origin}); if(error)throw error; }
 async function createUserWithEmailAndPassword(_auth,email,password) {
@@ -1744,12 +1751,15 @@ async function initializeUser(user){
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
 onAuthStateChanged(auth,user=>{
  if(!user){
-  // Não permitir que um evento inicial vazio derrube uma autenticação manual
-  // que acabou de ser solicitada. O evento SIGNED_IN ou o fluxo manual cuidará dela.
-  if(manualLoginRequested)return;
-  initializeUser(null);
+  // Estados vazios e SIGNED_OUT do listener não controlam a interface.
+  // Logout legítimo passa por signOut(), que limpa a sessão e a interface
+  // explicitamente. Isso impede eventos tardios/duplicados de derrubarem login.
+  console.info('[RelatorioPro] Evento sem usuário ignorado pelo listener; logout é tratado pelo fluxo explícito.');
   return;
  }
+ // Durante o login manual, o próprio formulário aguarda a inicialização.
+ // Evita duas chamadas concorrentes para o mesmo UID.
+ if(manualLoginRequested)return;
  initializeUser(user).catch(error=>{console.error('[RelatorioPro] Erro não tratado no listener de autenticação:',error);setAuthError(friendlyAuthError(error))});
 });
 
