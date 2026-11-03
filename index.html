@@ -944,12 +944,42 @@ async function createUserWithEmailAndPassword(_auth,email,password) {
   return {user:normalizeUser(data.user)};
 }
 function onAuthStateChanged(_auth,callback) {
-  // O Supabase é a fonte de verdade da sessão. Não atrasamos nem descartamos
-  // eventos: a inicialização é protegida por single-flight em initializeUser().
+  // IMPORTANTE: não consultar Supabase nem inicializar o app dentro do callback
+  // síncrono de onAuthStateChange. O cliente mantém um lock interno durante o
+  // evento; iniciar getDoc/getSession nesse mesmo callback pode provocar espera
+  // circular e deixar a interface presa em transições de autenticação.
   const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
-    const nextUser=normalizeUser(session?.user);
-    currentSupabaseUser=nextUser;
-    callback(nextUser,event);
+    const eventUser=normalizeUser(session?.user);
+    // Despacha o trabalho para depois que o callback do Supabase terminar.
+    window.setTimeout(async()=>{
+      try{
+        // Confirma o estado persistido atual antes de alterar a interface.
+        // Isso descarta eventos antigos (SIGNED_OUT/INITIAL_SESSION) que
+        // possam chegar fora de ordem durante um login ou refresh de token.
+        const {data,error}=await supabase.auth.getSession();
+        if(error){
+          console.error('[RelatorioPro] Não foi possível confirmar a sessão após '+event+':',error);
+          return; // Falha ao consultar sessão nunca equivale a logout.
+        }
+        const sessionUser=normalizeUser(data?.session?.user);
+        if(sessionUser){
+          currentSupabaseUser=sessionUser;
+          callback(sessionUser,event);
+          return;
+        }
+        if(event==='SIGNED_OUT'){
+          currentSupabaseUser=null;
+          callback(null,event);
+          return;
+        }
+        // INITIAL_SESSION sem usuário é normal no primeiro carregamento.
+        // Não altera a interface nem apaga dados de inicialização.
+        if(event==='INITIAL_SESSION'&&!eventUser)return;
+      }catch(error){
+        console.error('[RelatorioPro] Falha ao processar evento de autenticação '+event+':',error);
+        // Erros transitórios não devem derrubar uma sessão que ainda pode ser válida.
+      }
+    },0);
   });
   return ()=>subscription.unsubscribe();
 }
@@ -1207,29 +1237,29 @@ function friendlyAuthError(error){
  const message=String(error?.message||'');if(/invalid login credentials/i.test(message))return 'E-mail ou senha incorretos.';if(/email not confirmed/i.test(message))return 'Confirme seu e-mail antes de entrar.';if(/user already registered/i.test(message))return 'Este e-mail já possui uma conta.';if(/row-level security|permission denied/i.test(message))return 'Acesso bloqueado pelas permissões do Supabase. Confira as políticas RLS.';return codes[error?.code] || message || 'Ocorreu um erro. Tente novamente.';
 }
 // Um único handler de login evita autenticações concorrentes.
-// O contador permite descartar INITIAL_SESSION null que tenha sido agendado
-// antes ou durante uma tentativa de login manual, mas executado depois dela.
-let manualLoginRequested=false;
-let manualLoginAttempt=0;
 $('authForm').addEventListener('submit',async e=>{
  e.preventDefault();
  if($('authSubmit').disabled)return;
- manualLoginAttempt++;
- manualLoginRequested=true;
  setAuthError('');
  $('authSubmit').disabled=true;
+ const originalLabel=$('authSubmit').textContent;
+ $('authSubmit').textContent='Autenticando...';
  try{
   const result=await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);
-  // Não depender do tempo de despacho do listener: a autenticação já retornou
-  // um usuário válido, então iniciamos explicitamente o carregamento do sistema.
-  if(result?.user)await initializeUser(result.user);
-  else throw new Error('O Supabase autenticou, mas não retornou os dados do usuário.');
+  if(!result?.user)throw new Error('O Supabase não retornou os dados do usuário autenticado.');
+  // Confirma que a sessão foi persistida antes de carregar perfil e permissões.
+  const {data,error}=await supabase.auth.getSession();
+  if(error)throw error;
+  const sessionUser=normalizeUser(data?.session?.user);
+  if(!sessionUser||sessionUser.uid!==result.user.uid)throw new Error('O login foi aceito, mas a sessão não permaneceu ativa no navegador. Verifique cookies, armazenamento local e configuração de domínio.');
+  currentSupabaseUser=sessionUser;
+  await initializeUser(sessionUser);
  }catch(error){
-  manualLoginRequested=false;
+  console.error('[RelatorioPro] Falha após autenticação:',error);
   setAuthError(friendlyAuthError(error));
  }finally{
-  manualLoginRequested=false;
   $('authSubmit').disabled=false;
+  $('authSubmit').textContent=originalLabel;
  }
 });
 
