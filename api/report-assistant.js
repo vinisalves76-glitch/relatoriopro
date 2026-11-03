@@ -31,6 +31,71 @@ function buildUserPrompt(report) {
     "\nRelato livre: " + String(report.notes || "");
 }
 
+const PRIMARY_MODEL = "gemini-3.8-flash";
+const FALLBACK_MODEL = "gemini-3.7-flash";
+
+function isTemporaryGeminiError(status, message) {
+  if ([500, 502, 503, 504].includes(status)) return true;
+  return status === 429 && /rate.?limit|too many requests|temporar|overload/i.test(message || "");
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function requestGemini(payload, apiKey) {
+  const delays = [800, 1800, 3500];
+  let lastError;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) return result;
+      const message = result.error?.message || "Falha na solicitação ao Gemini.";
+      const error = new Error(message);
+      error.status = response.status;
+      error.temporary = isTemporaryGeminiError(response.status, message);
+      throw error;
+    } catch (error) {
+      lastError = error;
+      if (!error.temporary || attempt === delays.length) break;
+      await wait(delays[attempt]);
+    }
+  }
+  throw lastError;
+}
+
+async function runWithModelFallback(payload, apiKey) {
+  try {
+    const result = await requestGemini({ ...payload, model: PRIMARY_MODEL }, apiKey);
+    return { result, model: PRIMARY_MODEL };
+  } catch (primaryError) {
+    if (!primaryError.temporary) throw primaryError;
+    console.warn("Gemini 3.8 Flash temporariamente indisponível; tentando modelo de contingência.");
+    try {
+      const result = await requestGemini({ ...payload, model: FALLBACK_MODEL }, apiKey);
+      return { result, model: FALLBACK_MODEL };
+    } catch (fallbackError) {
+      const error = new Error("O Gemini 3.8 Flash está temporariamente sobrecarregado e o modelo de contingência também não respondeu. Aguarde alguns instantes e tente novamente. Detalhe: " + (fallbackError.message || primaryError.message));
+      error.status = fallbackError.status || primaryError.status || 503;
+      throw error;
+    }
+  }
+}
+
+function extractModelText(result) {
+  return (result.steps || [])
+    .filter(step => step.type === "model_output")
+    .flatMap(step => step.content || [])
+    .filter(item => item.type === "text")
+    .map(item => item.text || "")
+    .join("");
+}
+
 async function generateWithGemini(report, apiKey) {
   const schema = {
     type: "object",
@@ -43,53 +108,28 @@ async function generateWithGemini(report, apiKey) {
     },
     required: ["objective", "observations", "activities", "results", "conclusion"]
   };
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify({
-      model: "gemini-3.8-flash",
-      store: false,
-      system_instruction: SYSTEM_PROMPT,
-      input: buildUserPrompt(report),
-      response_format: { type: "text", mime_type: "application/json", schema }
-    })
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.message || "Falha na geração com Gemini 3.8 Flash.");
-  const content = (result.steps || [])
-    .filter(step => step.type === "model_output")
-    .flatMap(step => step.content || [])
-    .filter(item => item.type === "text")
-    .map(item => item.text || "")
-    .join("");
-  if (!content) throw new Error("Gemini 3.8 Flash não retornou conteúdo para o relatório.");
-  return JSON.parse(content);
+  const { result, model } = await runWithModelFallback({
+    store: false,
+    system_instruction: SYSTEM_PROMPT,
+    input: buildUserPrompt(report),
+    response_format: { type: "text", mime_type: "application/json", schema }
+  }, apiKey);
+  const content = extractModelText(result);
+  if (!content) throw new Error("Gemini não retornou conteúdo para o relatório.");
+  return { fields: JSON.parse(content), model };
 }
 
 async function transcribeWithGemini(audio, mime, apiKey) {
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify({
-      model: "gemini-3.8-flash",
-      store: false,
-      input: [
-        { type: "text", text: "Transcreva fielmente este áudio em português brasileiro. Retorne somente o texto falado, sem resumir, corrigir ou acrescentar informações." },
-        { type: "audio", data: audio.toString("base64"), mime_type: mime }
-      ]
-    })
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.message || "Não foi possível transcrever o áudio com Gemini 3.8 Flash.");
-  const text = (result.steps || [])
-    .filter(step => step.type === "model_output")
-    .flatMap(step => step.content || [])
-    .filter(item => item.type === "text")
-    .map(item => item.text || "")
-    .join("")
-    .trim();
-  if (!text) throw new Error("Gemini 3.8 Flash não retornou a transcrição do áudio.");
-  return text;
+  const { result, model } = await runWithModelFallback({
+    store: false,
+    input: [
+      { type: "text", text: "Transcreva fielmente este áudio em português brasileiro. Retorne somente o texto falado, sem resumir, corrigir ou acrescentar informações." },
+      { type: "audio", data: audio.toString("base64"), mime_type: mime }
+    ]
+  }, apiKey);
+  const text = extractModelText(result).trim();
+  if (!text) throw new Error("Gemini não retornou a transcrição do áudio.");
+  return { text, model };
 }
 
 function normalizeFields(fields) {
@@ -115,18 +155,18 @@ module.exports = async function handler(req, res) {
       const audio = Buffer.from(encoded, "base64");
       if (!audio.length || audio.length > 2.5 * 1024 * 1024) return res.status(400).json({ error: "Áudio vazio ou acima do limite de 2,5 MB." });
       if (!geminiKey) return res.status(503).json({ error: "GEMINI_API_KEY não está configurada na Vercel para este ambiente." });
-      const text = await transcribeWithGemini(audio, mime, geminiKey);
-      return res.status(200).json({ text, provider: "Gemini" });
+      const transcription = await transcribeWithGemini(audio, mime, geminiKey);
+      return res.status(200).json({ text: transcription.text, provider: "Gemini", model: transcription.model });
     }
 
     if (body.action !== "generate") return res.status(400).json({ error: "Ação não reconhecida." });
     const report = body.report || {};
     if (!geminiKey) return res.status(503).json({ error: "GEMINI_API_KEY não está configurada na Vercel para este ambiente." });
-    const fields = await generateWithGemini(report, geminiKey);
-    return res.status(200).json({ fields: normalizeFields(fields), provider: "Gemini" });
+    const generated = await generateWithGemini(report, geminiKey);
+    return res.status(200).json({ fields: normalizeFields(generated.fields), provider: "Gemini", model: generated.model });
   } catch (error) {
     console.error("report-assistant:", error);
-    return res.status(400).json({ error: error.message || "Falha ao processar a solicitação." });
+    return res.status(error.status === 429 || error.status >= 500 ? 503 : 400).json({ error: error.message || "Falha ao processar a solicitação." });
   }
 };
 module.exports.config = { api: { bodyParser: { sizeLimit: "4mb" } } };
