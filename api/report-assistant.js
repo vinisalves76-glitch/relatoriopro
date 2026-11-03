@@ -119,18 +119,6 @@ async function generateWithGemini(report, apiKey) {
   return { fields: JSON.parse(content), model };
 }
 
-async function transcribeWithGemini(audio, mime, apiKey) {
-  const { result, model } = await runWithModelFallback({
-    store: false,
-    input: [
-      { type: "text", text: "Transcreva fielmente este áudio em português brasileiro. Retorne somente o texto falado, sem resumir, corrigir ou acrescentar informações." },
-      { type: "audio", data: audio.toString("base64"), mime_type: mime }
-    ]
-  }, apiKey);
-  const text = extractModelText(result).trim();
-  if (!text) throw new Error("Gemini não retornou a transcrição do áudio.");
-  return { text, model };
-}
 
 function normalizeFields(fields) {
   const normalized = {};
@@ -145,19 +133,6 @@ module.exports = async function handler(req, res) {
     await authenticate(req);
     const body = req.body || {};
     const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
-
-    if (body.action === "transcribe") {
-      const encoded = String(body.audioBase64 || "");
-      if (!encoded || encoded.length > 3.6 * 1024 * 1024) return res.status(400).json({ error: "Áudio vazio ou acima do limite de 2,5 MB." });
-      const mime = String(body.mimeType || "audio/webm").split(";")[0].toLowerCase();
-      const supported = ["audio/webm", "audio/mp4", "audio/mpeg", "audio/wav", "audio/ogg"];
-      if (!supported.includes(mime)) return res.status(400).json({ error: "Formato não suportado. Grave em WebM, MP4, MP3, WAV ou OGG." });
-      const audio = Buffer.from(encoded, "base64");
-      if (!audio.length || audio.length > 2.5 * 1024 * 1024) return res.status(400).json({ error: "Áudio vazio ou acima do limite de 2,5 MB." });
-      if (!geminiKey) return res.status(503).json({ error: "GEMINI_API_KEY não está configurada na Vercel para este ambiente." });
-      const transcription = await transcribeWithGemini(audio, mime, geminiKey);
-      return res.status(200).json({ text: transcription.text, provider: "Gemini", model: transcription.model });
-    }
 
     if (body.action !== "generate") return res.status(400).json({ error: "Ação não reconhecida." });
     const report = body.report || {};
