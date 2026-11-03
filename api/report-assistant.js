@@ -32,8 +32,7 @@ function buildUserPrompt(report) {
     "\nRelato livre: " + String(report.notes || "");
 }
 
-const PRIMARY_MODEL = "gemini-3.8-flash";
-const FALLBACK_MODEL = "gemini-3.7-flash";
+const GEMINI_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
 const OPENAI_MODEL = "gpt-4o-mini";
 
 function isTemporaryGeminiError(status, message) {
@@ -48,7 +47,7 @@ async function requestGemini(payload, apiKey, model) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({ ...payload, model }),
-      signal: AbortSignal.timeout(16000)
+      signal: AbortSignal.timeout(8000)
     });
   } catch (cause) {
     const error = new Error(cause?.name === "TimeoutError" || cause?.name === "AbortError"
@@ -113,7 +112,7 @@ async function generateWithGemini(report, apiKey) {
     response_format: { type: "text", mime_type: "application/json", schema: reportSchema() }
   };
   let lastError;
-  for (const model of [PRIMARY_MODEL]) {
+  for (const model of GEMINI_MODELS) {
     try {
       const result = await requestGemini(payload, apiKey, model);
       return { fields: parseFields(extractGeminiText(result), "Gemini"), model, provider: "Gemini" };
@@ -158,7 +157,7 @@ async function generateWithOpenAI(report, apiKey) {
         },
         max_output_tokens: 1800
       }),
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(18000)
     });
   } catch (cause) {
     const error = new Error(cause?.name === "TimeoutError" || cause?.name === "AbortError"
