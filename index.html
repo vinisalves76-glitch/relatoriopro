@@ -940,24 +940,18 @@ async function createUserWithEmailAndPassword(_auth,email,password) {
   return {user:normalizeUser(data.user)};
 }
 function onAuthStateChanged(_auth,callback) {
-  // REGRA PERMANENTE DE AUTENTICAÇÃO:
-  // 1) Não chamar getSession() aqui: INITIAL_SESSION já entrega a sessão inicial.
-  // 2) O callback do Supabase deve retornar imediatamente. initializeUser faz
-  //    consultas supabase.from(...); executá-las dentro de onAuthStateChange
-  //    pode manter o lock interno do Auth e causar deadlock nas próximas consultas.
-  // 3) Por isso, toda inicialização é despachada para o próximo ciclo com setTimeout.
-  // 4) Entregar somente mudanças reais de UID; initializeUser mantém single-flight.
-  let hasDeliveredState=false;
-  let deliveredUid=null;
+  // Cada evento recebe uma versão. Se outro evento chegar antes do despacho,
+  // o callback antigo é descartado (ex.: INITIAL_SESSION null seguido de SIGNED_IN).
+  let authEventVersion=0;
   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
     const nextUser=normalizeUser(session?.user);
     currentSupabaseUser=nextUser;
-    const nextUid=nextUser?.uid||null;
-    if(hasDeliveredState&&nextUid===deliveredUid)return;
-    hasDeliveredState=true;
-    deliveredUid=nextUid;
-    // IMPORTANTE: não executar consultas Supabase antes de o listener retornar.
-    setTimeout(()=>callback(nextUser),0);
+    const eventVersion=++authEventVersion;
+    // O callback retorna imediatamente; consultas são executadas fora do lock do Auth.
+    setTimeout(()=>{
+      if(eventVersion!==authEventVersion)return;
+      callback(nextUser);
+    },0);
   });
   return ()=>subscription.unsubscribe();
 }
@@ -1585,44 +1579,142 @@ $('logoutBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(
 let authInitializationRun=0,initializingUserId=null,initializedUserId=null;
 async function initializeUser(user){
  const uid=user?.id||user?.uid||null;
- if(!user){authInitializationRun++;initializingUserId=null;initializedUserId=null;activeUser=null;closeSimulation();currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}
- // O Supabase pode emitir INITIAL_SESSION, SIGNED_IN e TOKEN_REFRESHED em sequência.
- // Evita executar várias cargas de perfil para a mesma conta ao mesmo tempo.
+ if(!user){
+  authInitializationRun++;
+  initializingUserId=null;
+  initializedUserId=null;
+  activeUser=null;
+  closeSimulation();
+  currentProfile=null;
+  $('appShell').hidden=true;
+  $('authGate').hidden=false;
+  $('changePasswordGate').hidden=true;
+  const startupPanel=$('startupErrorGate');
+  if(startupPanel)startupPanel.hidden=true;
+  return;
+ }
  if(initializedUserId===uid||initializingUserId===uid)return;
- const run=++authInitializationRun;initializingUserId=uid;activeUser=user;
- try{const ps=await getDoc(doc(db,'userProfiles',uid));
- if(run!==authInitializationRun||activeUser?.uid!==uid)return;
- if((user.id||user.uid)===MASTER_UID){if(!ps.exists())throw new Error('Perfil mestre não encontrado na tabela profiles do Supabase.');currentProfile={uid:user.id||user.uid,...ps.data(),role:'super_admin',roleLabel:ps.data().roleLabel||'Super administrador',permissions:PERMISSIONS.map(p=>p[0]),active:true}}
- else{if(!ps.exists()){setAuthError('Login autenticado no Supabase, mas sem perfil autorizado na tabela profiles. Solicite cadastro ao administrador.');await signOut(auth);return}currentProfile={uid:ps.id,...ps.data()};if(currentProfile.active===false){setAuthError('Seu acesso está desativado. Procure o administrador.');await signOut(auth);return}}
- if(currentProfile.mustChangePassword){$('authGate').hidden=true;$('appShell').hidden=true;$('changePasswordGate').hidden=false;return}
- $('changePasswordGate').hidden=true;$('authGate').hidden=true;$('appShell').hidden=false;applyAccessControl();$('appShell').classList.toggle('report-editor-active',!!document.querySelector('#editor.active'));
- if(can('model.view')||can('model.edit')){const ms=await getDoc(modelRef());modelCache=ms.exists()?ms.data():{...defaultModel};if(!ms.exists()&&can('model.edit'))await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()})}else modelCache={...defaultModel};
- setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());if(run!==authInitializationRun||activeUser?.uid!==uid)return;reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
- restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();showPage(getInitialPage(user));try{if(!localStorage.getItem('relatoriopro-tour-complete-'+uid))openTour()}catch(e){openTour()}
- if(run===authInitializationRun){initializedUserId=uid;initializingUserId=null}
+
+ const run=++authInitializationRun;
+ initializingUserId=uid;
+ initializedUserId=null;
+ activeUser=user;
+ let initializationComplete=false;
+ const isCurrent=()=>run===authInitializationRun&&activeUser?.uid===uid&&currentSupabaseUser?.uid===uid;
+
+ try{
+  const ps=await getDoc(doc(db,'userProfiles',uid));
+  if(!isCurrent())return;
+
+  if(uid===MASTER_UID){
+   if(!ps.exists())throw new Error('Perfil mestre não encontrado na tabela profiles do Supabase.');
+   currentProfile={uid,...ps.data(),role:'super_admin',roleLabel:ps.data().roleLabel||'Super administrador',permissions:PERMISSIONS.map(p=>p[0]),active:true};
+  }else{
+   if(!ps.exists()){
+    setAuthError('Login autenticado no Supabase, mas sem perfil autorizado na tabela profiles. Solicite cadastro ao administrador.');
+    await signOut(auth);
+    return;
+   }
+   currentProfile={uid:ps.id,...ps.data()};
+   if(currentProfile.active===false){
+    setAuthError('Seu acesso está desativado. Procure o administrador.');
+    await signOut(auth);
+    return;
+   }
+  }
+
+  // Este caminho libera o single-flight no finally. Após a troca de senha,
+  // a chamada seguinte poderá inicializar a mesma conta normalmente.
+  if(currentProfile.mustChangePassword){
+   $('authGate').hidden=true;
+   $('appShell').hidden=true;
+   $('changePasswordGate').hidden=false;
+   return;
+  }
+
+  $('changePasswordGate').hidden=true;
+  $('authGate').hidden=true;
+  $('appShell').hidden=false;
+  applyAccessControl();
+  $('appShell').classList.toggle('report-editor-active',!!document.querySelector('#editor.active'));
+
+  if(can('model.view')||can('model.edit')){
+   const ms=await getDoc(modelRef());
+   if(!isCurrent())return;
+   modelCache=ms.exists()?ms.data():{...defaultModel};
+   if(!ms.exists()&&can('model.edit')){
+    await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()});
+    if(!isCurrent())return;
+   }
+  }else{
+   modelCache={...defaultModel};
+  }
+
+  setModel(modelCache);
+  if(can('reports.view')){
+   const rs=await getDocs(userReportsRef());
+   if(!isCurrent())return;
+   reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+  }else{
+   reportCache=[];
+  }
+
+  if(!isCurrent())return;
+  restoring=true;
+  setFields({});
+  $('date').value=new Date().toISOString().slice(0,10);
+  $('type').value='Relatório de campo';
+  photos=[];
+  editingId=null;
+  renderPhotos();
+  preview();
+  renderSaved();
+  restoring=false;
+  $('draftStatus').textContent='Conectado. Permissões carregadas.';
+  if(isSystemAdmin())loadUsers();
+  showPage(getInitialPage(user));
+  try{
+   if(!localStorage.getItem('relatoriopro-tour-complete-'+uid))openTour();
+  }catch(e){
+   openTour();
+  }
+  initializationComplete=true;
  }catch(error){
-  if(run!==authInitializationRun)return;
-  initializingUserId=null;initializedUserId=null;
+  if(!isCurrent())return;
+  restoring=false;
   console.error('[RelatorioPro] Falha ao inicializar usuário autenticado:',error);
-  // ERRO DE CARREGAMENTO NÃO É LOGOUT:
-  // Uma falha de leitura de perfil/modelo/relatórios não prova que a sessão expirou.
-  // Não exibir novamente o login nem apagar a sessão; mostrar diagnóstico e permitir retry.
   const message=error?.message||String(error||'Erro desconhecido');
   $('authGate').hidden=true;
   $('appShell').hidden=true;
   $('changePasswordGate').hidden=true;
-  let panel=document.getElementById('startupErrorGate');
+  let panel=$('startupErrorGate');
   if(!panel){
-    panel=document.createElement('section');
-    panel.id='startupErrorGate';
-    panel.style.cssText='position:fixed;inset:0;z-index:10001;background:#111720;color:#f8fafc;display:grid;place-items:center;padding:24px;font:14px system-ui';
-    panel.innerHTML='<div style="width:min(100%,620px);background:#1b2532;border:1px solid #465366;border-radius:14px;padding:26px"><h2 style="margin:0 0 12px">Não foi possível carregar sua área de trabalho</h2><p id="startupErrorMessage" style="color:#d5dce5;line-height:1.6;overflow-wrap:anywhere"></p><p style="color:#aeb9c7;font-size:12px">Sua sessão não foi encerrada. O erro abaixo será usado para identificar a etapa que falhou.</p><button id="startupRetryBtn" type="button" style="padding:12px 18px;border:0;border-radius:8px;background:#f2b705;color:#171a1f;font-weight:700;cursor:pointer">Tentar carregar novamente</button><button id="startupBackLoginBtn" type="button" style="margin-left:10px;padding:12px 18px;border:1px solid #718096;border-radius:8px;background:transparent;color:#fff;cursor:pointer">Voltar ao login</button></div>';
-    document.body.appendChild(panel);
-    document.getElementById('startupRetryBtn').addEventListener('click',()=>{panel.remove();if(auth.currentUser)initializeUser(auth.currentUser);else{panel.remove();$('authGate').hidden=false}});
-    document.getElementById('startupBackLoginBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){console.error(e)}panel.remove();$('authGate').hidden=false});
+   panel=document.createElement('section');
+   panel.id='startupErrorGate';
+   panel.style.cssText='position:fixed;inset:0;z-index:10001;background:#111720;color:#f8fafc;display:grid;place-items:center;padding:24px;font:14px system-ui';
+   panel.innerHTML='<div style="width:min(100%,620px);background:#1b2532;border:1px solid #465366;border-radius:14px;padding:26px"><h2 style="margin:0 0 12px">Não foi possível carregar sua área de trabalho</h2><p id="startupErrorMessage" style="color:#d5dce5;line-height:1.6;overflow-wrap:anywhere"></p><p style="color:#aeb9c7;font-size:12px">Sua sessão permanece ativa. O erro abaixo identifica a etapa que falhou.</p><button id="startupRetryBtn" type="button" style="padding:12px 18px;border:0;border-radius:8px;background:#f2b705;color:#171a1f;font-weight:700;cursor:pointer">Tentar carregar novamente</button><button id="startupBackLoginBtn" type="button" style="margin-left:10px;padding:12px 18px;border:1px solid #718096;border-radius:8px;background:transparent;color:#fff;cursor:pointer">Voltar ao login</button></div>';
+   document.body.appendChild(panel);
+   $('startupRetryBtn').addEventListener('click',()=>{
+    panel.hidden=true;
+    if(auth.currentUser)initializeUser(auth.currentUser);
+    else{$('authGate').hidden=false;panel.hidden=true;}
+   });
+   $('startupBackLoginBtn').addEventListener('click',async()=>{
+    try{await signOut(auth)}catch(e){console.error(e)}
+    panel.hidden=true;
+    $('authGate').hidden=false;
+   });
   }
-  document.getElementById('startupErrorMessage').textContent=message;
+  $('startupErrorMessage').textContent=message;
   panel.hidden=false;
+ }finally{
+  // Libera o estado mesmo em retornos antecipados (perfil bloqueado,
+  // troca obrigatória de senha ou troca de sessão durante uma consulta).
+  if(run===authInitializationRun&&initializingUserId===uid){
+   if(initializationComplete)initializedUserId=uid;
+   initializingUserId=null;
+  }
+ }
 }
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
 onAuthStateChanged(auth,user=>{
