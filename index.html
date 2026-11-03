@@ -1217,11 +1217,16 @@ $('authForm').addEventListener('submit',async e=>{
  setAuthError('');
  $('authSubmit').disabled=true;
  try{
-  await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);
+  const result=await signInWithEmailAndPassword(auth,$('authEmail').value.trim(),$('authPassword').value);
+  // Não depender do tempo de despacho do listener: a autenticação já retornou
+  // um usuário válido, então iniciamos explicitamente o carregamento do sistema.
+  if(result?.user)await initializeUser(result.user);
+  else throw new Error('O Supabase autenticou, mas não retornou os dados do usuário.');
  }catch(error){
   manualLoginRequested=false;
   setAuthError(friendlyAuthError(error));
  }finally{
+  manualLoginRequested=false;
   $('authSubmit').disabled=false;
  }
 });
@@ -1611,15 +1616,11 @@ async function initializeUser(user){
    currentProfile={uid,...ps.data(),role:'super_admin',roleLabel:ps.data().roleLabel||'Super administrador',permissions:PERMISSIONS.map(p=>p[0]),active:true};
   }else{
    if(!ps.exists()){
-    setAuthError('Login autenticado no Supabase, mas sem perfil autorizado na tabela profiles. Solicite cadastro ao administrador.');
-    await signOut(auth);
-    return;
+    throw new Error('LOGIN AUTENTICADO, MAS PERFIL NÃO LOCALIZADO: o Supabase aceitou suas credenciais, porém não foi encontrado um registro correspondente ao UID na tabela profiles. Verifique o cadastro do usuário e as políticas de leitura (RLS). A sessão foi preservada para diagnóstico.');
    }
    currentProfile={uid:ps.id,...ps.data()};
    if(currentProfile.active===false){
-    setAuthError('Seu acesso está desativado. Procure o administrador.');
-    await signOut(auth);
-    return;
+    throw new Error('ACESSO DESATIVADO: o perfil foi localizado na tabela profiles, mas o campo active está desativado. Solicite ao administrador a reativação do acesso. A sessão foi preservada para diagnóstico.');
    }
   }
 
@@ -1719,11 +1720,9 @@ async function initializeUser(user){
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
 onAuthStateChanged(auth,user=>{
  if(!user){
-  // REGRA DE PREVENÇÃO DE LOOP: não limpar somente a interface no evento null.
-  // Uma inicialização anterior pode estar aguardando uma consulta Supabase.
-  // initializeUser(null) invalida essa execução e libera initializingUserId,
-  // impedindo que a tentativa antiga bloqueie o próximo login da mesma conta.
-  manualLoginRequested=false;
+  // Não permitir que um evento inicial vazio derrube uma autenticação manual
+  // que acabou de ser solicitada. O evento SIGNED_IN ou o fluxo manual cuidará dela.
+  if(manualLoginRequested)return;
   initializeUser(null);
   return;
  }
