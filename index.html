@@ -1570,17 +1570,25 @@ $('copyGPTResult').addEventListener('click',async()=>{try{await navigator.clipbo
 $('search').addEventListener('input',renderSaved);$('filter').addEventListener('change',renderSaved);
 
 $('logoutBtn').addEventListener('click',async()=>{try{await signOut(auth)}catch(e){alert(friendlyAuthError(e))}});
+let authInitializationRun=0,initializingUserId=null,initializedUserId=null;
 async function initializeUser(user){
- activeUser=user;if(!user){closeSimulation();currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}
- try{const ps=await getDoc(doc(db,'userProfiles',user.id||user.uid));
+ const uid=user?.id||user?.uid||null;
+ if(!user){authInitializationRun++;initializingUserId=null;initializedUserId=null;activeUser=null;closeSimulation();currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}
+ // O Supabase pode emitir INITIAL_SESSION, SIGNED_IN e TOKEN_REFRESHED em sequência.
+ // Evita executar várias cargas de perfil para a mesma conta ao mesmo tempo.
+ if(initializedUserId===uid||initializingUserId===uid)return;
+ const run=++authInitializationRun;initializingUserId=uid;activeUser=user;
+ try{const ps=await getDoc(doc(db,'userProfiles',uid));
+ if(run!==authInitializationRun||activeUser?.uid!==uid)return;
  if((user.id||user.uid)===MASTER_UID){if(!ps.exists())throw new Error('Perfil mestre não encontrado na tabela profiles do Supabase.');currentProfile={uid:user.id||user.uid,...ps.data(),role:'super_admin',roleLabel:ps.data().roleLabel||'Super administrador',permissions:PERMISSIONS.map(p=>p[0]),active:true}}
  else{if(!ps.exists()){await signOut(auth);throw new Error('Login autenticado no Supabase, mas sem perfil autorizado na tabela profiles. Solicite cadastro ao administrador.')}currentProfile={uid:ps.id,...ps.data()};if(currentProfile.active===false){await signOut(auth);throw new Error('Seu acesso está desativado. Procure o administrador.')}}
  if(currentProfile.mustChangePassword){$('authGate').hidden=true;$('appShell').hidden=true;$('changePasswordGate').hidden=false;return}
  $('changePasswordGate').hidden=true;$('authGate').hidden=true;$('appShell').hidden=false;applyAccessControl();$('appShell').classList.toggle('report-editor-active',!!document.querySelector('#editor.active'));
  if(can('model.view')||can('model.edit')){const ms=await getDoc(modelRef());modelCache=ms.exists()?ms.data():{...defaultModel};if(!ms.exists()&&can('model.edit'))await setDoc(modelRef(),{...defaultModel,updatedAt:new Date().toISOString()})}else modelCache={...defaultModel};
- setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
- restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();showPage(getInitialPage(user));try{if(!localStorage.getItem('relatoriopro-tour-complete-'+(user.uid||user.id)))openTour()}catch(e){openTour()}
- }catch(error){console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
+ setModel(modelCache);if(can('reports.view')){const rs=await getDocs(userReportsRef());if(run!==authInitializationRun||activeUser?.uid!==uid)return;reportCache=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))}else reportCache=[];
+ restoring=true;setFields({});$('date').value=new Date().toISOString().slice(0,10);$('type').value='Relatório de campo';photos=[];editingId=null;renderPhotos();preview();renderSaved();restoring=false;$('draftStatus').textContent='Conectado. Permissões carregadas.';if(isSystemAdmin())loadUsers();showPage(getInitialPage(user));try{if(!localStorage.getItem('relatoriopro-tour-complete-'+uid))openTour()}catch(e){openTour()}
+ if(run===authInitializationRun){initializedUserId=uid;initializingUserId=null}
+ }catch(error){if(run!==authInitializationRun)return;initializingUserId=null;initializedUserId=null;console.error(error);$('authGate').hidden=false;$('appShell').hidden=true;setAuthError(friendlyAuthError(error))}
 }
 $('changePasswordForm').addEventListener('submit',async e=>{e.preventDefault();const error=$('changePasswordError'),btn=$('changePasswordBtn'),password=$('newPassword').value,confirmPassword=$('confirmNewPassword').value;error.textContent='';if(password.length<6){error.textContent='A senha deve ter pelo menos 6 caracteres.';return}if(password!==confirmPassword){error.textContent='As senhas não coincidem.';return}btn.disabled=true;try{if(!auth.currentUser)throw new Error('Sua sessão expirou. Entre novamente.');await updatePassword(auth.currentUser,password);const {error:profileError}=await supabase.rpc('complete_password_change');if(profileError)throw profileError;$('changePasswordForm').reset();$('changePasswordGate').hidden=true;await initializeUser(auth.currentUser)}catch(e){error.textContent=e.code==='auth/requires-recent-login'?'Por segurança, saia e entre novamente antes de trocar a senha.':friendlyAuthError(e)}finally{btn.disabled=false}});
 onAuthStateChanged(auth,user=>{if(!user){activeUser=null;currentProfile=null;$('appShell').hidden=true;$('authGate').hidden=false;return}initializeUser(user).catch(error=>{console.error(error);setAuthError(friendlyAuthError(error))})});
