@@ -22,9 +22,9 @@ export function hasPermission(profile, permission, master = false) {
 
   const role = String(profile.role || profile.roleLabel || "")
     .normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[\\s-]+/g, "_");
+    .replace(/[\s-]+/g, "_");
 
   const defaults = ROLE_DEFAULTS[role] ||
     (role === "consultor" || role === "consultortecnico"
