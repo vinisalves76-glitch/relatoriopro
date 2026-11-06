@@ -391,8 +391,6 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   });
   $("#goLiveEquipmentSearch").addEventListener("input",render);
   $("#goLiveEquipmentStatus").addEventListener("change",render);
-  $("#goLiveOrderSearch").addEventListener("input",render);
-  $("#goLiveOrderStatus").addEventListener("change",render);
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
   if(isMaster){
