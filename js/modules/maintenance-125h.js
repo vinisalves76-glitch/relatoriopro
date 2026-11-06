@@ -5,7 +5,7 @@ const date125 = value => value ? new Date(value).toLocaleDateString("pt-BR") : "
 export async function init125hMaintenanceModule({supabase, profile, getAreaId, getEquipment, onRefresh}) {
   const root=document.getElementById("goLive125h");
   if(!root || !supabase || !profile) return;
-  const state={controls:[],services:[],loading:false};
+  const state={controls:[],services:[],schedules:[],loading:false};
   const userId=profile.uid||profile.id;
   const areaId=()=>getAreaId();
   const equipment=()=>getEquipment()||[];
@@ -48,9 +48,9 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       <button class="light" type="button" id="m125Refresh">Atualizar controle</button>
     </div>
     <div class="m125-toolbar"><div id="m125Feedback" role="status" aria-live="polite">Carregando controles…</div><span class="m125-pill">Intervalo padrão: 125 h</span></div>
-    <div class="m125-grid" id="m125Summary"></div>
-    <div class="m125-table-wrap"><table><thead><tr><th>Equipamento</th><th>Horímetro atual</th><th>Última manutenção</th><th>Próxima manutenção</th><th>Faltam</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="m125Rows"></tbody></table></div>
-    <div class="m125-card" style="margin-top:16px"><h3>Histórico de manutenções de 125 horas</h3><div id="m125History"><p>Nenhum registro carregado.</p></div></div>
+    <div class="m125-grid" id="m125Summary"></div><div class="m125-card"><strong>Planejamento:</strong> agende a inspeção antes de o caminhão atingir o próximo limite de 125 horas. A data é um compromisso operacional; o horímetro continua sendo o limite técnico.</div><h3>Controle de prazo por caminhão</h3>
+    <div class="m125-table-wrap"><table><thead><tr><th>Equipamento</th><th>Horímetro atual</th><th>Última manutenção</th><th>Próxima manutenção</th><th>Faltam</th><th>Agendamento</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="m125Rows"></tbody></table></div>
+    <div class="m125-card" style="margin-top:16px"><h3>Agenda programada</h3><div id="m125Agenda"><p>Nenhuma inspeção agendada.</p></div></div><div class="m125-card" style="margin-top:16px"><h3>Histórico de manutenções de 125 horas</h3><div id="m125History"><p>Nenhum registro carregado.</p></div></div>
     <div id="m125Modal"></div>
   `;
 
@@ -67,7 +67,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       const c=controlFor(e.id),current=Number(e.current_horimeter||0);
       if(!c)return {e,c,current,next:null,remaining:null,status:{label:"Não configurado",kind:""}};
       const next=Number(c.last_service_horimeter||0)+Number(c.interval_hours||125);
-      return {e,c,current,next,remaining:next-current,status:statusFor(current,next,c.enabled)};
+      return {e,c,current,next,remaining:next-current,status:statusFor(current,next,c.enabled),schedule:state.schedules.find(s=>s.equipment_id===e.id&&["scheduled","in_progress"].includes(s.status))};
     });
     const overdue=rows.filter(r=>r.c?.enabled&&r.remaining<=0).length;
     const due=rows.filter(r=>r.c?.enabled&&r.remaining>0&&r.remaining<=25).length;
@@ -84,11 +84,12 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
         <td>${r.c?num125(r.c.last_service_horimeter)+" h":"—"}</td>
         <td>${r.next===null?"—":num125(r.next)+" h"}</td>
         <td>${r.remaining===null?"—":r.remaining<=0?num125(Math.abs(r.remaining))+" h vencidas":num125(r.remaining)+" h"}</td>
-        <td><span class="m125-pill ${r.status.kind}">${r.status.label}</span></td>
+        <td>${r.schedule?date125(r.schedule.planned_for)+" · "+num125(r.schedule.planned_horimeter)+" h":"Não agendada"}</td><td><span class="m125-pill ${r.status.kind}">${r.status.label}</span></td>
         <td><div class="m125-actions">
-          ${r.c?'<button class="light" type="button" data-m125-service="'+r.e.id+'">Registrar manutenção</button><button class="light" type="button" data-m125-toggle="'+r.e.id+'">'+(r.c.enabled?"Pausar":"Ativar")+'</button>':'<button class="light" type="button" data-m125-config="'+r.e.id+'">Configurar controle</button>'}
+          ${r.c?'<button class="light" type="button" data-m125-service="'+r.e.id+'">Agendar / reprogramar</button><button class="light" type="button" data-m125-service="${r.e.id}">Registrar execução</button><button class="light" type="button" data-m125-toggle="'+r.e.id+'">'+(r.c.enabled?"Pausar":"Ativar")+'</button>':'<button class="light" type="button" data-m125-config="'+r.e.id+'">Configurar controle</button>'}
         </div></td>
       </tr>`).join(""):'<tr><td colspan="7" class="m125-empty">Cadastre equipamentos na área operacional para iniciar o controle.</td></tr>';
+    root.querySelector("#m125Agenda").innerHTML=state.schedules.filter(s=>["scheduled","in_progress"].includes(s.status)).map(s=>{const e=equipment().find(x=>x.id===s.equipment_id);return "<p><strong>"+esc125(e?.asset_code||"Equipamento")+"</strong> · "+date125(s.planned_for)+" · "+num125(s.planned_horimeter)+" h · "+esc125(s.responsible_name||"Sem responsável")+"</p>"}).join("")||"<p>Nenhuma inspeção agendada.</p>";
     root.querySelector("#m125History").innerHTML=state.services.length?'<div class="m125-table-wrap"><table><thead><tr><th>Data</th><th>Equipamento</th><th>Horímetro da revisão</th><th>Checklist / serviços executados</th><th>Observações</th></tr></thead><tbody>'+state.services.map(s=>{
       const e=equipment().find(x=>x.id===s.equipment_id);
       return '<tr><td>'+esc125(date125(s.performed_at))+'</td><td>'+esc125(e?.asset_code||"Equipamento")+'</td><td>'+num125(s.service_horimeter)+' h</td><td>'+esc125(s.checklist||"—")+'</td><td>'+esc125(s.notes||"—")+'</td></tr>';
@@ -99,13 +100,15 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     state.loading=true;feedback("Atualizando controle de 125 horas…");
     try{
       const id=areaId();
-      const [controls,services]=await Promise.all([
+      const [controls,services,schedules]=await Promise.all([
         supabase.from("operational_125h_control").select("*").eq("area_id",id),
-        supabase.from("operational_125h_services").select("*").eq("area_id",id).order("performed_at",{ascending:false}).limit(100)
+        supabase.from("operational_125h_services").select("*").eq("area_id",id).order("performed_at",{ascending:false}).limit(100),
+        supabase.from("operational_125h_schedules").select("*").eq("area_id",id).order("planned_for",{ascending:true})
       ]);
       if(controls.error)throw controls.error;
       if(services.error)throw services.error;
-      state.controls=controls.data||[];state.services=services.data||[];
+      if(schedules.error)throw schedules.error;
+      state.controls=controls.data||[];state.services=services.data||[];state.schedules=schedules.data||[];
       render();feedback("Controle atualizado · "+new Date().toLocaleTimeString("pt-BR"));
     }catch(error){feedback(error.message||"Não foi possível carregar o controle.",true);throw error;}
     finally{state.loading=false;}
@@ -136,6 +139,31 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       }catch(error){feedback(error.message||"Falha ao configurar controle.",true);btn.disabled=false;}
     });
   }
+
+  function scheduleForm(id){
+    const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e||!c)return;
+    const next=Number(c.last_service_horimeter||0)+125;
+    const existing=state.schedules.find(s=>s.equipment_id===id&&["scheduled","in_progress"].includes(s.status));
+    modal("Agendar inspeção de 125 horas · "+e.asset_code,
+      '<div class="full"><p>Programe a inspeção antes do limite de '+num125(next)+' h.</p></div>'+
+      '<div><label>Data planejada</label><input name="planned_for" type="date" min="'+new Date().toISOString().slice(0,10)+'" value="'+(existing?.planned_for||new Date().toISOString().slice(0,10))+'" required></div>'+
+      '<div><label>Horímetro previsto (h)</label><input name="planned_horimeter" type="number" min="'+Number(e.current_horimeter||0)+'" max="'+next+'" step="0.1" value="'+(existing?.planned_horimeter??next)+'" required></div>'+
+      '<div><label>Responsável</label><input name="responsible_name" value="'+esc125(existing?.responsible_name||"")+'" required></div>'+
+      '<div class="full"><label>Observações</label><textarea name="notes" rows="3">'+esc125(existing?.notes||"")+'</textarea></div>',"Salvar agendamento");
+    root.querySelector("#m125Form").addEventListener("submit",async ev=>{
+      ev.preventDefault();const btn=ev.currentTarget.querySelector('[type="submit"]');btn.disabled=true;
+      try{
+        const d=Object.fromEntries(new FormData(ev.currentTarget).entries()),target=Number(d.planned_horimeter);
+        if(d.planned_for<new Date().toISOString().slice(0,10))throw new Error("A data planejada não pode estar no passado.");
+        if(!Number.isFinite(target)||target<Number(e.current_horimeter||0)||target>next)throw new Error("O horímetro planejado deve ficar entre a leitura atual e "+num125(next)+" h.");
+        const payload={area_id:areaId(),equipment_id:id,planned_for:d.planned_for,planned_horimeter:target,responsible_name:d.responsible_name.trim(),notes:d.notes||"",status:"scheduled",created_by:userId,updated_at:new Date().toISOString()};
+        const result=existing?await supabase.from("operational_125h_schedules").update(payload).eq("id",existing.id).eq("area_id",areaId()):await supabase.from("operational_125h_schedules").insert(payload);
+        if(result.error)throw result.error;
+        root.querySelector("#m125Modal").innerHTML="";await load();feedback("Inspeção agendada com sucesso.");
+      }catch(error){feedback(error.message||"Falha ao agendar.",true);btn.disabled=false;}
+    });
+  }
+
   function serviceForm(id){
     const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e||!c)return;
     modal("Registrar manutenção de 125 horas · "+e.asset_code,
@@ -166,6 +194,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     if(b.id==="m125Refresh"){load().catch(()=>{});return;}
     if(b.dataset.m125Config){configureForm(b.dataset.m125Config);return;}
     if(b.dataset.m125Service){serviceForm(b.dataset.m125Service);return;}
+    if(b.dataset.m125Schedule){scheduleForm(b.dataset.m125Schedule);return;}
     if(b.dataset.m125Toggle){
       const c=controlFor(b.dataset.m125Toggle);if(!c)return;
       b.disabled=true;
