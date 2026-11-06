@@ -117,16 +117,11 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       <div class="go-filters"><input id="goLiveEquipmentSearch" type="search" placeholder="Buscar identificação, marca ou modelo"><select id="goLiveEquipmentStatus"><option value="">Todos os status</option><option value="available">Produzindo</option><option value="stopped">Parado</option><option value="maintenance">Em manutenção</option><option value="inactive">Inativo</option></select></div>
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Identificação</th><th>Equipamento</th><th>Horímetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="goLiveEquipmentRows"></tbody></table></div>
     </section>
-    <section class="go-panel" data-live-panel="orders" hidden>
-      <div class="go-section-heading"><div><h2>Ordens de serviço</h2><p>Abertura e acompanhamento das intervenções.</p></div><button class="primary" type="button" id="goLiveAddOrder">＋ Nova ordem de serviço</button></div>
-      <div class="go-filters"><input id="goLiveOrderSearch" type="search" placeholder="Buscar OS, equipamento ou descrição"><select id="goLiveOrderStatus"><option value="">Todos os status</option><option value="open">Aberta</option><option value="in_progress">Em andamento</option><option value="waiting">Aguardando recurso</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option></select></div>
-      <div id="goLiveOrderList"></div>
-    </section>
     <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
     <section class="go-panel" data-live-panel="checklist" hidden><div id="goLiveChecklist"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
       <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
-      <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>OS vinculada</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
+      <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
     </section>
     <div id="goLiveModalHost"></div>
   `;
@@ -152,24 +147,22 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       }
       const area=activeArea();
       if(!area)throw new Error("Área operacional não encontrada ou inativa.");
-      const [equipment,orders,events,readings,statusHistory,activities]=await Promise.all([
+      const [equipment,events,readings,statusHistory]=await Promise.all([
         supabase.from("operational_equipment").select("*").eq("area_id",state.areaId).order("asset_code"),
-        supabase.from("operational_work_orders").select("*").eq("area_id",state.areaId).order("opened_at",{ascending:false}),
         supabase.from("operational_maintenance_events").select("*").eq("area_id",state.areaId).order("occurred_at",{ascending:false}),
         supabase.from("operational_horimeter_readings").select("*").eq("area_id",state.areaId).order("recorded_at",{ascending:false}),
         supabase.from("operational_equipment_status_history").select("*").eq("area_id",state.areaId).order("changed_at",{ascending:false}),
-        supabase.from("operational_work_order_activities").select("*").eq("area_id",state.areaId).order("created_at",{ascending:false})
       ]);
       // O banco principal é o ambiente de trabalho. Caso as tabelas auxiliares
       // de histórico ainda não existam, mantém a Gestão Operacional disponível
       // com os dados operacionais existentes, sem bloquear o módulo.
-      for(const result of [equipment,orders,events,readings])if(result.error)throw result.error;
-      for(const result of [statusHistory,activities]){
+      for(const result of [equipment,events,readings])if(result.error)throw result.error;
+      for(const result of [statusHistory]){
         if(result.error && result.error.code!=="PGRST205")throw result.error;
       }
-      state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];
+      state.equipment=equipment.data||[];state.orders=[];state.events=events.data||[];state.readings=readings.data||[];
       state.statusHistory=statusHistory.error?[]:(statusHistory.data||[]);
-      state.activities=activities.error?[]:(activities.data||[]);
+      state.activities=[];
       const controls125h = await supabase.from("operational_125h_control").select("equipment_id,last_service_horimeter,interval_hours,enabled").eq("area_id",state.areaId);
       state.controls125hAvailable=!controls125h.error;
       state.controls125h=controls125h.error?[]:(controls125h.data||[]);
@@ -211,12 +204,12 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       {name:"MTTR · Tempo médio de reparo",value:"—",tag:"Dados insuficientes",detail:"Exige início e término de cada intervenção corretiva."},
       {name:"Downtime · Horas paradas",value:"—",tag:"Dados insuficientes",detail:"Exige apontamento de início e fim da parada e classificação do motivo."},
       {name:"Cumprimento preventivo",value:"—",tag:"Dados insuficientes",detail:"Exige plano preventivo previsto e ordens preventivas concluídas no período."},
-      {name:"Backlog de manutenção",value:openOrders.length+" OS",tag:"Parcial · por quantidade",detail:"Mostra OS em aberto. Para backlog em horas, precisamos da estimativa e do saldo de homem-hora."}
+      {name:"Backlog de manutenção",value:openOrders.length+" OS",tag:"Parcial · por quantidade",detail:"Mostra . Para backlog em horas, precisamos da estimativa e do saldo de homem-hora."}
     ];
     const attention=activeEquipment.map(e=>{
       const related=openOrders.filter(o=>o.equipment_id===e.id);
       const critical=related.some(o=>["critical","high"].includes(o.priority));
-      const reason=critical?"OS de alta prioridade":e.status==="stopped"?"Equipamento parado":e.status==="maintenance"?"Em manutenção":related.length?"OS em aberto":"";
+      const reason=critical?"":e.status==="stopped"?"Equipamento parado":e.status==="maintenance"?"Em manutenção":related.length?"":"";
       return {e,related,critical,reason,rank:critical?0:e.status==="stopped"?1:e.status==="maintenance"?2:related.length?3:9};
     }).filter(x=>x.rank<9).sort((a,b)=>a.rank-b.rank).slice(0,8);
     const periodLabel=state.overviewPeriod+" dias";
@@ -226,17 +219,17 @@ export async function initOperationalModule({supabase, profile, isMaster: master
         <article class="bi-kpi"><span>Frota ativa</span><strong>${activeEquipment.length}</strong><small>${state.equipment.length-activeEquipment.length} inativos / fora de operação</small></article>
         <article class="bi-kpi ${stopped?"alert":""}"><span>Parados ou em manutenção</span><strong>${stopped}</strong><small>${activeEquipment.length?Math.round(stopped/activeEquipment.length*100):0}% da frota ativa</small></article>
         <article class="bi-kpi"><span>OS em aberto</span><strong>${openOrders.length}</strong><small>${waitingOrders} aguardando recurso · ${closedOrders} concluídas no total</small></article>
-        <article class="bi-kpi ${criticalOrders.length?"alert":""}"><span>OS prioritárias</span><strong>${criticalOrders.length}</strong><small>Alta ou crítica · backlog atual</small></article>
+        <article class="bi-kpi ${criticalOrders.length?"alert":""}"><span></span><strong>${criticalOrders.length}</strong><small>Alta ou crítica · backlog atual</small></article>
         <article class="bi-kpi"><span>Produzindo</span><strong>${available}</strong><small>${activeEquipment.length?Math.round(available/activeEquipment.length*100):0}% da frota ativa com status produzindo</small></article>
         <article class="bi-kpi ${due125.length?"warn":""}"><span>Preventivas 125h próximas</span><strong>${state.controls125hAvailable?due125.length:"—"}</strong><small>${state.controls125hAvailable?overdue125+" vencidas · "+(due125.length-overdue125)+" próximas":"Controle 125h não consultado"}</small></article>
-        <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} OS abertas no período</small></article>
+        <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} Registros de manutenção e ocorrências</small></article>
         <article class="bi-kpi"><span>Leituras de horímetro</span><strong>${state.readings.length}</strong><small>Registros disponíveis no histórico</small></article>
       </div>
 
       <div class="bi-section-title"><div><h3>Distribuição da operação</h3><p>Visão proporcional da frota, das ordens e das intervenções</p></div></div>
       <div class="bi-layout">
         <section class="bi-panel"><h3>Status da frota</h3><p class="bi-sub">Equipamentos ativos · situação cadastrada</p>${pieMarkup(equipmentPie,activeEquipment.length,"equipamentos")}<div class="bi-note">Este gráfico representa o status informado no cadastro, não substitui o cálculo de disponibilidade física.</div></section>
-        <section class="bi-panel"><h3>Ordens de serviço</h3><p class="bi-sub">Distribuição por situação atual</p>${pieMarkup(orderPie,state.orders.length,"ordens")}</section>
+        <section class="bi-panel"><h3></h3><p class="bi-sub">Distribuição por situação atual</p>${pieMarkup(orderPie,state.orders.length,"ordens")}</section>
       </div>
       <div class="bi-layout">
         <section class="bi-panel"><h3>Tipos de intervenção</h3><p class="bi-sub">Eventos registrados nos últimos ${periodLabel.toLowerCase()}</p>${pieMarkup(eventPie,periodEvents.length,"eventos")}<div class="bi-note">A classificação depende do preenchimento correto do tipo de evento.</div></section>
@@ -246,7 +239,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       <div class="bi-metric-grid">${metricCards.map(m=>'<article class="bi-metric"><div class="bi-metric-top"><span>'+m.name+'</span><i class="bi-tag">'+m.tag+'</i></div><strong>'+m.value+'</strong><small>'+m.detail+'</small></article>').join("")}</div>
       <div class="bi-note">Indicadores marcados como dados insuficientes ainda não podem ser calculados com rigor a partir dos registros atuais. A próxima etapa é implantar apontamento de disponibilidade, paradas e planejamento preventivo.</div>
       <section class="bi-panel"><h3>Equipamentos que exigem atenção</h3><p class="bi-sub">Prioridade sugerida por status do equipamento e criticidade das OS</p>
-        ${attention.length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Equipamento</th><th>Status</th><th>OS abertas</th><th>Prioridade</th><th>Motivo</th></tr></thead><tbody>'+attention.map(x=>'<tr><td><strong>'+esc(x.e.asset_code)+'</strong><br><small>'+esc([x.e.brand,x.e.model].filter(Boolean).join(" · "))+'</small></td><td><span class="go-live-status '+statusClass(x.e.status)+'">'+esc(equipmentStatusLabel(x.e.status,x.e.maintenance_type))+'</span></td><td>'+x.related.length+'</td><td>'+ (x.critical?'<span class="go-live-status danger">Alta / crítica</span>':'—')+'</td><td>'+esc(x.reason)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Nenhum equipamento parado, em manutenção ou com OS aberta.</div>'}
+        ${attention.length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Equipamento</th><th>Status</th><th>Motivo</th></tr></thead><tbody>'+attention.map(x=>'<tr><td><strong>'+esc(x.e.asset_code)+'</strong><br><small>'+esc([x.e.brand,x.e.model].filter(Boolean).join(" · "))+'</small></td><td><span class="go-live-status '+statusClass(x.e.status)+'">'+esc(equipmentStatusLabel(x.e.status,x.e.maintenance_type))+'</span></td><td>'+x.related.length+'</td><td>'+ (x.critical?'<span class="go-live-status danger">Alta / crítica</span>':'—')+'</td><td>'+esc(x.reason)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Nenhum equipamento parado, em manutenção ou com OS aberta.</div>'}
       </section>
       <div class="bi-layout">
         <section class="bi-panel"><h3>Movimentações recentes</h3><p class="bi-sub">Últimos registros de manutenção e ocorrência</p>
@@ -268,7 +261,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     const orderTerm=($("#goLiveOrderSearch")?.value||"").toLocaleLowerCase("pt-BR"),orderStatus=$("#goLiveOrderStatus")?.value||"";
     const orders=state.orders.filter(o=>(!orderStatus||o.status===orderStatus)&&(!orderTerm||[o.order_number,o.title,o.description,equipmentName(o.equipment_id)].join(" ").toLocaleLowerCase("pt-BR").includes(orderTerm)));
     $("#goLiveOrderList").innerHTML=orders.length?orders.map(o=>'<article class="go-os-card"><div class="go-os-top"><div><span class="go-live-status '+statusClass(o.status)+'">'+esc(statusLabel(o.status))+' · '+esc(statusLabel(o.priority))+'</span><h3>'+esc(o.order_number)+' · '+esc(equipmentName(o.equipment_id))+'</h3><p>'+esc(o.title)+'</p></div><span class="go-os-date">'+esc(dateOnly(o.opened_at))+'</span></div><p>'+esc(o.diagnosis||o.description)+'</p><div class="go-live-actions"><button class="light" type="button" data-order-details="'+o.id+'">Acompanhar</button>'+(!["completed","cancelled"].includes(o.status)?'<button class="light" type="button" data-edit-order="'+o.id+'">Atualizar OS</button>':'')+'</div></article>').join(""):'<div class="go-live-empty">Nenhuma ordem de serviço cadastrada nesta área.</div>';
-    $("#goLiveEventRows").innerHTML=state.events.length?state.events.map(e=>'<tr><td>'+esc(dateTime(e.occurred_at))+'</td><td>'+esc(equipmentName(e.equipment_id))+'</td><td>'+esc(statusLabel(e.event_type))+'</td><td>'+esc(e.description)+'</td><td>'+esc(state.orders.find(o=>o.id===e.work_order_id)?.order_number||"—")+'</td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum evento registrado.</td></tr>';
+    $("#goLiveEventRows").innerHTML=state.events.length?state.events.map(e=>'<tr><td>'+esc(dateTime(e.occurred_at))+'</td><td>'+esc(equipmentName(e.equipment_id))+'</td><td>'+esc(statusLabel(e.event_type))+'</td><td>'+esc(e.description)+'</td></tr>').join(""):'<tr><td colspan="4" class="go-live-empty">Nenhum evento registrado.</td></tr>';
   }
   function openModal(title,body,submitLabel="Salvar",hasForm=true) {
     const footer=hasForm?'<button type="button" class="light" data-close-live-modal>Cancelar</button><button type="submit" form="goLiveForm" class="primary">'+esc(submitLabel)+'</button>':'<button type="button" class="light" data-close-live-modal>Fechar</button>';
@@ -293,9 +286,9 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     openModal("Histórico operacional · "+item.asset_code,'<p>Status atual: <strong>'+esc(equipmentStatusLabel(item.status,item.maintenance_type))+'</strong></p><h3>Histórico operacional</h3>'+timeline+'<button type="button" class="primary" data-change-equipment-status="'+item.id+'">Alterar status</button>',"",false);
   }
   function equipmentStatusForm(item) {
-    const relatedOrders=state.orders.filter(order=>order.equipment_id===item.id);
-    const orderOptions=[["","Sem OS vinculada"],...relatedOrders.map(order=>[order.id,order.order_number+" · "+order.title])];
-    openModal("Alterar status · "+item.asset_code,'<form id="goLiveForm"><div class="go-live-form-grid">'+selectField("Novo status","new_status",[["available","Produzindo"],["stopped","Parado"],["maintenance","Em manutenção"],["inactive","Inativo"]],item.status)+selectField("Tipo de manutenção","maintenance_type",[["","Não se aplica"],["preventive","Preventiva"],["corrective","Corretiva"],["tire_shop","Borracharia"]],item.maintenance_type||"")+selectField("Ordem de serviço relacionada","work_order_id",orderOptions,"")+field("Motivo da alteração","reason","")+ '<input type="hidden" name="status_equipment_id" value="'+esc(item.id)+'"><div class="full"><label for="live_notes">Observações</label><textarea id="live_notes" name="notes" rows="3"></textarea></div></div></form>');
+    
+    
+    openModal("Alterar status · "+item.asset_code,'<form id="goLiveForm"><div class="go-live-form-grid">'+selectField("Novo status","new_status",[["available","Produzindo"],["stopped","Parado"],["maintenance","Em manutenção"],["inactive","Inativo"]],item.status)+selectField("Tipo de manutenção","maintenance_type",[["","Não se aplica"],["preventive","Preventiva"],["corrective","Corretiva"],["tire_shop","Borracharia"]],item.maintenance_type||"")+field("Motivo da alteração","reason","")+ '<input type="hidden" name="status_equipment_id" value="'+esc(item.id)+'"><div class="full"><label for="live_notes">Observações</label><textarea id="live_notes" name="notes" rows="3"></textarea></div></div></form>');
   }
   function activityForm(order,type="activity",previous=null) {
     const labels={activity:"Registrar atividade",pending:"Registrar pendência",impediment:"Registrar impedimento"};
@@ -318,8 +311,8 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   function eventForm() {
     const equipmentOptions=state.equipment.filter(e=>e.status!=="inactive").map(e=>[e.id,e.asset_code+" · "+[e.brand,e.model].filter(Boolean).join(" ")]);
     if(!equipmentOptions.length){setFeedback("Cadastre um equipamento antes de registrar manutenção ou ocorrência.",true);switchTab("equipment");return;}
-    const orderOptions=[["","Sem OS vinculada"],...state.orders.filter(o=>!["completed","cancelled"].includes(o.status)).map(o=>[o.id,o.order_number+" · "+o.title])];
-    openModal("Registrar manutenção ou ocorrência",'<form id="goLiveForm"><div class="go-live-form-grid">'+selectField("Equipamento","equipment_id",equipmentOptions,equipmentOptions[0][0])+selectField("Tipo de evento","event_type",[["preventive","Preventiva"],["corrective","Corretiva"],["inspection","Inspeção"],["occurrence","Ocorrência"]],"occurrence")+selectField("Ordem de serviço","work_order_id",orderOptions,"")+'<div><label for="live_occurred_at">Data e hora</label><input id="live_occurred_at" name="occurred_at" type="datetime-local" value="'+new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)+'" required></div><div class="full"><label for="live_description">Descrição / registro</label><textarea id="live_description" name="description" rows="4" required></textarea></div></div></form>');
+    
+    openModal("Registrar manutenção ou ocorrência",'<form id="goLiveForm"><div class="go-live-form-grid">'+selectField("Equipamento","equipment_id",equipmentOptions,equipmentOptions[0][0])+selectField("Tipo de evento","event_type",[["preventive","Preventiva"],["corrective","Corretiva"],["inspection","Inspeção"],["occurrence","Ocorrência"]],"occurrence")+'<div><label for="live_occurred_at">Data e hora</label><input id="live_occurred_at" name="occurred_at" type="datetime-local" value="'+new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)+'" required></div><div class="full"><label for="live_description">Descrição / registro</label><textarea id="live_description" name="description" rows="4" required></textarea></div></div></form>');
   }
   function horimeterForm(item) {
     openModal("Registrar horímetro · "+item.asset_code,'<form id="goLiveForm"><div class="go-live-form-grid">'+field("Leitura atual (horas)","reading",item.current_horimeter||0,"number")+'<div class="full"><label for="live_notes">Observações</label><textarea id="live_notes" name="notes" rows="3"></textarea></div><input type="hidden" name="equipment_id" value="'+esc(item.id)+'"></div></form>');
@@ -344,7 +337,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
         const {error}=await supabase.rpc("transition_operational_equipment_status",{
           p_area_id:state.areaId,p_equipment_id:data.status_equipment_id,p_new_status:data.new_status,
           p_maintenance_type:data.new_status==="maintenance"?(data.maintenance_type||null):null,
-          p_reason:data.reason.trim(),p_notes:data.notes||"",p_work_order_id:data.work_order_id||null
+          p_reason:data.reason.trim(),p_notes:data.notes||"",p_work_order_id:null
         });
         if(error)throw error;
       } else if(form.querySelector('[name="close_order_id"]')){
@@ -373,7 +366,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
         if(recordId){const result=await supabase.from("operational_work_orders").update(payload).eq("id",recordId).eq("area_id",state.areaId);if(result.error)throw result.error;}
         else {payload.order_number="OS-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,6).toUpperCase();payload.created_by=profile.uid||profile.id;const result=await supabase.from("operational_work_orders").insert(payload);if(result.error)throw result.error;}
       } else if(form.querySelector('[name="event_type"]')){
-        const payload={area_id:state.areaId,equipment_id:data.equipment_id,work_order_id:data.work_order_id||null,event_type:data.event_type,description:data.description.trim(),occurred_at:new Date(data.occurred_at).toISOString(),created_by:profile.uid||profile.id};
+        const payload={area_id:state.areaId,equipment_id:data.equipment_id,event_type:data.event_type,description:data.description.trim(),occurred_at:new Date(data.occurred_at).toISOString(),created_by:profile.uid||profile.id};
         const result=await supabase.from("operational_maintenance_events").insert(payload);if(result.error)throw result.error;
       } else if(form.querySelector('[name="reading"]')){
         const equipment=state.equipment.find(e=>e.id===data.equipment_id),reading=Number(data.reading);
@@ -394,18 +387,10 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     if(button.dataset.liveTab){switchTab(button.dataset.liveTab);return;}
     if(button.id==="goLiveOpenChecklist"){switchTab("checklist");return;}
     if(button.id==="goLiveAddEquipment"){equipmentForm();return;}
-    if(button.id==="goLiveAddOrder"){orderForm();return;}
     if(button.id==="goLiveAddEvent"){eventForm();return;}
     if(button.dataset.equipmentHistory){const item=state.equipment.find(e=>e.id===button.dataset.equipmentHistory);if(item)equipmentHistory(item);return;}
     if(button.dataset.changeEquipmentStatus){const item=state.equipment.find(e=>e.id===button.dataset.changeEquipmentStatus);if(item)equipmentStatusForm(item);return;}
     if(button.dataset.editEquipment){const item=state.equipment.find(e=>e.id===button.dataset.editEquipment);if(item)equipmentForm(item);return;}
-    if(button.dataset.orderDetails){const item=state.orders.find(o=>o.id===button.dataset.orderDetails);if(item)orderDetails(item);return;}
-    if(button.dataset.addOrderActivity){const item=state.orders.find(o=>o.id===button.dataset.addOrderActivity);if(item)activityForm(item);return;}
-    if(button.dataset.addOrderPending){const item=state.orders.find(o=>o.id===button.dataset.addOrderPending);if(item)activityForm(item,"pending");return;}
-    if(button.dataset.addOrderImpediment){const item=state.orders.find(o=>o.id===button.dataset.addOrderImpediment);if(item)activityForm(item,"impediment");return;}
-    if(button.dataset.updateOrderActivity){const activity=state.activities.find(a=>a.id===button.dataset.updateOrderActivity),item=state.orders.find(o=>o.id===activity?.work_order_id);if(item&&activity)activityForm(item,activity.activity_type,activity);return;}
-    if(button.dataset.closeOrder){const item=state.orders.find(o=>o.id===button.dataset.closeOrder);if(item)closeOrderForm(item);return;}
-    if(button.dataset.editOrder){const item=state.orders.find(o=>o.id===button.dataset.editOrder);if(item)orderForm(item);return;}
     if(button.dataset.addReading){const item=state.equipment.find(e=>e.id===button.dataset.addReading);if(item)horimeterForm(item);return;}
   });
   $("#goLiveEquipmentSearch").addEventListener("input",render);
