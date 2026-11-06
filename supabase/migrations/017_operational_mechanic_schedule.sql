@@ -108,6 +108,10 @@ begin
     raise exception 'Somente o Supervisor de Área pode gerenciar a escala desta mina.';
   end if;
 
+  if tg_op = 'INSERT' and new.work_date < current_date then
+    raise exception 'Não é permitido criar uma alocação em data passada.';
+  end if;
+
   if tg_op = 'UPDATE' and old.work_date < current_date then
     raise exception 'A escala de uma data passada é histórica e não pode ser alterada.';
   end if;
