@@ -383,12 +383,12 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
   if(isMaster){
-    const checklistPanel=root.querySelector('[data-live-panel="checklist"]');
-    const checklistButton=root.querySelector("#goLiveOpenChecklist");
+    const checklistPanel=liveRoot().querySelector('[data-live-panel="checklist"]');
+    const checklistButton=liveRoot().querySelector("#goLiveOpenChecklist");
     if(checklistPanel&&checklistButton){
       checklistButton.hidden=false;
       const {initChecklistTremForca}=await import("../checklist-trem-forca.js");
-      initChecklistTremForca({root,isMaster:()=>isMaster,getAssets:()=>state.equipment});
+      initChecklistTremForca({root:liveRoot(),isMaster:()=>isMaster,getAssets:()=>state.equipment});
     }
   }
 }
