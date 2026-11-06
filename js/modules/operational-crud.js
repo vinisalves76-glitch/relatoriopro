@@ -112,7 +112,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
 
       @media(max-width:600px){#gestaoOperacional .go-live-form-grid{grid-template-columns:1fr}#gestaoOperacional .go-live-form-grid .full{grid-column:auto}#gestaoOperacional .go-live-dialog{padding:16px}}
     </style>
-    <div class="go-page-head"><h1>Gestão Operacional</h1><button class="primary" type="button" id="goLiveOpenChecklist" hidden>Checklist Trem de Força</button></div>
+    <div class="go-page-head"><h1>Gestão Operacional</h1></div>
     <div id="goLiveFeedback" role="status" aria-live="polite"></div>
         <section class="go-panel active" data-live-panel="overview"><div id="goLiveOverview"></div></section>
         <section class="go-panel" data-live-panel="equipment" hidden>
@@ -121,7 +121,6 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Identificação</th><th>Equipamento</th><th>Horímetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="goLiveEquipmentRows"></tbody></table></div>
     </section>
     <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
-    <section class="go-panel" data-live-panel="checklist" hidden><div id="goLiveChecklist"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
       <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
@@ -370,7 +369,6 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   liveRoot().addEventListener("click",event=>{
     const button=event.target.closest("button");if(!button)return;
     if(button.dataset.liveTab){switchTab(button.dataset.liveTab);return;}
-    if(button.id==="goLiveOpenChecklist"){switchTab("checklist");return;}
     if(button.id==="goLiveAddEquipment"){equipmentForm();return;}
     if(button.id==="goLiveAddEvent"){eventForm();return;}
     if(button.dataset.equipmentHistory){const item=state.equipment.find(e=>e.id===button.dataset.equipmentHistory);if(item)equipmentHistory(item);return;}
@@ -382,13 +380,4 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   $("#goLiveEquipmentStatus").addEventListener("change",render);
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
-  if(isMaster){
-    const checklistPanel=liveRoot().querySelector('[data-live-panel="checklist"]');
-    const checklistButton=liveRoot().querySelector("#goLiveOpenChecklist");
-    if(checklistPanel&&checklistButton){
-      checklistButton.hidden=false;
-      const {initChecklistTremForca}=await import("../checklist-trem-forca.js");
-      initChecklistTremForca({root:liveRoot(),isMaster:()=>isMaster,getAssets:()=>state.equipment});
-    }
-  }
 }
