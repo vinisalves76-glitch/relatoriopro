@@ -17,7 +17,7 @@ export async function initOperationalModule({supabase, profile}) {
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
   const fixedArea = isSupervisor ? profile.operationalAreaId : null;
-  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], busy:false};
+  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], controls125h:[], controls125hAvailable:false, overviewPeriod:90, busy:false};
   root.innerHTML = `
     <style>
       #gestaoOperacional .go-live-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:18px 0}
@@ -46,6 +46,39 @@ export async function initOperationalModule({supabase, profile}) {
       #gestaoOperacional .go-live-status{display:inline-block;padding:4px 8px;border-radius:20px;background:#edf1f4;font-size:11px;font-weight:700}
       #gestaoOperacional .go-live-status.success{background:#e2f5e9;color:#17663a}#gestaoOperacional .go-live-status.warning{background:#fff2d6;color:#875600}#gestaoOperacional .go-live-status.danger{background:#ffe4e1;color:#a32b21}#gestaoOperacional .go-live-status.info{background:#e5efff;color:#28549a}
       #gestaoOperacional .go-live-error{padding:12px;border-radius:8px;background:#fff0ee;color:#a32b21;margin:12px 0}
+      #gestaoOperacional .bi-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:8px 0 16px}
+      #gestaoOperacional .bi-head h2{margin:0 0 4px;font-size:21px}
+      #gestaoOperacional .bi-head p{margin:0;color:var(--muted,#68737d);font-size:13px}
+      #gestaoOperacional .bi-period{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-period select{padding:8px 10px;border:1px solid var(--line,#d5dce2);border-radius:8px;background:var(--panel,#fff);color:inherit}
+      #gestaoOperacional .bi-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+      #gestaoOperacional .bi-kpi{background:var(--panel,#fff);border:1px solid var(--line,#dfe4e8);border-radius:11px;padding:14px;min-width:0}
+      #gestaoOperacional .bi-kpi span{display:block;font-size:12px;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-kpi strong{display:block;font-size:26px;line-height:1.2;margin:7px 0 4px;font-weight:760}
+      #gestaoOperacional .bi-kpi small{font-size:11px;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-kpi.alert strong{color:#b42318}
+      #gestaoOperacional .bi-kpi.warn strong{color:#9a6700}
+      #gestaoOperacional .bi-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,1fr);gap:12px;margin:12px 0}
+      #gestaoOperacional .bi-panel{background:var(--panel,#fff);border:1px solid var(--line,#dfe4e8);border-radius:11px;padding:15px;min-width:0}
+      #gestaoOperacional .bi-panel h3{font-size:14px;margin:0 0 5px}
+      #gestaoOperacional .bi-panel .bi-sub{font-size:11px;color:var(--muted,#68737d);margin:0 0 14px}
+      #gestaoOperacional .bi-bars{display:grid;gap:10px}
+      #gestaoOperacional .bi-bar-row{display:grid;grid-template-columns:minmax(95px,130px) 1fr 34px;align-items:center;gap:8px;font-size:12px}
+      #gestaoOperacional .bi-bar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-bar-track{height:9px;background:var(--surface,#edf1f4);border-radius:20px;overflow:hidden}
+      #gestaoOperacional .bi-bar-fill{height:100%;border-radius:20px;background:#4779a8}
+      #gestaoOperacional .bi-bar-fill.danger{background:#c54d42}
+      #gestaoOperacional .bi-bar-fill.warning{background:#d69a27}
+      #gestaoOperacional .bi-bar-fill.success{background:#3b9870}
+      #gestaoOperacional .bi-bar-value{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+      #gestaoOperacional .bi-table{width:100%;border-collapse:collapse;min-width:600px}
+      #gestaoOperacional .bi-table th,#gestaoOperacional .bi-table td{padding:10px 8px;border-bottom:1px solid var(--line,#e5e9ed);font-size:12px;text-align:left}
+      #gestaoOperacional .bi-table th{font-size:10px;text-transform:uppercase;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-note{font-size:11px;color:var(--muted,#68737d);padding:10px 12px;border-radius:8px;background:var(--surface,#f5f7f9);margin-top:12px}
+      #gestaoOperacional .bi-empty{padding:16px;text-align:center;color:var(--muted,#68737d);font-size:12px}
+      @media(max-width:900px){#gestaoOperacional .bi-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#gestaoOperacional .bi-layout{grid-template-columns:1fr}}
+      @media(max-width:480px){#gestaoOperacional .bi-kpi{padding:11px}#gestaoOperacional .bi-kpi strong{font-size:22px}#gestaoOperacional .bi-bar-row{grid-template-columns:92px 1fr 26px;gap:6px}}
+
       @media(max-width:600px){#gestaoOperacional .go-live-form-grid{grid-template-columns:1fr}#gestaoOperacional .go-live-form-grid .full{grid-column:auto}#gestaoOperacional .go-live-dialog{padding:16px}}
     </style>
     <div class="go-page-head"><div><span class="go-eyebrow">IRMEN · GESTÃO TÉCNICA E OPERACIONAL</span><h1>Gestão Operacional</h1><p class="muted">Dados operacionais gravados no Supabase e protegidos por área.</p></div><span class="go-master-badge" id="goLiveScope"></span></div>
@@ -99,6 +132,9 @@ export async function initOperationalModule({supabase, profile}) {
       ]);
       for(const result of [equipment,orders,events,readings])if(result.error)throw result.error;
       state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];
+      const controls125h = await supabase.from("operational_125h_control").select("equipment_id,last_service_horimeter,interval_hours,enabled").eq("area_id",state.areaId);
+      state.controls125hAvailable=!controls125h.error;
+      state.controls125h=controls125h.error?[]:(controls125h.data||[]);
       $("#goLiveAreaName").textContent=area.name;
       render();
       setFeedback("Dados atualizados · "+new Date().toLocaleTimeString("pt-BR"));
@@ -107,19 +143,66 @@ export async function initOperationalModule({supabase, profile}) {
   }
   const equipmentName = id => {const e=state.equipment.find(x=>x.id===id);return e?[e.asset_code,e.brand,e.model].filter(Boolean).join(" · "):"Equipamento não localizado";};
   function render() {
-    const open=state.orders.filter(o=>["open","in_progress","waiting"].includes(o.status)).length;
-    const available=state.equipment.filter(e=>e.status==="available").length;
-    const stopped=state.equipment.filter(e=>["stopped","maintenance"].includes(e.status)).length;
+
+    const activeEquipment=state.equipment.filter(e=>e.status!=="inactive");
+    const available=activeEquipment.filter(e=>e.status==="available").length;
+    const stopped=activeEquipment.filter(e=>["stopped","maintenance"].includes(e.status)).length;
+    const openOrders=state.orders.filter(o=>["open","in_progress","waiting"].includes(o.status));
+    const criticalOrders=openOrders.filter(o=>["critical","high"].includes(o.priority));
+    const waitingOrders=openOrders.filter(o=>o.status==="waiting").length;
+    const closedOrders=state.orders.filter(o=>o.status==="completed").length;
+    const due125=state.controls125h.filter(c=>c.enabled&&activeEquipment.some(e=>e.id===c.equipment_id)&&Number(c.last_service_horimeter||0)+Number(c.interval_hours||125)-Number(activeEquipment.find(e=>e.id===c.equipment_id)?.current_horimeter||0)<=25);
+    const overdue125=due125.filter(c=>Number(c.last_service_horimeter||0)+Number(c.interval_hours||125)-Number(activeEquipment.find(e=>e.id===c.equipment_id)?.current_horimeter||0)<=0).length;
+    const periodStart=new Date();periodStart.setDate(periodStart.getDate()-state.overviewPeriod);
+    const periodEvents=state.events.filter(e=>e.occurred_at&&new Date(e.occurred_at)>=periodStart);
+    const periodOrders=state.orders.filter(o=>o.opened_at&&new Date(o.opened_at)>=periodStart);
+    const eventTypes=[["preventive","Preventivas"],["corrective","Corretivas"],["inspection","Inspeções"],["occurrence","Ocorrências"]];
+    const maxType=Math.max(1,...eventTypes.map(([key])=>periodEvents.filter(e=>e.event_type===key).length));
+    const eventBars=eventTypes.map(([key,label])=>{const n=periodEvents.filter(e=>e.event_type===key).length;return '<div class="bi-bar-row"><span class="bi-bar-label">'+label+'</span><div class="bi-bar-track"><div class="bi-bar-fill '+(key==="corrective"||key==="occurrence"?"warning":"success")+'" style="width:'+(n/maxType*100)+'%"></div></div><strong class="bi-bar-value">'+n+'</strong></div>';}).join("");
+    const orderTypes=[["open","Abertas"],["in_progress","Em andamento"],["waiting","Aguardando recurso"],["completed","Concluídas"]];
+    const maxOrder=Math.max(1,...orderTypes.map(([key])=>state.orders.filter(o=>o.status===key).length));
+    const orderBars=orderTypes.map(([key,label])=>{const n=state.orders.filter(o=>o.status===key).length;return '<div class="bi-bar-row"><span class="bi-bar-label">'+label+'</span><div class="bi-bar-track"><div class="bi-bar-fill '+(key==="waiting"?"warning":key==="completed"?"success":key==="open"?"danger":"")+'" style="width:'+(n/maxOrder*100)+'%"></div></div><strong class="bi-bar-value">'+n+'</strong></div>';}).join("");
+    const attention=activeEquipment.map(e=>{
+      const related=openOrders.filter(o=>o.equipment_id===e.id);
+      const critical=related.some(o=>["critical","high"].includes(o.priority));
+      const reason=critical?"OS de alta prioridade":e.status==="stopped"?"Equipamento parado":e.status==="maintenance"?"Em manutenção":related.length?"OS em aberto":"";
+      return {e,related,critical,reason,rank:critical?0:e.status==="stopped"?1:e.status==="maintenance"?2:related.length?3:9};
+    }).filter(x=>x.rank<9).sort((a,b)=>a.rank-b.rank).slice(0,8);
+    const periodLabel=state.overviewPeriod+" dias";
     $("#goLiveScope").textContent=isMaster?"Acesso global · Administrador master":"Área vinculada · "+areaLabel(state.areaId);
     $("#goLiveOverview").innerHTML=`
-      <div class="go-live-grid">
-        <article class="go-live-card"><h3>Equipamentos cadastrados</h3><strong>${state.equipment.length}</strong><p>${available} disponíveis · ${stopped} parados ou em manutenção</p></article>
-        <article class="go-live-card"><h3>Ordens em aberto</h3><strong>${open}</strong><p>${state.orders.filter(o=>o.status==="waiting").length} aguardando recurso</p></article>
-        <article class="go-live-card"><h3>Eventos registrados</h3><strong>${state.events.length}</strong><p>Manutenções, inspeções e ocorrências</p></article>
-        <article class="go-live-card"><h3>Leituras de horímetro</h3><strong>${state.readings.length}</strong><p>Histórico registrado nesta área</p></article>
+      <div class="bi-head"><div><h2>Painel de manutenção</h2><p>Gestão à vista da frota · ${esc(areaLabel(state.areaId))}</p></div><label class="bi-period">Período de análise <select id="biPeriod"><option value="30" ${state.overviewPeriod===30?"selected":""}>Últimos 30 dias</option><option value="90" ${state.overviewPeriod===90?"selected":""}>Últimos 90 dias</option><option value="180" ${state.overviewPeriod===180?"selected":""}>Últimos 180 dias</option></select></label></div>
+      <div class="bi-kpis">
+        <article class="bi-kpi"><span>Frota ativa</span><strong>${activeEquipment.length}</strong><small>${state.equipment.length-activeEquipment.length} inativos / fora de operação</small></article>
+        <article class="bi-kpi ${stopped?"alert":""}"><span>Parados ou em manutenção</span><strong>${stopped}</strong><small>${activeEquipment.length?Math.round(stopped/activeEquipment.length*100):0}% da frota ativa</small></article>
+        <article class="bi-kpi"><span>OS em aberto</span><strong>${openOrders.length}</strong><small>${waitingOrders} aguardando recurso · ${closedOrders} concluídas no total</small></article>
+        <article class="bi-kpi ${criticalOrders.length?"alert":""}"><span>OS prioritárias</span><strong>${criticalOrders.length}</strong><small>Alta ou crítica · backlog atual</small></article>
+        <article class="bi-kpi"><span>Disponíveis</span><strong>${available}</strong><small>${activeEquipment.length?Math.round(available/activeEquipment.length*100):0}% da frota ativa com status disponível</small></article>
+        <article class="bi-kpi ${due125.length?"warn":""}"><span>Preventivas 125h próximas</span><strong>${state.controls125hAvailable?due125.length:"—"}</strong><small>${state.controls125hAvailable?overdue125+" vencidas · "+(due125.length-overdue125)+" próximas":"Controle 125h não consultado"}</small></article>
+        <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} OS abertas no período</small></article>
+        <article class="bi-kpi"><span>Leituras de horímetro</span><strong>${state.readings.length}</strong><small>Registros disponíveis no histórico</small></article>
       </div>
-      <div class="go-live-card"><h3>Últimas movimentações</h3>${state.events.slice(0,5).length?'<ul>'+state.events.slice(0,5).map(e=>'<li><strong>'+esc(equipmentName(e.equipment_id))+'</strong> · '+esc(statusLabel(e.event_type))+' · '+esc(e.description)+' <span style="color:#718096">('+esc(dateTime(e.occurred_at))+')</span></li>').join("")+'</ul>':'<p>Nenhum evento registrado até o momento.</p>'}</div>
-      <div class="go-live-card" style="margin-top:12px"><h3>Equipamentos recentes</h3>${state.equipment.slice(0,6).length?'<ul>'+state.equipment.slice(0,6).map(e=>'<li><strong>'+esc(e.asset_code)+'</strong> · '+esc([e.brand,e.model,e.description].filter(Boolean).join(" · "))+' · '+esc(statusLabel(e.status))+' · '+Number(e.current_horimeter||0).toLocaleString("pt-BR")+' h</li>').join("")+'</ul>':'<p>Nenhum equipamento cadastrado. Comece cadastrando o primeiro equipamento da área.</p>'}</div>`;
+      <div class="bi-layout">
+        <section class="bi-panel"><h3>Perfil das intervenções</h3><p class="bi-sub">Eventos registrados nos últimos ${periodLabel.toLowerCase()}</p><div class="bi-bars">${eventBars}</div><div class="bi-note">A distribuição considera os eventos cadastrados. Ela não representa horas paradas nem custo de manutenção.</div></section>
+        <section class="bi-panel"><h3>Carteira de ordens de serviço</h3><p class="bi-sub">Situação atual das OS cadastradas</p><div class="bi-bars">${orderBars}</div><div class="bi-note">${criticalOrders.length} OS de alta prioridade ou críticas exigem acompanhamento.</div></section>
+      </div>
+      <section class="bi-panel"><h3>Equipamentos que exigem atenção</h3><p class="bi-sub">Prioridade sugerida por status do equipamento e criticidade das OS</p>
+        ${attention.length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Equipamento</th><th>Status</th><th>OS abertas</th><th>Prioridade</th><th>Motivo</th></tr></thead><tbody>'+attention.map(x=>'<tr><td><strong>'+esc(x.e.asset_code)+'</strong><br><small>'+esc([x.e.brand,x.e.model].filter(Boolean).join(" · "))+'</small></td><td><span class="go-live-status '+statusClass(x.e.status)+'">'+esc(statusLabel(x.e.status))+'</span></td><td>'+x.related.length+'</td><td>'+ (x.critical?'<span class="go-live-status danger">Alta / crítica</span>':'—')+'</td><td>'+esc(x.reason)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Nenhum equipamento parado, em manutenção ou com OS aberta.</div>'}
+      </section>
+      <div class="bi-layout">
+        <section class="bi-panel"><h3>Movimentações recentes</h3><p class="bi-sub">Últimos registros de manutenção e ocorrência</p>
+          ${state.events.slice(0,6).length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Registro</th></tr></thead><tbody>'+state.events.slice(0,6).map(e=>'<tr><td>'+esc(dateOnly(e.occurred_at))+'</td><td>'+esc(equipmentName(e.equipment_id))+'</td><td>'+esc(statusLabel(e.event_type))+'</td><td>'+esc(e.description)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Sem movimentações registradas.</div>'}
+        </section>
+        <section class="bi-panel"><h3>Leitura gerencial</h3><p class="bi-sub">Pontos de atenção sobre a qualidade dos indicadores</p>
+          <div class="bi-bars">
+            <div class="bi-bar-row"><span class="bi-bar-label">Disponíveis</span><div class="bi-bar-track"><div class="bi-bar-fill success" style="width:${activeEquipment.length?available/activeEquipment.length*100:0}%"></div></div><strong class="bi-bar-value">${available}</strong></div>
+            <div class="bi-bar-row"><span class="bi-bar-label">Parados / manutenção</span><div class="bi-bar-track"><div class="bi-bar-fill danger" style="width:${activeEquipment.length?stopped/activeEquipment.length*100:0}%"></div></div><strong class="bi-bar-value">${stopped}</strong></div>
+          </div>
+          <div class="bi-note">A taxa acima é baseada no status cadastrado. Para calcular disponibilidade física, MTBF, MTTR e horas de downtime com rigor, precisamos registrar início/fim das paradas, horas programadas e horímetro por turno.</div>
+        </section>
+      </div>
+    `;
+    $("#biPeriod").addEventListener("change",event=>{state.overviewPeriod=Number(event.target.value)||90;render();});
     const term=($("#goLiveEquipmentSearch")?.value||"").toLocaleLowerCase("pt-BR"),status=$("#goLiveEquipmentStatus")?.value||"";
     const equipment=state.equipment.filter(e=>(!status||e.status===status)&&(!term||[e.asset_code,e.description,e.brand,e.model].join(" ").toLocaleLowerCase("pt-BR").includes(term)));
     $("#goLiveEquipmentRows").innerHTML=equipment.length?equipment.map(e=>'<tr><td><strong>'+esc(e.asset_code)+'</strong></td><td>'+esc([e.brand,e.model,e.description].filter(Boolean).join(" · "))+'</td><td>'+Number(e.current_horimeter||0).toLocaleString("pt-BR")+' h</td><td><span class="go-live-status '+statusClass(e.status)+'">'+esc(statusLabel(e.status))+'</span></td><td><div class="go-live-actions"><button type="button" class="light" data-edit-equipment="'+e.id+'">Editar</button><button type="button" class="light" data-add-reading="'+e.id+'">Horímetro</button></div></td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum equipamento encontrado.</td></tr>';
