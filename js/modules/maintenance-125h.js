@@ -150,6 +150,13 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       }catch(error){feedback(error.message||"Falha ao salvar a programação.",true);btn.disabled=false;}
     });
   }
+  function chooseEquipment(){
+    const list=equipment().filter(e=>e.status!=="inactive");
+    if(!list.length){feedback("Não há equipamentos ativos cadastrados para programar.");return;}
+    root.querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>Escolher equipamento</h3><p>Selecione o caminhão para programar ou reprogramar a inspeção de 250 horas.</p><form id="m125ChooseForm"><div class="m125-form"><div class="full"><label>Equipamento da frota</label><select name="equipment_id" required style="width:100%;padding:10px;border:1px solid #d5dce2;border-radius:8px">'+list.map(e=>'<option value="'+esc125(e.id)+'">'+esc125(e.asset_code)+' · '+esc125([e.brand,e.model].filter(Boolean).join(" "))+'</option>').join("")+'</select></div></div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">Continuar</button></div></form></section></div>';
+    root.querySelector(".m125-modal").addEventListener("click",ev=>{if(ev.target.classList.contains("m125-modal")||ev.target.closest("[data-m125-close]"))root.querySelector("#m125Modal").innerHTML="";});
+    root.querySelector("#m125ChooseForm").addEventListener("submit",ev=>{ev.preventDefault();const id=new FormData(ev.currentTarget).get("equipment_id");const e=list.find(x=>x.id===id);if(!e)return;root.querySelector("#m125Modal").innerHTML="";modal(currentSchedule(id)?"Reprogramar inspeção de 250 horas":"Programar inspeção de 250 horas",e,currentSchedule(id));});
+  }
   async function changeScheduleStatus(id,status){
     const result=await supabase.from("operational_125h_schedules").update({status,updated_at:new Date().toISOString()}).eq("id",id).eq("area_id",areaId());
     if(result.error){feedback(result.error.message||"Não foi possível atualizar a programação.",true);return;}
@@ -157,12 +164,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
   root.addEventListener("click",event=>{
     const b=event.target.closest("button");if(!b)return;
-    if(b.id==="m125NewSchedule"){
-      const first=equipment().find(e=>e.status!=="inactive"&&!currentSchedule(e.id));
-      if(first)modal("Programar inspeção de 250 horas",first,null);
-      else feedback("Todos os equipamentos ativos já possuem uma programação. Use Reprogramar na frota.");
-      return;
-    }
+    if(b.id==="m125NewSchedule"){chooseEquipment();return;}
     if(b.dataset.m125Schedule){
       const e=equipment().find(x=>x.id===b.dataset.m125Schedule);if(!e)return;
       modal(currentSchedule(e.id)?"Reprogramar inspeção de 250 horas":"Programar inspeção de 250 horas",e,currentSchedule(e.id));return;
