@@ -1,6 +1,6 @@
 const esc125 = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num125 = value => Number(value || 0).toLocaleString("pt-BR",{maximumFractionDigits:1});
-const date125 = value => value ? new Date(value).toLocaleDateString("pt-BR") : "—";
+const date125 = value => value ? (/^\\d{4}-\\d{2}-\\d{2}$/.test(String(value)) ? new Date(...String(value).split("-").map((v,i)=>i===1?Number(v)-1:Number(v))).toLocaleDateString("pt-BR") : new Date(value).toLocaleDateString("pt-BR")) : "—";
 
 export async function init125hMaintenanceModule({supabase, profile, getAreaId, getEquipment, onRefresh}) {
   const root=document.getElementById("goLive125h");
@@ -88,7 +88,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
         <td><div class="m125-actions">
           ${r.c?'<button class="light" type="button" data-m125-service="'+r.e.id+'">Agendar / reprogramar</button><button class="light" type="button" data-m125-service="${r.e.id}">Registrar execução</button><button class="light" type="button" data-m125-toggle="'+r.e.id+'">'+(r.c.enabled?"Pausar":"Ativar")+'</button>':'<button class="light" type="button" data-m125-config="'+r.e.id+'">Configurar controle</button>'}
         </div></td>
-      </tr>`).join(""):'<tr><td colspan="7" class="m125-empty">Cadastre equipamentos na área operacional para iniciar o controle.</td></tr>';
+      </tr>`).join(""):'<tr><td colspan="8" class="m125-empty">Cadastre equipamentos na área operacional para iniciar o controle.</td></tr>';
     root.querySelector("#m125Agenda").innerHTML=state.schedules.filter(s=>["scheduled","in_progress"].includes(s.status)).map(s=>{const e=equipment().find(x=>x.id===s.equipment_id);return "<p><strong>"+esc125(e?.asset_code||"Equipamento")+"</strong> · "+date125(s.planned_for)+" · "+num125(s.planned_horimeter)+" h · "+esc125(s.responsible_name||"Sem responsável")+"</p>"}).join("")||"<p>Nenhuma inspeção agendada.</p>";
     root.querySelector("#m125History").innerHTML=state.services.length?'<div class="m125-table-wrap"><table><thead><tr><th>Data</th><th>Equipamento</th><th>Horímetro da revisão</th><th>Checklist / serviços executados</th><th>Observações</th></tr></thead><tbody>'+state.services.map(s=>{
       const e=equipment().find(x=>x.id===s.equipment_id);
