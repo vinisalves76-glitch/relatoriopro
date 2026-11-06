@@ -1,4 +1,4 @@
-const CACHE_NAME = "relatoriopro-shell-v4";
+const CACHE_NAME = "relatoriopro-shell-v5";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -19,6 +19,7 @@ const APP_SHELL = [
   "/js/core/permissions.js",
   "/js/shared/html.js",
   "/js/modules/operational-crud.js",
+  "/js/modules/operational-shift-reports.js",
   "/js/modules/maintenance-125h.js",
   "/Logo%20Irmen.webp",
   "/Logo%20Sany.png"
