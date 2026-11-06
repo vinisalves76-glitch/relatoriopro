@@ -101,7 +101,16 @@ export function initChecklistTremForca({ root, isMaster, getAssets }) {
       </form>
     `;
     const today = new Date(); const dateField=panel.querySelector('[name="date"]'); dateField.value=today.toISOString().slice(0,10);
+    panel.querySelectorAll("#tfForm [name]").forEach(el=>{
+      const name=el.name;
+      if(el.type==="radio"){const item=el.closest(".tf-item")?.dataset.item;el.checked=!!item&&state.items[item]?.status===el.value;}
+      else if(state.data[name]!==undefined)el.value=state.data[name];
+    });
+    panel.querySelectorAll("[data-observation]").forEach(el=>{el.value=state.items[el.dataset.observation]?.observation||"";});
+    requiredPhotos.forEach(([key])=>{if(state.photos[key])setPhoto(key,state.photos[key]);});
+    allItems.forEach((item,i)=>{const key="inspection-item-"+(i+1),data=state.items[item];if(data?.photo){const preview=panel.querySelector("#preview-"+CSS.escape(key));if(preview)preview.innerHTML='<img src="'+data.photo+'" alt="Foto do item"><span class="tf-photo-check">✓</span>';const remove=panel.querySelector('[data-remove-photo="'+key+'"]');if(remove)remove.hidden=false;}});
     bind();
+    renderExtraPhotos();
     refreshProgress();
   }
   function photoCard(key,title,required) {
