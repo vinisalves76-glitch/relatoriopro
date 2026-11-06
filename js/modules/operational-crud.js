@@ -160,12 +160,16 @@ export async function initOperationalModule({supabase, profile, isMaster: master
         supabase.from("operational_equipment_status_history").select("*").eq("area_id",state.areaId).order("changed_at",{ascending:false}),
         supabase.from("operational_work_order_activities").select("*").eq("area_id",state.areaId).order("created_at",{ascending:false})
       ]);
-      if([statusHistory,activities].some(result=>result.error?.code==="PGRST205")){
-        throw new Error("O histórico operacional ainda não está disponível neste ambiente. O uso desta versão depende da validação da atualização em homologação.");
+      // O banco principal é o ambiente de trabalho. Caso as tabelas auxiliares
+      // de histórico ainda não existam, mantém a Gestão Operacional disponível
+      // com os dados operacionais existentes, sem bloquear o módulo.
+      for(const result of [equipment,orders,events,readings])if(result.error)throw result.error;
+      for(const result of [statusHistory,activities]){
+        if(result.error && result.error.code!=="PGRST205")throw result.error;
       }
-      for(const result of [equipment,orders,events,readings,statusHistory,activities])if(result.error)throw result.error;
       state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];
-      state.statusHistory=statusHistory.data||[];state.activities=activities.data||[];
+      state.statusHistory=statusHistory.error?[]:(statusHistory.data||[]);
+      state.activities=activities.error?[]:(activities.data||[]);
       const controls125h = await supabase.from("operational_125h_control").select("equipment_id,last_service_horimeter,interval_hours,enabled").eq("area_id",state.areaId);
       state.controls125hAvailable=!controls125h.error;
       state.controls125h=controls125h.error?[]:(controls125h.data||[]);
