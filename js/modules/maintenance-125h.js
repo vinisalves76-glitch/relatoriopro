@@ -1,6 +1,6 @@
 const esc125 = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num125 = value => Number(value || 0).toLocaleString("pt-BR",{maximumFractionDigits:1});
-const date125 = value => value ? (/^\\d{4}-\\d{2}-\\d{2}$/.test(String(value)) ? new Date(...String(value).split("-").map((v,i)=>i===1?Number(v)-1:Number(v))).toLocaleDateString("pt-BR") : new Date(value).toLocaleDateString("pt-BR")) : "—";
+const date125 = value => value ? (/^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? new Date(...String(value).split("-").map((v,i)=>i===1?Number(v)-1:Number(v))).toLocaleDateString("pt-BR") : new Date(value).toLocaleDateString("pt-BR")) : "—";
 
 export async function init125hMaintenanceModule({supabase, profile, getAreaId, getEquipment, onRefresh}) {
   const root=document.getElementById("goLive125h");
