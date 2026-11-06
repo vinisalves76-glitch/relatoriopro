@@ -1,10 +1,9 @@
-const CACHE_NAME = "relatoriopro-shell-v5";
+const CACHE_NAME = "relatoriopro-shell-v6";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/offline.html",
   "/manifest.webmanifest",
-  "/pwa-icon.svg",
   "/css/styles.css",
   "/css/base.css",
   "/css/onboarding.css",
