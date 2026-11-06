@@ -1,6 +1,7 @@
 import { createSupabaseAdapter } from "./core/supabase-adapter.js";
 import { hasPermission, PERMISSIONS } from "./core/permissions.js";
 import { escapeHtml } from "./shared/html.js";
+import { initGestaoOperacional } from "./gestao-operacional.js";
 const $ = id => document.getElementById(id);
 const backend = createSupabaseAdapter({ $, supabaseUrl: "https://vwvesygsudhbaqmayhsz.supabase.co", supabaseAnonKey: "sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw" });
 const { supabase, creatorClient, auth, db, storage, MASTER_UID, profilesRef, collection, collectionGroup, doc, where, query, serverTimestamp, getDocs, getDoc, setDoc, createUserProfile, updateDoc, deleteDoc, signInWithEmailAndPassword, signOut, updatePassword, sendPasswordResetEmail, createUserWithEmailAndPassword, onAuthStateChanged, storageRef, uploadBytes, getDownloadURL } = backend;
@@ -551,23 +552,7 @@ function newReport(){
 }
 function printNow(){if(!requirePermission('reports.print'))return;preview();window.print()}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPage(t.dataset.page)));
-(function initGestaoOperacionalPreview(){
- const root=$('gestaoOperacional');if(!root)return;
- const tabs=[...root.querySelectorAll('[data-go-tab]')],panels=[...root.querySelectorAll('[data-go-panel]')];
- function goTab(name){tabs.forEach(t=>t.classList.toggle('active',t.dataset.goTab===name));panels.forEach(p=>{const active=p.dataset.goPanel===name;p.hidden=!active;p.classList.toggle('active',active)})}
- tabs.forEach(t=>t.addEventListener('click',()=>goTab(t.dataset.goTab)));
- root.querySelectorAll('[data-go-tab-jump]').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.goTabJump)));
- const search=$('goEquipmentSearch'),status=$('goEquipmentStatus'),rows=[...root.querySelectorAll('#goEquipmentRows tr')];
- function filterEquipment(){const term=(search?.value||'').toLocaleLowerCase('pt-BR'),state=status?.value||'';rows.forEach(row=>{row.hidden=!!((state&&row.dataset.status!==state)||(term&&!row.dataset.search.includes(term)))})}
- search?.addEventListener('input',filterEquipment);status?.addEventListener('change',filterEquipment);
- $('goReportType')?.addEventListener('change',e=>root.querySelectorAll('.go-report-card').forEach(card=>card.hidden=!!(e.target.value&&card.dataset.reportType!==e.target.value)));
- root.querySelectorAll('[data-go-report]').forEach(btn=>btn.addEventListener('click',()=>{const name=btn.dataset.goReport;$('goReportPreviewTitle').textContent='Prévia · '+name;$('goReportPreviewBody').textContent=name==='DF'?'Disponibilidade Física: 92,5% (dado fictício). Meta demonstrativa: 90%. A memória de cálculo e os eventos de parada ainda não estão conectados.':name==='Manutenção'?'Resumo demonstrativo: 42 OS concluídas no mês, 18 abertas e 3 aguardando recurso.':'Fechamento demonstrativo: turno 07:00–17:00, atividades realizadas, pendências e ocorrências.';$('goReportPreview').hidden=false;$('goReportPreview').scrollIntoView({behavior:'smooth',block:'nearest'})}));
- $('goCloseReport')?.addEventListener('click',()=>$('goReportPreview').hidden=true);
- $('goChangePeriod')?.addEventListener('click',()=>alert('O filtro de período será conectado aos dados reais após a aprovação do módulo.'));
- $('goAddEquipment')?.addEventListener('click',()=>alert('Cadastro de equipamentos será implementado na próxima etapa. Esta preview não grava dados.'));
- $('goNewOS')?.addEventListener('click',()=>alert('Abertura de ordens de serviço será implementada na próxima etapa. Esta preview não grava dados.'));
- $('goGenerateReport')?.addEventListener('click',()=>alert('O gerador de relatórios será implementado após definirmos os critérios oficiais dos indicadores.'));
-})();
+initGestaoOperacional({ $, isMaster });
 
 document.querySelectorAll('[data-home-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.homePage)));
 fields.forEach(id=>{ $(id).addEventListener('input',()=>{preview();schedule()});$(id).addEventListener('change',()=>{preview();schedule()})});
