@@ -84,7 +84,7 @@ export function initChecklistTremForca({ root, isMaster, getAssets }) {
                 <article class="tf-item" data-item="${esc(item)}">
                   <div class="tf-item-head"><strong>${esc(item)}</strong><span class="tf-item-number">Item ${allItems.indexOf(item)+1}/15</span></div>
                   <div class="tf-status-choice"><label><input type="radio" name="status-${key}" value="OK"> <span class="tf-ok">OK</span></label><label><input type="radio" name="status-${key}" value="NOK"> <span class="tf-nok">NOK</span></label></div>
-                  <label class="tf-observation">Observações<textarea rows="2" data-observation="${esc(item)}" placeholder="Descreva a condição encontrada..."></textarea></label>
+                  <label class="tf-observation"><span data-observation-label="${esc(item)}">Observações (opcional)</span><textarea rows="2" data-observation="${esc(item)}" placeholder="Descreva a condição encontrada..."></textarea><small class="tf-nok-required" hidden>Obrigatório quando o resultado for NOK. Descreva a falha encontrada.</small></label>
                   ${photoCard("inspection-"+key,"Foto obrigatória do item",true)}
                 </article>`;}).join("")}
             </div>`).join("")}
@@ -106,7 +106,7 @@ export function initChecklistTremForca({ root, isMaster, getAssets }) {
       if(el.type==="radio"){const item=el.closest(".tf-item")?.dataset.item;el.checked=!!item&&state.items[item]?.status===el.value;}
       else if(state.data[name]!==undefined)el.value=state.data[name];
     });
-    panel.querySelectorAll("[data-observation]").forEach(el=>{el.value=state.items[el.dataset.observation]?.observation||"";});
+    panel.querySelectorAll("[data-observation]").forEach(el=>{el.value=state.items[el.dataset.observation]?.observation||"";updateNokRequirement(el.closest(".tf-item"));});
     requiredPhotos.forEach(([key])=>{if(state.photos[key])setPhoto(key,state.photos[key]);});
     allItems.forEach((item,i)=>{const key="inspection-item-"+(i+1),data=state.items[item];if(data?.photo){const preview=panel.querySelector("#preview-"+CSS.escape(key));if(preview)preview.innerHTML='<img src="'+data.photo+'" alt="Foto do item"><span class="tf-photo-check">✓</span>';const remove=panel.querySelector('[data-remove-photo="'+key+'"]');if(remove)remove.hidden=false;}});
     bind();
@@ -154,10 +154,26 @@ export function initChecklistTremForca({ root, isMaster, getAssets }) {
     const canvas=panel.querySelector("#tfSignature"),ctx=canvas.getContext("2d");
     if(state.signature){const img=new Image();img.onload=()=>ctx.drawImage(img,0,0,canvas.width,canvas.height);img.src=state.signature;}
   }
+  function updateNokRequirement(itemCard) {
+    if(!itemCard)return;
+    const item=itemCard.dataset.item;
+    const isNok=state.items[item]?.status==="NOK";
+    const textarea=itemCard.querySelector("[data-observation]");
+    const label=itemCard.querySelector("[data-observation-label]");
+    const hint=itemCard.querySelector(".tf-nok-required");
+    if(textarea) {
+      textarea.required=!!isNok;
+      textarea.setAttribute("aria-required",String(!!isNok));
+      textarea.placeholder=isNok?"Descreva obrigatoriamente a falha encontrada...":"Descreva a condição encontrada...";
+    }
+    if(label)label.textContent=isNok?"Descrição da falha (obrigatória) *":"Observações (opcional)";
+    if(hint)hint.hidden=!isNok;
+    itemCard.classList.toggle("tf-item-nok",!!isNok);
+  }
   function bind() {
     const form=panel.querySelector("#tfForm");
     form.addEventListener("input",e=>{
-      if(e.target.name?.startsWith("status-")){const item=e.target.closest(".tf-item")?.dataset.item;if(item){state.items[item]=state.items[item]||{};state.items[item].status=e.target.value;}}
+      if(e.target.name?.startsWith("status-")){const item=e.target.closest(".tf-item")?.dataset.item;if(item){state.items[item]=state.items[item]||{};state.items[item].status=e.target.value;updateNokRequirement(e.target.closest(".tf-item"));}}
       if(e.target.dataset.observation){const item=e.target.dataset.observation;state.items[item]=state.items[item]||{};state.items[item].observation=e.target.value;}
       refreshProgress();
     });
@@ -194,7 +210,7 @@ export function initChecklistTremForca({ root, isMaster, getAssets }) {
     ["date","technician","serial","tag","location","client","emails"].forEach(k=>{if(!String(state.data[k]||"").trim())errors.push("Preencha: "+({date:"Data",technician:"Técnico",serial:"Número de série",tag:"TAG",location:"Local",client:"Contrato/Cliente",emails:"E-mail(s)"}[k]));});
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+(?:\s*;\s*[^\s@]+@[^\s@]+\.[^\s@]+)*$/.test(state.data.emails||""))errors.push("Informe e-mail(s) válido(s), separados por ponto e vírgula.");
     requiredPhotos.forEach(([k,t])=>{if(!state.photos[k])errors.push("Foto obrigatória: "+t);});
-    allItems.forEach(item=>{if(!["OK","NOK"].includes(state.items[item]?.status))errors.push("Avalie: "+item);if(!state.items[item]?.photo)errors.push("Adicione foto: "+item);});
+    allItems.forEach(item=>{if(!["OK","NOK"].includes(state.items[item]?.status))errors.push("Avalie: "+item);if(state.items[item]?.status==="NOK"&&!String(state.items[item]?.observation||"").trim())errors.push("Descreva obrigatoriamente a falha do item marcado como NOK: "+item);if(!state.items[item]?.photo)errors.push("Adicione foto: "+item);});
     if(!state.signature)errors.push("A assinatura do técnico é obrigatória.");
     return errors;
   }
