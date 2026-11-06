@@ -132,6 +132,8 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     </section>
     <div id="goLiveModalHost"></div>
   `;
+  const reportTab=document.querySelector('.operational-main-tab[data-operational-section="events"]');
+  if(reportTab){reportTab.hidden=false;reportTab.style.display="";}
   const scheduleTab=document.querySelector('.operational-main-tab[data-operational-section="mechanicSchedule"]');
   if(scheduleTab){scheduleTab.hidden=!isSupervisor;scheduleTab.style.display=isSupervisor?"":"none";}
   if(isSupervisor) await initMechanicSchedule({supabase,profile,areaId:fixedArea||AREA_DEFAULT,root:$("#goLiveMechanicSchedule")});
