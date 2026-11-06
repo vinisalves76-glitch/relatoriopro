@@ -1,6 +1,7 @@
 const DB_NAME = "relatoriopro-offline";
 const STORE = "shiftReports";
 const EQUIPMENT_STORE = "equipmentCache";
+const SCHEDULE_STORE = "scheduleCache";
 const AREA_LABELS = {"arcelormittal-andradas":"ArcelorMittal Andradas"};
 let activeController=null;
 const esc = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -10,8 +11,8 @@ const statusText = status => ({pending:"Aguardando sincronização",syncing:"Sin
 function openQueue(){
   return new Promise((resolve,reject)=>{
     if(!("indexedDB" in window)){reject(new Error("Este navegador não oferece armazenamento local necessário para trabalhar offline."));return;}
-    const request=indexedDB.open(DB_NAME,2);
-    request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE)){const store=db.createObjectStore(STORE,{keyPath:"localId"});store.createIndex("ownerUid","ownerUid",{unique:false});store.createIndex("status","status",{unique:false});}if(!db.objectStoreNames.contains(EQUIPMENT_STORE))db.createObjectStore(EQUIPMENT_STORE,{keyPath:"areaId"});};
+    const request=indexedDB.open(DB_NAME,3);
+    request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE)){const store=db.createObjectStore(STORE,{keyPath:"localId"});store.createIndex("ownerUid","ownerUid",{unique:false});store.createIndex("status","status",{unique:false});}if(!db.objectStoreNames.contains(EQUIPMENT_STORE))db.createObjectStore(EQUIPMENT_STORE,{keyPath:"areaId"});if(!db.objectStoreNames.contains(SCHEDULE_STORE))db.createObjectStore(SCHEDULE_STORE,{keyPath:"key"});};
     request.onsuccess=()=>resolve(request.result);
     request.onerror=()=>reject(request.error||new Error("Não foi possível abrir o armazenamento offline."));
   });
@@ -30,6 +31,8 @@ async function queueDelete(id){
 }
 async function cacheEquipment(areaId,items){const db=await openQueue();return new Promise((resolve,reject)=>{const tx=db.transaction(EQUIPMENT_STORE,"readwrite");tx.objectStore(EQUIPMENT_STORE).put({areaId,items,updatedAt:new Date().toISOString()});tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)};});}
 async function readEquipmentCache(areaId){const db=await openQueue();return new Promise((resolve,reject)=>{const tx=db.transaction(EQUIPMENT_STORE,"readonly"),req=tx.objectStore(EQUIPMENT_STORE).get(areaId);req.onsuccess=()=>resolve(req.result?.items||[]);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close();});}
+async function readScheduleCache(areaId,uid){const db=await openQueue();return new Promise((resolve,reject)=>{const tx=db.transaction(SCHEDULE_STORE,"readonly"),req=tx.objectStore(SCHEDULE_STORE).get(areaId+":"+uid);req.onsuccess=()=>resolve(req.result?.items||[]);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close();});}
+async function cacheSchedule(areaId,uid,items){const db=await openQueue();return new Promise((resolve,reject)=>{const tx=db.transaction(SCHEDULE_STORE,"readwrite");tx.objectStore(SCHEDULE_STORE).put({key:areaId+":"+uid,items,updatedAt:new Date().toISOString()});tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)};});}
 
 export async function initMechanicShiftReports({supabase,profile,root}){
   if(activeController)activeController.abort();
@@ -40,7 +43,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   if(!areaId)throw new Error("Seu login não está vinculado a uma mina. Solicite ao Super Admin a correção do cadastro.");
   const areaName=AREA_LABELS[areaId]||areaId;
   const $=selector=>root.querySelector(selector);
-  const state={equipment:[],reports:[],queue:[],busy:false};
+  const state={equipment:[],assignedEquipment:[],assignments:[],reports:[],queue:[],busy:false};
   root.innerHTML=`
     <style>
       #gestaoOperacional .ms-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:8px 0 18px}
@@ -104,9 +107,26 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       feedback("Sem acesso ao servidor neste momento. Usando a última lista de equipamentos salva neste dispositivo.");
     }
     if(fetched){try{await cacheEquipment(areaId,state.equipment)}catch(error){console.warn("[RelatorioPro] Não foi possível atualizar o cache local da frota:",error)}}
-    const selectable=state.equipment.filter(e=>e.status!=="inactive");
-    $("#msEquipment").innerHTML='<option value="">Selecione a TAG</option>'+selectable.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
-    $("#msEquipmentCount").textContent=String(selectable.length);
+    await loadAssignedEquipment($("#msDate").value||localDate());
+  }
+  async function loadAssignedEquipment(date){
+    let items=[];
+    if(navigator.onLine){
+      const {data,error}=await supabase.from("operational_mechanic_assignments").select("equipment_id,work_date,status").eq("area_id",areaId).eq("mechanic_id",uid).eq("work_date",date).eq("status","scheduled");
+      if(error)throw error;
+      items=data||[];
+      const cached=await readScheduleCache(areaId,uid);
+      await cacheSchedule(areaId,uid,[...cached.filter(row=>row.work_date!==date),...items]);
+    }else{
+      const cached=await readScheduleCache(areaId,uid);
+      items=cached.filter(row=>row.work_date===date&&row.status==="scheduled");
+    }
+    state.assignments=items;
+    const assignedIds=new Set(items.map(row=>row.equipment_id));
+    state.assignedEquipment=state.equipment.filter(e=>assignedIds.has(e.id)&&e.status!=="inactive");
+    $("#msEquipment").innerHTML='<option value="">Selecione a TAG escalada para esta data</option>'+state.assignedEquipment.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
+    $("#msEquipmentCount").textContent=String(state.assignedEquipment.length);
+    if(!state.assignedEquipment.length)feedback("Você não possui equipamento escalado para "+date+". Consulte o Supervisor de Área.");
   }
   async function loadRemoteReports(){
     const {data,error}=await supabase.from("operational_shift_reports").select("*").eq("area_id",areaId).order("report_date",{ascending:false}).order("created_at",{ascending:false}).limit(100);
@@ -178,6 +198,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     }catch(error){feedback("Não foi possível processar a fila offline: "+(error.message||error),"error")}
     finally{state.busy=false;}
   }
+  $("#msDate").addEventListener("change",async()=>{try{await loadAssignedEquipment($("#msDate").value)}catch(error){feedback(error.message||"Não foi possível consultar a escala desta data.","error")}});
   $("#msEquipment").addEventListener("change",()=>{
     const item=state.equipment.find(e=>e.id===$("#msEquipment").value);
     if(item&&(!$("#msHorimeter").value||Number($("#msHorimeter").value)===0))$("#msHorimeter").value=item.current_horimeter||"";
@@ -188,7 +209,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     const button=$("#msSave");if(button.disabled)return;button.disabled=true;
     try{
       const form=Object.fromEntries(new FormData(formElement).entries());
-      const equipment=state.equipment.find(e=>e.id===form.equipment_id);
+      const equipment=state.assignedEquipment.find(e=>e.id===form.equipment_id);
       if(!equipment)throw new Error("Selecione um equipamento válido da mina vinculada.");
       const horimeter=Number(form.horimeter);
       if(!Number.isFinite(horimeter)||horimeter<0)throw new Error("Informe um horímetro válido.");
