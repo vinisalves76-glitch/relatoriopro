@@ -9,10 +9,10 @@ const dateOnly = value => value ? new Date(value).toLocaleDateString("pt-BR") : 
 const statusLabel = value => ({available:"Disponível",stopped:"Parado",maintenance:"Em manutenção",inactive:"Inativo",open:"Aberta",in_progress:"Em andamento",waiting:"Aguardando recurso",completed:"Concluída",cancelled:"Cancelada",low:"Baixa",normal:"Normal",high:"Alta",critical:"Crítica",preventive:"Preventiva",corrective:"Corretiva",inspection:"Inspeção",occurrence:"Ocorrência"}[value] || value || "—");
 const statusClass = value => ({available:"success",stopped:"danger",maintenance:"warning",inactive:"muted",open:"info",in_progress:"warning",waiting:"warning",completed:"success",cancelled:"muted",critical:"danger",high:"danger",normal:"info",low:"muted"}[value] || "info");
 
-export async function initOperationalModule({supabase, profile}) {
+export async function initOperationalModule({supabase, profile, isMaster: masterAccess = false}) {
   const root = document.getElementById("gestaoOperacional");
   if (!root || !supabase || !profile || profile.active === false) return;
-  const isMaster = profile.role === "super_admin";
+  const isMaster = !!masterAccess || profile.role === "super_admin";
   const isSupervisor = profile.role === "supervisor_area";
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
