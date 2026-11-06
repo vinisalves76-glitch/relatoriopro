@@ -22,7 +22,7 @@ const storage = { provider: "supabase" };
 const MASTER_UID = "5c6800f9-426b-44b3-842d-ba6485cc017e";
 
 const fieldMap = {
-  ownerUid:"owner_id", ownerName:"owner_name", roleLabel:"role_label",
+  ownerUid:"owner_id", ownerName:"owner_name", roleLabel:"role_label", operationalAreaId:"operational_area_id",
   mustChangePassword:"must_change_password", updatedAt:"updated_at",
   createdAt:"created_at", reviewedBy:"reviewed_by", reviewedAt:"reviewed_at",
   approvedBy:"reviewed_by", approvedAt:"reviewed_at", reviewComment:"review_comment",
@@ -71,7 +71,7 @@ function serverTimestamp() { return new Date().toISOString(); }
 function mapRow(table,row) {
   if (!row) return row;
   const legacy = row.legacy_data && typeof row.legacy_data === "object" ? row.legacy_data : {};
-  if (table === "profiles") return { ...legacy, uid:row.id, id:row.id, email:row.email, name:row.name, role:row.role, roleLabel:row.role_label, permissions:row.permissions||[], active:row.active, mustChangePassword:row.must_change_password, createdAt:row.created_at, updatedAt:row.updated_at };
+  if (table === "profiles") return { ...legacy, uid:row.id, id:row.id, email:row.email, name:row.name, role:row.role, roleLabel:row.role_label, permissions:row.permissions||[], operationalAreaId:row.operational_area_id||null, active:row.active, mustChangePassword:row.must_change_password, createdAt:row.created_at, updatedAt:row.updated_at };
   if (table === "reports") return { ...legacy, id:row.id, ownerUid:row.owner_id, type:row.type, date:row.report_date, responsible:row.responsible, client:row.client, branch:row.branch, equipment:row.equipment, location:row.location, objective:row.objective, observations:row.observations, activities:row.activities, results:row.results, conclusion:row.conclusion, model:row.model||{}, updatedAt:row.updated_at, createdAt:row.created_at };
   if (table === "report_photos") return { ...legacy, id:row.id, data:row.data, caption:row.caption, order:row.order_index, updatedAt:row.updated_at };
   if (table === "user_settings") return { ...(row.data||{}), updatedAt:row.updated_at };
@@ -85,7 +85,7 @@ function mapWrite(ref,data) {
     if (Object.prototype.hasOwnProperty.call(d,k)) { if (!["id","ownerUid","createdAt","updatedAt","roleLabel","mustChangePassword","reviewComment","approvedBy","approvedAt","assigneeName","updatedBy","attachments","size","contentType","order"].includes(k)) legacy[k]=d[k]; delete d[k]; }
   }
   if (table === "profiles") {
-    const out={id:ref.id,email:data.email||"",name:data.name||"",role:data.role||"consultor_tecnico",role_label:data.roleLabel||data.role_label||"",permissions:data.permissions||[],active:data.active!==false,must_change_password:data.mustChangePassword??data.must_change_password??false,updated_at:new Date().toISOString()};
+    const out={id:ref.id,email:data.email||"",name:data.name||"",role:data.role||"consultor_tecnico",role_label:data.roleLabel||data.role_label||"",permissions:data.permissions||[],operational_area_id:data.operationalAreaId||data.operational_area_id||null,active:data.active!==false,must_change_password:data.mustChangePassword??data.must_change_password??false,updated_at:new Date().toISOString()};
     if (data.createdBy) out.created_by=data.createdBy;
     const extra={...legacy}; if(Object.keys(extra).length)out.legacy_data=extra;
     return out;
