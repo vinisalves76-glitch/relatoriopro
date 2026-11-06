@@ -1,5 +1,5 @@
 import { createSupabaseAdapter } from "./core/supabase-adapter.js";
-import { hasPermission } from "./core/permissions.js";
+import { hasPermission, PERMISSIONS } from "./core/permissions.js";
 import { escapeHtml } from "./shared/html.js";
 const $ = id => document.getElementById(id);
 const backend = createSupabaseAdapter({ $, supabaseUrl: "https://vwvesygsudhbaqmayhsz.supabase.co", supabaseAnonKey: "sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw" });
