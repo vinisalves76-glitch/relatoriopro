@@ -1,4 +1,5 @@
 import { init125hMaintenanceModule } from "./maintenance-125h.js";
+import { initShiftCloseoutModule } from "./shift-closeout.js";
 
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
@@ -119,6 +120,7 @@ export async function initOperationalModule({supabase, profile}) {
       <div id="goLiveOrderList"></div>
     </section>
     <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
+    <section class="go-panel" data-live-panel="shiftCloseout" hidden><div id="goShiftCloseout"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
       <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>OS vinculada</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
@@ -330,4 +332,5 @@ export async function initOperationalModule({supabase, profile}) {
   $("#goLiveOrderStatus").addEventListener("change",render);
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
+  await initShiftCloseoutModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,getOrders:()=>state.orders});
 }

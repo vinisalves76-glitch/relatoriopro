@@ -50,6 +50,8 @@ create table if not exists public.operational_shifts (
 create index if not exists operational_shifts_area_start_idx
   on public.operational_shifts(area_id, starts_at desc, status);
 
+alter table public.operational_shifts add column if not exists planned_ends_at timestamptz;
+
 -- 3) Fotografia de status da frota por turno. A localização física e o setor
 -- responsável são dimensões independentes e obrigatórias quando o equipamento está parado.
 create table if not exists public.operational_shift_equipment_status (
@@ -97,13 +99,15 @@ create table if not exists public.operational_work_order_tasks (
 create index if not exists operational_work_order_tasks_order_idx
   on public.operational_work_order_tasks(area_id, work_order_id, status, sort_order);
 
+alter table public.operational_work_order_tasks add column if not exists shift_id uuid references public.operational_shifts(id) on delete set null;
+
 -- 5) Atualizações de turno vinculadas à OS: o que foi executado, o que falta,
 -- mudanças de equipe, diagnóstico, observações e passagem de serviço.
 create table if not exists public.operational_work_order_updates (
   id uuid primary key default gen_random_uuid(),
   area_id text not null references public.operational_areas(id),
   shift_id uuid references public.operational_shifts(id) on delete set null,
-  work_order_id uuid not null references public.operational_work_orders(id) on delete cascade,
+  work_order_id uuid references public.operational_work_orders(id) on delete cascade,
   update_type text not null default 'progress'
     check (update_type in ('diagnosis','progress','handover','incident','release')),
   summary text not null,
@@ -162,6 +166,8 @@ create table if not exists public.operational_shift_df_official (
   unique (shift_id)
 );
 
+update public.operational_shifts set planned_ends_at=ends_at where planned_ends_at is null;
+
 -- Integridade: todos os registros relacionados precisam pertencer à mesma área.
 create or replace function public.validate_operational_shift_links()
 returns trigger
@@ -180,9 +186,10 @@ begin
     then raise exception 'Turno ou equipamento não pertence à área informada.'; end if;
   elsif tg_table_name = 'operational_work_order_tasks' then
     if not exists (select 1 from public.operational_work_orders w where w.id=new.work_order_id and w.area_id=new.area_id)
-    then raise exception 'Ordem de serviço não pertence à área informada.'; end if;
+      or (new.shift_id is not null and not exists (select 1 from public.operational_shifts s where s.id=new.shift_id and s.area_id=new.area_id))
+    then raise exception 'Ordem de serviço ou turno não pertence à área informada.'; end if;
   elsif tg_table_name = 'operational_work_order_updates' then
-    if not exists (select 1 from public.operational_work_orders w where w.id=new.work_order_id and w.area_id=new.area_id)
+    if (new.work_order_id is not null and not exists (select 1 from public.operational_work_orders w where w.id=new.work_order_id and w.area_id=new.area_id))
       or (new.shift_id is not null and not exists (select 1 from public.operational_shifts s where s.id=new.shift_id and s.area_id=new.area_id))
     then raise exception 'Ordem de serviço ou turno não pertence à área informada.'; end if;
   elsif tg_table_name = 'operational_downtime_events' then
@@ -225,7 +232,7 @@ create or replace view public.operational_shift_df_summary with (security_invoke
 with shift_base as (
   select s.id as shift_id, s.area_id, s.starts_at,
          coalesce(s.ends_at, now()) as ends_at,
-         greatest(0, extract(epoch from (coalesce(s.ends_at, now()) - s.starts_at))/60.0) as scheduled_minutes,
+         greatest(0, extract(epoch from (coalesce(s.planned_ends_at, s.ends_at, now()) - s.starts_at))/60.0) as scheduled_minutes,
          count(d.id) filter (where d.df_treatment='pending') as pending_classification_count,
          coalesce(
            range_agg(
