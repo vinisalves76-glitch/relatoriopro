@@ -1,3 +1,5 @@
+import { init125hMaintenanceModule } from "./maintenance-125h.js";
+
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
 const $ = selector => document.querySelector(selector);
@@ -52,6 +54,7 @@ export async function initOperationalModule({supabase, profile}) {
       <button class="go-subtab" type="button" data-live-tab="equipment">Equipamentos</button>
       <button class="go-subtab" type="button" data-live-tab="orders">Ordens de serviço</button>
       <button class="go-subtab" type="button" data-live-tab="events">Manutenção e ocorrências</button>
+      <button class="go-subtab" type="button" data-live-tab="maintenance125">Manutenção 125h</button>
     </nav>
     <div class="go-live-toolbar"><div id="goLiveFeedback" role="status" aria-live="polite">Carregando dados da área…</div><button class="light" type="button" id="goLiveRefresh">Atualizar dados</button></div>
     <section class="go-panel active" data-live-panel="overview"><div id="goLiveOverview"></div></section>
@@ -65,6 +68,7 @@ export async function initOperationalModule({supabase, profile}) {
       <div class="go-filters"><input id="goLiveOrderSearch" type="search" placeholder="Buscar OS, equipamento ou descrição"><select id="goLiveOrderStatus"><option value="">Todos os status</option><option value="open">Aberta</option><option value="in_progress">Em andamento</option><option value="waiting">Aguardando recurso</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option></select></div>
       <div id="goLiveOrderList"></div>
     </section>
+    <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
       <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>OS vinculada</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
@@ -200,4 +204,5 @@ export async function initOperationalModule({supabase, profile}) {
   $("#goLiveOrderSearch").addEventListener("input",render);
   $("#goLiveOrderStatus").addEventListener("change",render);
   await loadData();
+  await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
 }
