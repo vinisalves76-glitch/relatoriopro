@@ -720,11 +720,9 @@ async function initializeUserOnce(user){
   $('draftStatus').textContent='Conectado. Permissões carregadas.';
   if(isSystemAdmin())loadUsers();
   showPage(getInitialPage(user));
-  try{
-   if(!localStorage.getItem('relatoriopro-tour-complete-'+uid))openTour();
-  }catch(e){
-   openTour();
-  }
+  // Exibe automaticamente somente uma vez por usuário. A marcação é
+  // gravada antes de abrir para não repetir o guia em inicializações futuras.
+  if(!hasSeenTour(uid))openTour(true);
   initializationComplete=true;
  }catch(error){
   if(!isCurrent())return;
@@ -812,14 +810,30 @@ function renderTourStep(){
  $('tourSkip').hidden=tourIndex===tourSteps.length-1;
  if(target&&!target.hidden){tourSpotlight=target;target.classList.add('tour-spotlight')}
 }
-function openTour(){
+function tourStorageKey(uid){return 'relatoriopro-tour-complete-'+uid}
+function markTourSeen(uid){
+ if(!uid)return;
+ try{localStorage.setItem(tourStorageKey(uid),'1')}catch(e){
+  try{sessionStorage.setItem(tourStorageKey(uid),'1')}catch(_){}
+ }
+}
+function hasSeenTour(uid){
+ if(!uid)return true;
+ try{return localStorage.getItem(tourStorageKey(uid))==='1'}catch(e){
+  try{return sessionStorage.getItem(tourStorageKey(uid))==='1'}catch(_){return true}
+ }
+}
+function openTour(firstVisit=false){
  tourSteps=makeTourSteps();tourIndex=0;
  if(!tourSteps.length)return;
+ const uid=activeUser?.uid||activeUser?.id||currentProfile?.uid||currentProfile?.id;
+ if(firstVisit)markTourSeen(uid);
  $('tourBackdrop').hidden=false;document.body.style.overflow='hidden';renderTourStep();
 }
 function closeTour(completed=false){
  clearTourSpotlight();$('tourBackdrop').hidden=true;document.body.style.overflow='';
- if(activeUser){try{localStorage.setItem('relatoriopro-tour-complete-'+activeUser.uid,'1')}catch(e){}}
+ const uid=activeUser?.uid||activeUser?.id||currentProfile?.uid||currentProfile?.id;
+ markTourSeen(uid);
 }
 function nextTourStep(){
  if(tourIndex>=tourSteps.length-1){closeTour(true);return}
