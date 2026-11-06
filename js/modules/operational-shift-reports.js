@@ -1,6 +1,7 @@
 const DB_NAME = "relatoriopro-offline";
 const STORE = "shiftReports";
 const AREA_LABELS = {"arcelormittal-andradas":"ArcelorMittal Andradas"};
+let activeController=null;
 const esc = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const localDate = () => {const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 const statusText = status => ({pending:"Aguardando sincronização",syncing:"Sincronizando",synced:"Sincronizado",error:"Erro no envio",conflict:"Conflito: já existe relatório para esta TAG/data"})[status]||status;
@@ -28,6 +29,9 @@ async function queueDelete(id){
 }
 
 export async function initMechanicShiftReports({supabase,profile,root}){
+  if(activeController)activeController.abort();
+  activeController=new AbortController();
+  const listenerOptions={signal:activeController.signal};
   const areaId=profile.operationalAreaId;
   const uid=profile.uid||profile.id;
   if(!areaId)throw new Error("Seu login não está vinculado a uma mina. Solicite ao Super Admin a correção do cadastro.");
@@ -100,7 +104,8 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   }
   async function loadQueue(){
     const all=await queueAll();
-    state.queue=all.filter(x=>x.ownerUid===uid&&x.areaId===areaId);
+    for(const item of all.filter(x=>x.ownerUid===uid&&x.areaId===areaId&&x.status==="syncing")){item.status="pending";await queuePut(item);}
+    state.queue=(await queueAll()).filter(x=>x.ownerUid===uid&&x.areaId===areaId);
     const otherAccounts=all.filter(x=>x.ownerUid!==uid).length;
     $("#msPendingCount").textContent=String(state.queue.filter(x=>x.status!=="synced").length);
     renderQueue(otherAccounts);
@@ -164,9 +169,10 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   });
   $("#msForm").addEventListener("submit",async event=>{
     event.preventDefault();
+    const formElement=event.currentTarget;
     const button=$("#msSave");if(button.disabled)return;button.disabled=true;
     try{
-      const form=Object.fromEntries(new FormData(event.currentTarget).entries());
+      const form=Object.fromEntries(new FormData(formElement).entries());
       const equipment=state.equipment.find(e=>e.id===form.equipment_id);
       if(!equipment)throw new Error("Selecione um equipamento válido da mina vinculada.");
       const horimeter=Number(form.horimeter);
@@ -182,15 +188,15 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       const item={localId,ownerUid:uid,areaId,payload,equipmentLabel:equipment.asset_code+" · "+(equipment.model||""),status:"pending",createdLocalAt:new Date().toISOString(),error:""};
       await queuePut(item);
       await loadQueue();
-      event.currentTarget.reset();$("#msDate").value=localDate();$("#msHorimeter").value="";
+      formElement.reset();$("#msDate").value=localDate();$("#msHorimeter").value="";
       feedback(navigator.onLine?"Relatório salvo no dispositivo. Iniciando sincronização...":"Relatório salvo localmente. Será enviado quando a conexão retornar.","");
       if(navigator.onLine)await syncQueue();
     }catch(error){feedback(error.message||"Não foi possível salvar o relatório.","error")}
     finally{button.disabled=false;}
   });
   $("#msRefresh").addEventListener("click",async()=>{try{await refresh();if(navigator.onLine)await syncQueue()}catch(error){feedback(error.message||"Falha ao atualizar.","error")}});
-  window.addEventListener("online",syncQueue);
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&navigator.onLine)syncQueue()});
+  window.addEventListener("online",syncQueue,listenerOptions);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&navigator.onLine)syncQueue()},{signal:activeController.signal});
   try{await refresh();if(navigator.onLine)await syncQueue();}
   catch(error){feedback(error.message||"Não foi possível iniciar o relatório de turno.","error")}
 }
