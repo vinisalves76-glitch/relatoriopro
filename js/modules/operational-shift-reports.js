@@ -92,16 +92,18 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   }
   function statusPill(status){return '<span class="ms-pill '+(status==="synced"?"synced":status==="error"||status==="conflict"?"error":"")+'">'+esc(statusText(status))+'</span>'}
   async function loadEquipment(){
+    let fetched=false;
     try{
       const {data,error}=await supabase.from("operational_equipment").select("id,asset_code,model,description,current_horimeter,status").eq("area_id",areaId).neq("status","inactive").order("asset_code");
       if(error)throw error;
       state.equipment=data||[];
-      await cacheEquipment(areaId,state.equipment);
+      fetched=true;
     }catch(error){
       if(navigator.onLine)throw error;
       state.equipment=await readEquipmentCache(areaId);
       if(!state.equipment.length)throw new Error("Não há equipamentos armazenados neste dispositivo. Conecte-se uma vez para carregar a frota da mina.");
     }
+    if(fetched){try{await cacheEquipment(areaId,state.equipment)}catch(error){console.warn("[RelatorioPro] Não foi possível atualizar o cache local da frota:",error)}}
     $("#msEquipment").innerHTML='<option value="">Selecione a TAG</option>'+state.equipment.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
     $("#msEquipmentCount").textContent=String(state.equipment.length);
   }
