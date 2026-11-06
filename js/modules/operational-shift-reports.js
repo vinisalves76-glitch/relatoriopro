@@ -72,6 +72,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     </style>
     <div class="ms-head"><div><h1>Relatório de Final de Turno</h1><p class="ms-muted">Área vinculada: <strong>${esc(areaName)}</strong> · Mecânico: <strong>${esc(profile.name||"Usuário")}</strong></p><p class="ms-muted">Registre um único relatório por equipamento e data. Se outros mecânicos participaram, informe os nomes no mesmo registro.</p></div><button class="light" type="button" id="msRefresh">↻ Atualizar</button></div>
     <div class="ms-kpis"><div class="ms-kpi"><span class="ms-muted">Equipamentos disponíveis</span><strong id="msEquipmentCount">—</strong></div><div class="ms-kpi"><span class="ms-muted">Relatórios no histórico</span><strong id="msReportCount">—</strong></div><div class="ms-kpi"><span class="ms-muted">Pendentes neste dispositivo</span><strong id="msPendingCount">—</strong></div></div>
+    <div class="ms-card"><h2 style="margin:0 0 8px">Equipamentos em manutenção na área</h2><p class="ms-muted">Todos os mecânicos da área podem consultar os equipamentos em manutenção e os relatórios de final de turno registrados para cada TAG.</p><div id="msMaintenanceEquipment"></div></div>
     <div class="ms-card"><h2 style="margin:0 0 5px">Novo relatório</h2><p class="ms-muted">O formulário é salvo primeiro neste dispositivo. A sincronização com o sistema ocorre quando houver conexão.</p>
       <form id="msForm"><div class="ms-grid">
         <div class="ms-field"><label for="msEquipment">TAG do equipamento *</label><select id="msEquipment" name="equipment_id" required><option value="">Carregando equipamentos...</option></select></div>
@@ -87,7 +88,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       </div><div class="ms-actions"><button class="primary" id="msSave" type="submit">Salvar relatório</button><button class="light" type="reset">Limpar formulário</button></div><div class="ms-status" id="msFeedback" role="status" aria-live="polite">Rascunho local protegido contra perda de conexão.</div></form>
     </div>
     <div class="ms-card"><h2 style="margin:0 0 8px">Fila de sincronização</h2><p class="ms-muted">Relatórios locais só são considerados entregues após confirmação do Supabase.</p><div id="msQueue"></div></div>
-    <div class="ms-card"><h2 style="margin:0 0 8px">Histórico por equipamento</h2><p class="ms-muted">Relatórios enviados para a mina vinculada, organizados por data.</p><div id="msHistory"></div></div>
+    <div class="ms-card"><h2 style="margin:0 0 8px">Histórico por equipamento</h2><p class="ms-muted">Todos os relatórios enviados para a mina vinculada. A consulta não depende da escala individual.</p><div class="ms-field" style="max-width:420px;margin:10px 0"><label for="msHistoryFilter">Filtrar por equipamento</label><select id="msHistoryFilter"><option value="">Todos os equipamentos</option></select></div><div id="msHistory"></div></div>
   `;
 
   function feedback(message,type=""){
@@ -108,6 +109,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     }
     if(fetched){try{await cacheEquipment(areaId,state.equipment)}catch(error){console.warn("[RelatorioPro] Não foi possível atualizar o cache local da frota:",error)}}
     await loadAssignedEquipment($("#msDate").value||localDate());
+    renderMaintenanceEquipment();
   }
   async function loadAssignedEquipment(date){
     let items=[];
@@ -126,6 +128,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     state.assignedEquipment=state.equipment.filter(e=>assignedIds.has(e.id)&&e.status!=="inactive");
     $("#msEquipment").innerHTML='<option value="">Selecione a TAG escalada para esta data</option>'+state.assignedEquipment.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
     $("#msEquipmentCount").textContent=String(state.assignedEquipment.length);
+    renderMaintenanceEquipment();
     if(!state.assignedEquipment.length)feedback("Você não possui equipamento escalado para "+date+". Consulte o Supervisor de Área.");
   }
   async function loadRemoteReports(){
@@ -134,6 +137,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     state.reports=data||[];
     $("#msReportCount").textContent=String(state.reports.length);
     renderHistory();
+    renderMaintenanceEquipment();
   }
   async function loadQueue(){
     const all=await queueAll();
@@ -151,10 +155,33 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     if(otherAccounts)box.insertAdjacentHTML("beforeend",'<p class="ms-muted">'+otherAccounts+' pendência(s) pertencem a outra conta neste dispositivo e não serão sincronizadas com este login.</p>');
     if(otherAreas)box.insertAdjacentHTML("beforeend",'<p class="ms-muted">'+otherAreas+' pendência(s) deste usuário estão vinculadas a outra mina. Elas não serão enviadas com o vínculo atual.</p>');
   }
+  function renderMaintenanceEquipment(){
+    const box=$("#msMaintenanceEquipment");
+    if(!box)return;
+    const items=state.equipment.filter(e=>e.status==="maintenance").sort((a,b)=>String(a.asset_code).localeCompare(String(b.asset_code),"pt-BR"));
+    const filter=$("#msHistoryFilter");
+    const previous=filter?.value||"";
+    if(filter){
+      filter.innerHTML='<option value="">Todos os equipamentos</option>'+items.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
+      if(items.some(e=>e.id===previous))filter.value=previous;
+    }
+    if(!items.length){box.innerHTML='<p class="ms-muted">Não há equipamentos com status “Em manutenção” nesta área no momento.</p>';return;}
+    box.innerHTML=items.map(e=>{
+      const latest=state.reports.filter(r=>r.equipment_id===e.id).sort((a,b)=>String(b.report_date).localeCompare(String(a.report_date)))[0];
+      const pending=latest?.pending_items?.trim();
+      return '<article class="ms-report"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h3>'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</h3><p class="ms-muted">Horímetro atual: '+esc(e.current_horimeter??"—")+' h · Status: Em manutenção</p></div><span class="ms-pill">Em manutenção</span></div>'+(latest?'<p><strong>Último relatório:</strong> '+esc(new Date(latest.report_date+"T12:00:00").toLocaleDateString("pt-BR"))+' · '+esc(latest.created_by_name||"Mecânico")+'</p>'+(pending?'<p><strong>Pendências registradas:</strong> '+esc(pending)+'</p>':'<p class="ms-muted">O último relatório não registrou pendências.</p>'):'<p class="ms-muted">Ainda não existe relatório de final de turno para este equipamento.</p>')+'<div class="ms-actions"><button class="light" type="button" data-ms-view-equipment="'+esc(e.id)+'">Ver relatórios da TAG</button></div></article>';
+    }).join("");
+    box.querySelectorAll("[data-ms-view-equipment]").forEach(button=>button.addEventListener("click",()=>{
+      if(filter){filter.value=button.dataset.msViewEquipment;renderHistory();}
+      $("#msHistory").scrollIntoView({behavior:"smooth",block:"start"});
+    }));
+  }
   function renderHistory(){
     const box=$("#msHistory");
-    if(!state.reports.length){box.innerHTML='<p class="ms-muted">Ainda não há relatórios enviados para esta mina.</p>';return;}
-    box.innerHTML=state.reports.map(r=>{
+    const selected=$("#msHistoryFilter")?.value||"";
+    const reports=selected?state.reports.filter(r=>r.equipment_id===selected):state.reports;
+    if(!reports.length){box.innerHTML='<p class="ms-muted">'+(selected?'Ainda não há relatórios para este equipamento.':'Ainda não há relatórios enviados para esta mina.')+'</p>';return;}
+    box.innerHTML=reports.map(r=>{
       const equipment=state.equipment.find(e=>e.id===r.equipment_id);
       const label=equipment?equipment.asset_code:"Equipamento";
       const condition={available:"Disponível para operação",stopped:"Parado",maintenance:"Em manutenção"}[r.final_condition]||r.final_condition;
@@ -199,6 +226,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     finally{state.busy=false;}
   }
   $("#msDate").addEventListener("change",async()=>{try{await loadAssignedEquipment($("#msDate").value)}catch(error){feedback(error.message||"Não foi possível consultar a escala desta data.","error")}});
+  $("#msHistoryFilter").addEventListener("change",renderHistory);
   $("#msEquipment").addEventListener("change",()=>{
     const item=state.equipment.find(e=>e.id===$("#msEquipment").value);
     if(item&&(!$("#msHorimeter").value||Number($("#msHorimeter").value)===0))$("#msHorimeter").value=item.current_horimeter||"";
