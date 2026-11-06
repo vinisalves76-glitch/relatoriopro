@@ -24,7 +24,6 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       #goLive125h .m125-pill.due{background:#fff0d4;color:#875600}
       #goLive125h .m125-pill.overdue{background:#ffe4e1;color:#a32b21}
       #goLive125h .m125-pill.ok{background:#e2f5e9;color:#17663a}
-      #goLive125h .m125-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:14px 0}
       #goLive125h .m125-table-wrap{overflow:auto;border:1px solid var(--line,#e5e9ed);border-radius:12px}
       #goLive125h table{width:100%;border-collapse:collapse;min-width:760px}
       #goLive125h th,#goLive125h td{padding:11px 10px;border-bottom:1px solid var(--line,#e5e9ed);font-size:13px;text-align:left;vertical-align:middle}
@@ -43,14 +42,11 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       #goLive125h .m125-empty{padding:24px;text-align:center;color:var(--muted,#68737d)}
       @media(max-width:600px){#goLive125h .m125-form{grid-template-columns:1fr}#goLive125h .m125-form .full{grid-column:auto}#goLive125h .m125-dialog{padding:16px}}
     </style>
-    <div class="go-section-heading">
-      <div><h2>Manutenção preventiva de 125 horas</h2><p>Controle por horímetro, previsão da próxima revisão e histórico por equipamento.</p></div>
-      <button class="light" type="button" id="m125Refresh">Atualizar controle</button>
-    </div>
-    <div class="m125-toolbar"><div id="m125Feedback" role="status" aria-live="polite">Carregando controles…</div><span class="m125-pill">Intervalo padrão: 125 h</span></div>
+    <div class="go-section-heading"><h2>Manutenção preventiva de 125 horas</h2></div>
+    <div id="m125Feedback" role="status" aria-live="polite"></div>
     <div class="m125-grid" id="m125Summary"></div><div class="m125-card"><strong>Planejamento:</strong> agende a inspeção antes de o caminhão atingir o próximo limite de 125 horas. A data é um compromisso operacional; o horímetro continua sendo o limite técnico.</div><h3>Controle de prazo por caminhão</h3>
     <div class="m125-table-wrap"><table><thead><tr><th>Equipamento</th><th>Horímetro atual</th><th>Última manutenção</th><th>Próxima manutenção</th><th>Faltam</th><th>Agendamento</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="m125Rows"></tbody></table></div>
-    <div class="m125-card" style="margin-top:16px"><h3>Agenda programada</h3><div id="m125Agenda"><p>Nenhuma inspeção agendada.</p></div></div><div class="m125-card" style="margin-top:16px"><h3>Histórico de manutenções de 125 horas</h3><div id="m125History"><p>Nenhum registro carregado.</p></div></div>
+    <div class="m125-card" style="margin-top:16px"><h3>Agenda programada</h3><div id="m125Agenda"></div></div><div class="m125-card" style="margin-top:16px"><h3>Histórico de manutenções de 125 horas</h3><div id="m125History"></div></div>
     <div id="m125Modal"></div>
   `;
 
@@ -97,7 +93,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
   async function load(){
     if(state.loading)return;
-    state.loading=true;feedback("Atualizando controle de 125 horas…");
+    state.loading=true;feedback("");
     try{
       const id=areaId();
       const [controls,services,schedules]=await Promise.all([
@@ -109,7 +105,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       if(services.error)throw services.error;
       if(schedules.error)throw schedules.error;
       state.controls=controls.data||[];state.services=services.data||[];state.schedules=schedules.data||[];
-      render();feedback("Controle atualizado · "+new Date().toLocaleTimeString("pt-BR"));
+      render();feedback("");
     }catch(error){feedback(error.message||"Não foi possível carregar o controle.",true);throw error;}
     finally{state.loading=false;}
   }
@@ -191,7 +187,6 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
   root.addEventListener("click",async event=>{
     const b=event.target.closest("button");if(!b)return;
-    if(b.id==="m125Refresh"){load().catch(()=>{});return;}
     if(b.dataset.m125Config){configureForm(b.dataset.m125Config);return;}
     if(b.dataset.m125Service){serviceForm(b.dataset.m125Service);return;}
     if(b.dataset.m125Schedule){scheduleForm(b.dataset.m125Schedule);return;}

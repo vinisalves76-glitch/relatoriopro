@@ -54,11 +54,11 @@ export function initChecklistTremForca({ root, isMaster, getAssets }) {
     const assetOptions = assets().map(a=>'<option value="'+esc(a.id)+'">'+esc(a.asset_code+" — "+a.model)+'</option>').join("");
     panel.innerHTML = `
       <div class="tf-head">
-        <div><span class="go-eyebrow">INSPEÇÃO TÉCNICA · IRMEN</span><h2>Checklist de Campo — Trem de Força</h2>
-        <p>Inspeção guiada para registrar condições, evidências fotográficas e assinatura do técnico.</p></div>
+        <div><h2>Checklist de Campo — Trem de Força</h2>
+        <p>Registre as condições do equipamento e as evidências da inspeção.</p></div>
         <div class="tf-progress"><strong id="tfProgressValue">0%</strong><span>preenchimento</span><div><i id="tfProgressBar"></i></div></div>
       </div>
-      <div class="tf-local-note"><strong>Modo de homologação offline</strong><span>Rascunhos e fotos são salvos somente neste dispositivo. A sincronização com o banco será ativada após validação.</span></div>
+      <div class="tf-local-note"><span>Os rascunhos ficam salvos neste dispositivo.</span></div>
       <div class="tf-actions-top"><button class="light" id="tfNew" type="button">＋ Novo checklist</button><button class="light" id="tfSavedToggle" type="button">Ver salvos</button><button class="light" id="tfSave" type="button">Salvar rascunho</button></div>
       <div id="tfSavedList" class="tf-saved-list" hidden></div>
       <form id="tfForm" novalidate>
