@@ -94,7 +94,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   async function loadEquipment(){
     let fetched=false;
     try{
-      const {data,error}=await supabase.from("operational_equipment").select("id,asset_code,model,description,current_horimeter,status").eq("area_id",areaId).neq("status","inactive").order("asset_code");
+      const {data,error}=await supabase.from("operational_equipment").select("id,asset_code,model,description,current_horimeter,status").eq("area_id",areaId).order("asset_code");
       if(error)throw error;
       state.equipment=data||[];
       fetched=true;
@@ -104,8 +104,9 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       feedback("Sem acesso ao servidor neste momento. Usando a última lista de equipamentos salva neste dispositivo.");
     }
     if(fetched){try{await cacheEquipment(areaId,state.equipment)}catch(error){console.warn("[RelatorioPro] Não foi possível atualizar o cache local da frota:",error)}}
-    $("#msEquipment").innerHTML='<option value="">Selecione a TAG</option>'+state.equipment.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
-    $("#msEquipmentCount").textContent=String(state.equipment.length);
+    const selectable=state.equipment.filter(e=>e.status!=="inactive");
+    $("#msEquipment").innerHTML='<option value="">Selecione a TAG</option>'+selectable.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
+    $("#msEquipmentCount").textContent=String(selectable.length);
   }
   async function loadRemoteReports(){
     const {data,error}=await supabase.from("operational_shift_reports").select("*").eq("area_id",areaId).order("report_date",{ascending:false}).order("created_at",{ascending:false}).limit(100);
