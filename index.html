@@ -179,17 +179,16 @@
 
 <section class="page" id="gestaoOperacional">
  <div class="go-page-head">
-  <div><span class="go-eyebrow">IRMEN · INTELIGÊNCIA E GESTÃO OPERACIONAL</span><h1>Gestão Operacional</h1><p class="muted">Cadastros estruturados para clientes, contratos, operações e frota de caminhões.</p></div>
+  <div><span class="go-eyebrow">IRMEN · INTELIGÊNCIA E GESTÃO OPERACIONAL</span><h1>Gestão Operacional</h1><p class="muted">Gestão integrada da operação ArcelorMittal: frota, manutenção, disponibilidade e histórico técnico.</p></div>
   <span class="go-master-badge">Acesso exclusivo · Administrador master</span>
  </div>
  <div class="go-demo-alert"><strong>PREVIEW FASE 1 · PROTÓTIPO LOCAL</strong><span>Os registros desta versão são fictícios e ficam somente neste navegador. Nenhum dado é enviado ao Supabase ou à produção.</span></div>
  <div class="go-toolbar">
-  <div><strong>Base operacional</strong><small id="goDatasetCounts">Carregando cadastros...</small></div>
+  <div><strong>Operação ArcelorMittal</strong><small id="goDatasetCounts">Carregando estrutura operacional...</small></div>
   <div class="go-toolbar-actions"><button class="light" type="button" id="goExportDemo">Exportar dados de teste</button><button class="light" type="button" id="goResetDemo">Restaurar demonstração</button></div>
  </div>
  <nav class="go-subnav" aria-label="Módulos da Gestão Operacional">
   <button class="go-subtab active" type="button" data-go-tab="overview">Visão geral</button>
-  <button class="go-subtab" type="button" data-go-tab="clients">Clientes</button>
   <button class="go-subtab" type="button" data-go-tab="contracts">Contratos</button>
   <button class="go-subtab" type="button" data-go-tab="operations">Operações</button>
   <button class="go-subtab" type="button" data-go-tab="assets">Caminhões</button>
@@ -204,16 +203,12 @@
   <div class="go-kpis go-kpis-phase1" id="goOverviewKpis"></div>
   <div class="go-card go-health-card"><div class="go-card-title"><div><h3>Saúde e memória da operação</h3><p>Indicadores básicos de estrutura e histórico já registrados.</p></div><span class="go-pill">Fase 1</span></div><div id="goHealthSummary" class="go-health-summary"></div></div>
   <div class="go-two-col">
-   <article class="go-card"><h3>Como os dados se conectam</h3><div class="go-relationship-flow"><span>Cliente</span><b>→</b><span>Contrato</span><b>→</b><span>Operação</span><b>→</b><span>Caminhão</span></div><p class="go-table-note">Componentes, horímetros, ordens de serviço, falhas e paradas ficam vinculados ao caminhão e à operação correspondente.</p></article>
+   <article class="go-card"><h3>Como os dados se conectam</h3><div class="go-relationship-flow"><span>ArcelorMittal</span><b>→</b><span>Contrato</span><b>→</b><span>Operação</span><b>→</b><span>Caminhão</span></div><p class="go-table-note">A ArcelorMittal é o único cliente deste ambiente. Contratos e operações ficam vinculados a ela; componentes, horímetros, ordens de serviço, falhas e paradas permanecem ligados aos caminhões e à operação correspondente.</p></article>
    <article class="go-card"><h3>Próxima evolução</h3><p>Com os cadastros estruturados, o próximo passo será transformar os registros em indicadores rastreáveis de disponibilidade, MTBF, MTTR e reincidência.</p><span class="go-status info">Preparado para confiabilidade</span></article>
   </div>
  </section>
- <section class="go-panel" data-go-panel="clients" hidden>
-  <div class="go-section-heading"><div><h2>Clientes</h2><p>Empresas atendidas pela Irmen.</p></div><button class="primary" type="button" data-go-add="clients">＋ Novo cliente</button></div>
-  <input class="go-list-search" type="search" placeholder="Pesquisar cliente..." data-go-search="clients"><div id="goList-clients"></div>
- </section>
  <section class="go-panel" data-go-panel="contracts" hidden>
-  <div class="go-section-heading"><div><h2>Contratos</h2><p>Contratos vinculados a cada cliente.</p></div><button class="primary" type="button" data-go-add="contracts">＋ Novo contrato</button></div>
+  <div class="go-section-heading"><div><h2>Contratos ArcelorMittal</h2><p>Controle dos contratos atendidos pela Irmen dentro da ArcelorMittal.</p></div><button class="primary" type="button" data-go-add="contracts">＋ Novo contrato ArcelorMittal</button></div>
   <input class="go-list-search" type="search" placeholder="Pesquisar contrato..." data-go-search="contracts"><div id="goList-contracts"></div>
  </section>
  <section class="go-panel" data-go-panel="operations" hidden>
