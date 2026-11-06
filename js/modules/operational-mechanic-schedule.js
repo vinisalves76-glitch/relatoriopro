@@ -58,17 +58,20 @@ export async function initMechanicSchedule({supabase,profile,areaId,root}){
   const feedback=(message,error=false)=>{$("#scFeedback").textContent=message;$("#scFeedback").classList.toggle("sc-error",error)};
   function render(){
     const box=$("#scCalendar");
-    if(!state.assignments.length){box.innerHTML='<div class="sc-empty">Nenhuma alocação registrada neste mês.</div>';return;}
-    const grouped=new Map();
+    const bounds=monthBounds(state.month),grouped=new Map();
     for(const row of state.assignments){if(!grouped.has(row.work_date))grouped.set(row.work_date,[]);grouped.get(row.work_date).push(row);}
-    box.innerHTML=[...grouped.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([date,rows])=>{
+    const days=[];
+    for(let cursor=new Date(bounds.start+"T12:00:00");localISO(cursor)<=bounds.end;cursor.setDate(cursor.getDate()+1))days.push(localISO(cursor));
+    box.innerHTML=days.map(date=>{
+      const rows=grouped.get(date)||[];
       const day=new Date(date+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
-      return '<section class="sc-day"><h3>'+esc(day)+'</h3>'+rows.map(row=>{
+      const assignments=rows.length?rows.map(row=>{
         const mechanic=state.mechanics.find(item=>item.id===row.mechanic_id);
         const equipment=state.equipment.find(item=>item.id===row.equipment_id);
         const isFuture=row.work_date>=todayISO();
         return '<div class="sc-assignment"><div><strong>'+esc(equipment?.asset_code||"Equipamento")+'</strong> · '+esc(mechanic?.name||"Mecânico")+'<small>'+esc(equipment?.model||"")+(row.notes?" · "+esc(row.notes):"")+'</small></div><div style="display:flex;align-items:center;gap:7px"><span class="sc-pill '+(row.status==="cancelled"?"cancelled":"")+'">'+(row.status==="cancelled"?"Cancelada":"Escalado")+'</span>'+(row.status==="scheduled"&&isFuture?'<button type="button" class="light" data-sc-cancel="'+esc(row.id)+'">Cancelar</button>':"")+'</div></div>';
-      }).join("")+'</section>';
+      }).join(""):'<p class="sc-muted" style="margin:0">Sem alocação cadastrada para este dia.</p>';
+      return '<section class="sc-day"><h3>'+esc(day)+'</h3>'+assignments+'</section>';
     }).join("");
   }
   async function load(){
