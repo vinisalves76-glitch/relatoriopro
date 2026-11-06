@@ -54,9 +54,12 @@ create table if not exists public.operational_125h_schedules (
     check (status in ('scheduled','in_progress','completed','cancelled')),
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (equipment_id)
+  updated_at timestamptz not null default now()
 );
+
+create unique index if not exists operational_125h_one_active_schedule_per_equipment_idx
+  on public.operational_125h_schedules(equipment_id)
+  where status in ('scheduled','in_progress');
 
 create index if not exists operational_125h_schedules_area_date_idx
   on public.operational_125h_schedules(area_id, planned_for, status);
@@ -82,7 +85,7 @@ begin
   if new.planned_horimeter < coalesce(v_current,0) then
     raise exception 'Horímetro planejado não pode ser menor que o horímetro atual.';
   end if;
-  if v_next is not null and new.planned_horimeter > v_next then
+  if v_next is not null and v_current <= v_next and new.planned_horimeter > v_next then
     raise exception 'Agendamento ultrapassa o limite da próxima manutenção de 125 horas.';
   end if;
   return new;
