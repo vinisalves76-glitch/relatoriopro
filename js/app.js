@@ -641,10 +641,18 @@ async function initializeUserOnce(user){
  const isCurrent=()=>run===authInitializationRun&&activeUser?.uid===uid&&backend.currentSupabaseUser?.uid===uid;
 
  try{
-  const ps=await getDoc(doc(db,'userProfiles',uid));
+  let ps=null,offlineCachedProfile=null;
+  try{ps=await getDoc(doc(db,'userProfiles',uid));}
+  catch(error){
+   if(navigator.onLine)throw error;
+   try{const cached=JSON.parse(localStorage.getItem('relatoriopro-profile-cache-'+uid)||'null');if(cached&&cached.uid===uid&&cached.role==='mecanico'&&cached.active!==false&&cached.operationalAreaId)offlineCachedProfile=cached;}catch(_){}
+   if(!offlineCachedProfile)throw new Error('Sem conexão e sem perfil operacional previamente validado neste dispositivo. Conecte-se à internet para entrar pela primeira vez.');
+  }
   if(!isCurrent())return;
 
-  if(uid===MASTER_UID){
+  if(offlineCachedProfile){
+   currentProfile=offlineCachedProfile;
+  }else if(uid===MASTER_UID){
    if(!ps.exists())throw new Error('Perfil mestre não encontrado na tabela profiles do Supabase.');
    currentProfile={uid,...ps.data(),role:'super_admin',roleLabel:ps.data().roleLabel||'Super administrador',permissions:PERMISSIONS.map(p=>p[0]),active:true};
   }else{
@@ -656,6 +664,8 @@ async function initializeUserOnce(user){
     throw new Error('ACESSO DESATIVADO: o perfil foi localizado na tabela profiles, mas o campo active está desativado. Solicite ao administrador a reativação do acesso. A sessão foi preservada para diagnóstico.');
    }
   }
+
+  if(currentProfile?.role==='mecanico'&&!offlineCachedProfile){try{localStorage.setItem('relatoriopro-profile-cache-'+uid,JSON.stringify(currentProfile));}catch(_){}}
 
   // Este caminho libera o single-flight no finally. Após a troca de senha,
   // a chamada seguinte poderá inicializar a mesma conta normalmente.
