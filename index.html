@@ -49,7 +49,7 @@
 <button class="tab operational-main-tab" data-operational-section="orders" hidden>▤ &nbsp; Ordens de serviço</button>
 <button class="tab operational-main-tab" data-operational-section="events" hidden>⚙ &nbsp; Manutenção e ocorrências</button>
 <button class="tab operational-main-tab" data-operational-section="maintenance125" hidden>◷ &nbsp; Inspeção 125 Horas</button>
-<button class="tab operational-main-tab" data-operational-section="shiftCloseout" hidden>◷ &nbsp; Fechamento de turno</button><div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div><div class="sidebar-footer"><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir guia rápido"><span class="help-dot">?</span><span>Guia rápido</span></button><button class="sidebar-logout" id="logoutBtn" type="button">↪ Sair</button></div></nav>
+<div class="muted" id="sessionInfo" style="padding:8px 20px;background:#fff"></div><div class="sidebar-footer"><button class="help-launch" id="helpLaunch" type="button" aria-label="Abrir guia rápido"><span class="help-dot">?</span><span>Guia rápido</span></button><button class="sidebar-logout" id="logoutBtn" type="button">↪ Sair</button></div></nav>
 <main>
 <section class="page" id="home">
  <div class="home-hero">
@@ -234,11 +234,11 @@
  </section>
  <section class="go-panel" data-go-panel="reports" hidden>
   <div class="go-section-heading"><div><h2>Relatórios gerenciais</h2><p>Documentos para conferência interna e futura entrega aos setores responsáveis.</p></div><button class="primary" type="button" id="goGenerateReport">＋ Gerar relatório</button></div>
-  <div class="go-report-filters"><select id="goReportType"><option value="">Todos os relatórios</option><option>Disponibilidade física</option><option>Manutenção mensal</option><option>Fechamento de turno</option></select><select id="goReportMonth"><option value="11/2026">Novembro de 2026</option><option value="10/2026">Outubro de 2026</option></select></div>
+  <div class="go-report-filters"><select id="goReportType"><option value="">Todos os relatórios</option><option>Disponibilidade física</option><option>Manutenção mensal</option></select><select id="goReportMonth"><option value="11/2026">Novembro de 2026</option><option value="10/2026">Outubro de 2026</option></select></div>
   <div class="go-report-list">
    <article class="go-report-card" data-report-type="Disponibilidade física"><div class="go-report-icon">▥</div><div><span class="go-status success">Pronto para conferência</span><h3>Relatório de Disponibilidade Física</h3><p>ArcelorMittal · Mina do Andrade · Novembro/2026</p><small>Gerado em 05/11/2026 · PDF demonstrativo</small></div><button class="light" type="button" data-go-report="DF">Visualizar</button></article>
    <article class="go-report-card" data-report-type="Manutenção mensal"><div class="go-report-icon">⚙</div><div><span class="go-status warning">Em elaboração</span><h3>Relatório mensal de manutenção</h3><p>Ordens de serviço, falhas, preventivas e pendências</p><small>Período: Novembro/2026</small></div><button class="light" type="button" data-go-report="Manutenção">Visualizar</button></article>
-   <article class="go-report-card" data-report-type="Fechamento de turno"><div class="go-report-icon">◷</div><div><span class="go-status info">Aguardando conferência</span><h3>Fechamento operacional do turno</h3><p>Equipe, atividades, ocorrências e passagem de turno</p><small>05/11/2026 · Turno 07:00–17:00</small></div><button class="light" type="button" data-go-report="Turno">Visualizar</button></article>
+   
   </div><div class="go-report-preview" id="goReportPreview" hidden><button class="light" id="goCloseReport" type="button">Fechar prévia</button><h3 id="goReportPreviewTitle">Prévia do relatório</h3><p>Documento demonstrativo. A geração de PDF e o fluxo de aprovação serão implementados na próxima etapa.</p><div class="go-report-preview-body" id="goReportPreviewBody"></div></div>
  </section>
  <div class="go-footer-note">Módulo em prototipação · Acesso restrito ao administrador master · Nenhum dado operacional é gravado nesta preview.</div>
