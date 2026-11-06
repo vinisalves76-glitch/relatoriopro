@@ -229,5 +229,6 @@ export function initGestaoOperacional({ $, isMaster }) {
   root.querySelectorAll("[data-go-search]").forEach(input=>input.addEventListener("input",()=>renderList(input.dataset.goSearch)));
   load();
   renderAll();
+  initChecklistTremForca({ root, isMaster, getAssets: () => state.assets });
   if(!isMaster()) { root.innerHTML='<div class="go-denied">A Gestão Operacional está disponível somente para o administrador master.</div>'; }
 }
