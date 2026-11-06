@@ -312,15 +312,54 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     
     openModal("Registrar manutenção ou ocorrência",'<form id="goLiveForm"><div class="go-live-form-grid">'+selectField("Equipamento","equipment_id",equipmentOptions,equipmentOptions[0][0])+selectField("Tipo de evento","event_type",[["preventive","Preventiva"],["corrective","Corretiva"],["inspection","Inspeção"],["occurrence","Ocorrência"]],"occurrence")+'<div><label for="live_occurred_at">Data e hora</label><input id="live_occurred_at" name="occurred_at" type="datetime-local" value="'+new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)+'" required></div><div class="full"><label for="live_description">Descrição / registro</label><textarea id="live_description" name="description" rows="4" required></textarea></div></div></form>');
   }
-  function shiftReportForm() {
+  async function shiftReportForm() {
     const equipmentOptions=state.equipment.filter(e=>e.status!=="inactive").map(e=>[e.id,e.asset_code+" · "+[e.model].filter(Boolean).join(" ")]);
     if(!equipmentOptions.length){setFeedback("Não há equipamentos ativos nesta área.",true);switchTab("equipment");return;}
     const date=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-    openModal("Registrar relatório de final de turno",'<form id="goLiveForm"><input type="hidden" name="shift_report" value="1"><div class="go-live-form-grid">'+selectField("Equipamento / TAG","equipment_id",equipmentOptions,equipmentOptions[0][0])+'<div><label for="live_report_date">Data do trabalho</label><input id="live_report_date" name="report_date" type="date" value="'+date+'" required></div>'+field("Horímetro","horimeter",state.equipment.find(e=>e.id===equipmentOptions[0][0])?.current_horimeter||0,"number")+'<div><label for="live_other_mechanics">Mecânicos participantes</label><input id="live_other_mechanics" name="other_mechanics" placeholder="Separe os nomes por vírgula"></div><div class="full"><label for="live_work_performed">Serviços realizados</label><textarea id="live_work_performed" name="work_performed" rows="3" required></textarea></div><div class="full"><label for="live_anomalies">Problemas / anormalidades</label><textarea id="live_anomalies" name="anomalies" rows="2"></textarea></div><div class="full"><label for="live_actions_taken">Ações executadas</label><textarea id="live_actions_taken" name="actions_taken" rows="2"></textarea></div><div class="full"><label for="live_pending_items">Pendências para o próximo turno</label><textarea id="live_pending_items" name="pending_items" rows="2"></textarea></div>'+selectField("Condição final","final_condition",[["available","Disponível para operação"],["stopped","Parado"],["maintenance","Permanece em manutenção"]],"available")+'<div><label for="live_final_condition_notes">Observações da condição final</label><input id="live_final_condition_notes" name="final_condition_notes"></div></div></form>',"Salvar relatório");
+    const areaMechanicsResult=await supabase.rpc("list_operational_area_mechanics",{area_key:state.areaId});
+    if(areaMechanicsResult.error)throw new Error("Não foi possível consultar a equipe da área: "+areaMechanicsResult.error.message);
+    const areaMechanics=areaMechanicsResult.data||[];
+    openModal("Registrar relatório de final de turno",'<form id="goLiveForm"><input type="hidden" name="shift_report" value="1"><div class="go-live-form-grid">'+selectField("Equipamento / TAG","equipment_id",equipmentOptions,equipmentOptions[0][0])+'<div><label for="live_report_date">Data do trabalho</label><input id="live_report_date" name="report_date" type="date" value="'+date+'" required></div>'+field("Horímetro","horimeter",state.equipment.find(e=>e.id===equipmentOptions[0][0])?.current_horimeter||0,"number")+'<div class="full"><label for="live_labor_source">Origem da mão de obra *</label><select id="live_labor_source" name="labor_source" required><option value="scheduled">Mecânicos escalados</option><option value="client">Mão de obra do cliente</option><option value="none">Sem mão de obra disponível (desvio)</option></select></div><div class="full" id="live_assigned_mechanics_wrap"><label>Mecânicos escalados nesta TAG e data</label><div id="live_assigned_mechanics" class="go-live-form-grid"><span class="go-live-empty">Consultando escala...</span></div><small id="live_assignment_hint" class="go-live-empty"></small></div><div class="full" id="live_labor_deviation_wrap" hidden><label for="live_labor_deviation">Descrição do desvio de mão de obra *</label><textarea id="live_labor_deviation" name="labor_deviation" rows="3" placeholder="Ex.: caminhão ficou sem mão de obra disponível durante o turno. Explique o motivo e o impacto."></textarea></div><div class="full"><label for="live_work_performed">Serviços realizados</label><textarea id="live_work_performed" name="work_performed" rows="3" placeholder="Descreva as atividades executadas. Se não houve serviço, informe isso no desvio."></textarea></div><div class="full"><label for="live_anomalies">Problemas / anormalidades</label><textarea id="live_anomalies" name="anomalies" rows="2"></textarea></div><div class="full"><label for="live_actions_taken">Ações executadas</label><textarea id="live_actions_taken" name="actions_taken" rows="2"></textarea></div><div class="full"><label for="live_pending_items">Pendências para o próximo turno</label><textarea id="live_pending_items" name="pending_items" rows="2"></textarea></div>'+selectField("Condição final","final_condition",[["available","Disponível para operação"],["stopped","Parado"],["maintenance","Permanece em manutenção"]],"available")+'<div><label for="live_final_condition_notes">Observações da condição final</label><input id="live_final_condition_notes" name="final_condition_notes"></div></div></form>',"Salvar relatório");
+    const form=$("#goLiveForm");
+    const source=form.querySelector('[name="labor_source"]');
+    const assignedWrap=$("#live_assigned_mechanics_wrap");
+    const deviationWrap=$("#live_labor_deviation_wrap");
+    async function refreshAssignedMechanics(){
+      const equipmentId=form.elements.equipment_id.value,workDate=form.elements.report_date.value;
+      const list=$("#live_assigned_mechanics");
+      list.innerHTML='<span class="go-live-empty">Consultando escala...</span>';
+      const {data,error}=await supabase.from("operational_mechanic_assignments").select("mechanic_id").eq("area_id",state.areaId).eq("equipment_id",equipmentId).eq("work_date",workDate).eq("status","scheduled");
+      if(error){list.innerHTML='<span class="go-live-error">Falha ao consultar escala: '+esc(error.message)+'</span>';source.value="none";source.querySelector('option[value="scheduled"]').disabled=true;return;}
+      const ids=[...new Set((data||[]).map(row=>row.mechanic_id))];
+      const assigned=areaMechanics.filter(mechanic=>ids.includes(mechanic.id));
+      if(!assigned.length){
+        list.innerHTML='<span class="go-live-empty">Nenhum mecânico escalado para esta TAG nesta data.</span>';
+        $("#live_assignment_hint").textContent="Registre o desvio de mão de obra ou selecione mão de obra do cliente.";
+        source.value="none";source.querySelector('option[value="scheduled"]').disabled=true;
+      }else{
+        source.querySelector('option[value="scheduled"]').disabled=false;
+        list.innerHTML=assigned.map(mechanic=>'<label style="display:flex;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="assigned_mechanic_id" value="'+esc(mechanic.id)+'" checked> '+esc(mechanic.name||mechanic.email||"Mecânico")+(mechanic.email?' · '+esc(mechanic.email):"")+'</label>').join("");
+        $("#live_assignment_hint").textContent=assigned.length+" mecânico(s) escalado(s) para esta TAG e data. Desmarque quem não participou do turno.";
+        source.value="scheduled";
+      }
+      updateLaborFields();
+    }
+    function updateLaborFields(){
+      const noLabor=source.value==="none";
+      assignedWrap.hidden=source.value!=="scheduled";
+      deviationWrap.hidden=!noLabor;
+      $("#live_labor_deviation").required=noLabor;
+    }
+    source.addEventListener("change",updateLaborFields);
+    form.elements.equipment_id.addEventListener("change",refreshAssignedMechanics);
+    form.elements.report_date.addEventListener("change",refreshAssignedMechanics);
+    await refreshAssignedMechanics();
   }
   function horimeterForm(item) {
     openModal("Registrar horímetro · "+item.asset_code,'<form id="goLiveForm"><div class="go-live-form-grid">'+field("Leitura atual (horas)","reading",item.current_horimeter||0,"number")+'<div class="full"><label for="live_notes">Observações</label><textarea id="live_notes" name="notes" rows="3"></textarea></div><input type="hidden" name="equipment_id" value="'+esc(item.id)+'"></div></form>');
   }
+  let reportMechanicsSnapshot=[];
+  function areaMechanicsForReport(ids){return reportMechanicsSnapshot.filter(mechanic=>ids.includes(mechanic.id)).map(mechanic=>mechanic.name||mechanic.email||"Mecânico");}
   async function submitForm(event) {
     event.preventDefault();
     const form=event.currentTarget, data=Object.fromEntries(new FormData(form).entries()), button=$("#goLiveModalHost button[type=submit]");
@@ -329,8 +368,15 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     try {
       const recordId=data.record_id;delete data.record_id;
       if(form.querySelector('[name="shift_report"]')){
-        const participants=String(data.other_mechanics||"").replace(/\r?\n/g,",").split(/[,;]+/).map(value=>value.trim()).filter(Boolean);
-        const payload={area_id:state.areaId,equipment_id:data.equipment_id,report_date:data.report_date,horimeter:Number(data.horimeter),created_by:profile.uid||profile.id,created_by_name:profile.name||"",other_mechanics:participants,work_performed:String(data.work_performed||"").trim(),anomalies:String(data.anomalies||"").trim(),actions_taken:String(data.actions_taken||"").trim(),pending_items:String(data.pending_items||"").trim(),final_condition:data.final_condition,final_condition_notes:String(data.final_condition_notes||"").trim(),idempotency_key:crypto.randomUUID(),client_created_at:new Date().toISOString()};
+        const source=data.labor_source;
+        const selectedIds=[...form.querySelectorAll('input[name="assigned_mechanic_id"]:checked')].map(input=>input.value);
+        const participants=source==="scheduled"?areaMechanicsForReport(selectedIds):source==="client"?["Mão de obra do cliente"]:[];
+        const deviation=String(data.labor_deviation||"").trim();
+        if(source==="scheduled"&&!participants.length)throw new Error("Selecione ao menos um mecânico escalado que participou do turno.");
+        if(source==="none"&&!deviation)throw new Error("Descreva o desvio de mão de obra para registrar o relatório.");
+        const work=String(data.work_performed||"").trim()||(source==="none"?"Sem serviço executado devido à ausência de mão de obra.":"");
+        const anomalyParts=[String(data.anomalies||"").trim(),source==="none"?"Desvio de mão de obra: "+deviation:""].filter(Boolean);
+        const payload={area_id:state.areaId,equipment_id:data.equipment_id,report_date:data.report_date,horimeter:Number(data.horimeter),created_by:profile.uid||profile.id,created_by_name:profile.name||"",other_mechanics:participants,work_performed:work,anomalies:anomalyParts.join("\n\n"),actions_taken:String(data.actions_taken||"").trim(),pending_items:String(data.pending_items||"").trim(),final_condition:data.final_condition,final_condition_notes:String(data.final_condition_notes||"").trim(),idempotency_key:crypto.randomUUID(),client_created_at:new Date().toISOString()};
         if(!Number.isFinite(payload.horimeter)||payload.horimeter<0)throw new Error("Informe um horímetro válido.");
         const {error}=await supabase.from("operational_shift_reports").insert(payload);
         if(error)throw error;
