@@ -127,8 +127,8 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
     <section class="go-panel" data-live-panel="mechanicSchedule" hidden><div id="goLiveMechanicSchedule"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
-      <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
-      <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
+      <div class="go-section-heading"><div><h2>Relatórios de final de turno</h2><p>Um relatório por equipamento e data, com identificação do responsável e participantes.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar relatório de final de turno</button></div>
+      <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Responsável</th><th>Horímetro</th><th>Condição final</th><th>Serviços realizados</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
     </section>
     <div id="goLiveModalHost"></div>
   `;
@@ -255,7 +255,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     const term=($("#goLiveEquipmentSearch")?.value||"").toLocaleLowerCase("pt-BR"),status=$("#goLiveEquipmentStatus")?.value||"";
     const equipment=state.equipment.filter(e=>(!status||e.status===status)&&(!term||[e.asset_code,e.description,e.model].join(" ").toLocaleLowerCase("pt-BR").includes(term)));
     $("#goLiveEquipmentRows").innerHTML=equipment.length?equipment.map(e=>'<tr><td><strong>'+esc(e.asset_code)+'</strong></td><td>'+esc([e.model,e.description].filter(Boolean).join(" · "))+'</td><td>'+Number(e.current_horimeter||0).toLocaleString("pt-BR")+' h</td><td><span class="go-live-status '+statusClass(e.status)+'">'+esc(equipmentStatusLabel(e.status,e.maintenance_type))+'</span></td><td><div class="go-live-actions"><button type="button" class="light" data-equipment-history="'+e.id+'">Histórico</button><button type="button" class="light" data-change-equipment-status="'+e.id+'">Alterar status</button><button type="button" class="light" data-edit-equipment="'+e.id+'">Editar</button><button type="button" class="light" data-add-reading="'+e.id+'">Horímetro</button></div></td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum equipamento encontrado.</td></tr>';
-    $("#goLiveEventRows").innerHTML=state.events.length?state.events.map(e=>'<tr><td>'+esc(dateTime(e.occurred_at))+'</td><td>'+esc(equipmentName(e.equipment_id))+'</td><td>'+esc(statusLabel(e.event_type))+'</td><td>'+esc(e.description)+'</td></tr>').join(""):'<tr><td colspan="4" class="go-live-empty">Nenhum evento registrado.</td></tr>';
+    $("#goLiveEventRows").innerHTML=state.shiftReports.length?state.shiftReports.map(r=>'<tr><td>'+esc(new Date(r.report_date+"T12:00:00").toLocaleDateString("pt-BR"))+'</td><td>'+esc(equipmentName(r.equipment_id))+'</td><td>'+esc(r.created_by_name||"Não identificado")+(r.other_mechanics?.length?'<small>Participantes: '+esc(r.other_mechanics.join(", "))+'</small>':"")+'</td><td>'+Number(r.horimeter||0).toLocaleString("pt-BR")+' h</td><td>'+esc(({available:"Disponível",stopped:"Parado",maintenance:"Em manutenção"})[r.final_condition]||r.final_condition)+'</td><td>'+esc(r.work_performed)+'</td></tr>').join(""):'<tr><td colspan="6" class="go-live-empty">Nenhum relatório de final de turno registrado.</td></tr>';
   }
   function openModal(title,body,submitLabel="Salvar",hasForm=true) {
     const footer=hasForm?'<button type="button" class="light" data-close-live-modal>Cancelar</button><button type="submit" form="goLiveForm" class="primary">'+esc(submitLabel)+'</button>':'<button type="button" class="light" data-close-live-modal>Fechar</button>';
@@ -310,6 +310,12 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     
     openModal("Registrar manutenção ou ocorrência",'<form id="goLiveForm"><div class="go-live-form-grid">'+selectField("Equipamento","equipment_id",equipmentOptions,equipmentOptions[0][0])+selectField("Tipo de evento","event_type",[["preventive","Preventiva"],["corrective","Corretiva"],["inspection","Inspeção"],["occurrence","Ocorrência"]],"occurrence")+'<div><label for="live_occurred_at">Data e hora</label><input id="live_occurred_at" name="occurred_at" type="datetime-local" value="'+new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)+'" required></div><div class="full"><label for="live_description">Descrição / registro</label><textarea id="live_description" name="description" rows="4" required></textarea></div></div></form>');
   }
+  function shiftReportForm() {
+    const equipmentOptions=state.equipment.filter(e=>e.status!=="inactive").map(e=>[e.id,e.asset_code+" · "+[e.model].filter(Boolean).join(" ")]);
+    if(!equipmentOptions.length){setFeedback("Não há equipamentos ativos nesta área.",true);switchTab("equipment");return;}
+    const date=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+    openModal("Registrar relatório de final de turno",'<form id="goLiveForm"><input type="hidden" name="shift_report" value="1"><div class="go-live-form-grid">'+selectField("Equipamento / TAG","equipment_id",equipmentOptions,equipmentOptions[0][0])+'<div><label for="live_report_date">Data do trabalho</label><input id="live_report_date" name="report_date" type="date" value="'+date+'" required></div>'+field("Horímetro","horimeter",state.equipment.find(e=>e.id===equipmentOptions[0][0])?.current_horimeter||0,"number")+'<div><label for="live_other_mechanics">Mecânicos participantes</label><input id="live_other_mechanics" name="other_mechanics" placeholder="Separe os nomes por vírgula"></div><div class="full"><label for="live_work_performed">Serviços realizados</label><textarea id="live_work_performed" name="work_performed" rows="3" required></textarea></div><div class="full"><label for="live_anomalies">Problemas / anormalidades</label><textarea id="live_anomalies" name="anomalies" rows="2"></textarea></div><div class="full"><label for="live_actions_taken">Ações executadas</label><textarea id="live_actions_taken" name="actions_taken" rows="2"></textarea></div><div class="full"><label for="live_pending_items">Pendências para o próximo turno</label><textarea id="live_pending_items" name="pending_items" rows="2"></textarea></div>'+selectField("Condição final","final_condition",[["available","Disponível para operação"],["stopped","Parado"],["maintenance","Permanece em manutenção"]],"available")+'<div><label for="live_final_condition_notes">Observações da condição final</label><input id="live_final_condition_notes" name="final_condition_notes"></div></div></form>',"Salvar relatório");
+  }
   function horimeterForm(item) {
     openModal("Registrar horímetro · "+item.asset_code,'<form id="goLiveForm"><div class="go-live-form-grid">'+field("Leitura atual (horas)","reading",item.current_horimeter||0,"number")+'<div class="full"><label for="live_notes">Observações</label><textarea id="live_notes" name="notes" rows="3"></textarea></div><input type="hidden" name="equipment_id" value="'+esc(item.id)+'"></div></form>');
   }
@@ -320,7 +326,17 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     if(button)button.disabled=true;
     try {
       const recordId=data.record_id;delete data.record_id;
-      if(form.querySelector('[name="asset_code"]')){
+      if(form.querySelector('[name="shift_report"]')){
+        const participants=String(data.other_mechanics||"").split(/[,;\\n]+/).map(value=>value.trim()).filter(Boolean);
+        const payload={area_id:state.areaId,equipment_id:data.equipment_id,report_date:data.report_date,horimeter:Number(data.horimeter),created_by:profile.uid||profile.id,created_by_name:profile.name||"",other_mechanics:participants,work_performed:String(data.work_performed||"").trim(),anomalies:String(data.anomalies||"").trim(),actions_taken:String(data.actions_taken||"").trim(),pending_items:String(data.pending_items||"").trim(),final_condition:data.final_condition,final_condition_notes:String(data.final_condition_notes||"").trim(),idempotency_key:crypto.randomUUID(),client_created_at:new Date().toISOString()};
+        if(!Number.isFinite(payload.horimeter)||payload.horimeter<0)throw new Error("Informe um horímetro válido.");
+        const {error}=await supabase.from("operational_shift_reports").insert(payload);
+        if(error)throw error;
+        $("#goLiveModalHost").innerHTML="";
+        await loadData();
+        setFeedback("Relatório de final de turno registrado e confirmado pelo Supabase.");
+        return;
+      } else if(form.querySelector('[name="asset_code"]')){
         const shared={p_area_id:state.areaId,p_asset_code:data.asset_code.trim(),p_description:data.description.trim(),p_brand:"SANY",p_model:data.model.trim(),p_category:data.category,p_current_horimeter:Number(data.current_horimeter||0)};
         if(recordId){
           const result=await supabase.from("operational_equipment").update({asset_code:shared.p_asset_code,description:shared.p_description,brand:"SANY",model:shared.p_model,category:shared.p_category,current_horimeter:shared.p_current_horimeter,updated_by:profile.uid||profile.id}).eq("id",recordId).eq("area_id",state.areaId);
@@ -382,7 +398,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     const button=event.target.closest("button");if(!button)return;
     if(button.dataset.liveTab){switchTab(button.dataset.liveTab);return;}
     if(button.id==="goLiveAddEquipment"){equipmentForm();return;}
-    if(button.id==="goLiveAddEvent"){eventForm();return;}
+    if(button.id==="goLiveAddEvent"){shiftReportForm();return;}
     if(button.dataset.equipmentHistory){const item=state.equipment.find(e=>e.id===button.dataset.equipmentHistory);if(item)equipmentHistory(item);return;}
     if(button.dataset.changeEquipmentStatus){const item=state.equipment.find(e=>e.id===button.dataset.changeEquipmentStatus);if(item)equipmentStatusForm(item);return;}
     if(button.dataset.editEquipment){const item=state.equipment.find(e=>e.id===button.dataset.editEquipment);if(item)equipmentForm(item);return;}
