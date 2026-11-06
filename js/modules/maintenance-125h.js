@@ -15,7 +15,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     const el=liveRoot().querySelector("#m125Feedback");
     if(el){el.textContent=message;el.classList.toggle("m125-error",error);}
   };
-  liveRoot().innerHTML=`
+  const panelMarkup=`
     <style>
       #goLive125h .m125-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:16px 0}
       #goLive125h .m125-card{background:var(--panel,#fff);border:1px solid var(--line,#dfe4e8);border-radius:12px;padding:16px}
@@ -49,8 +49,13 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     <div class="m125-grid" id="m125Summary"></div><div class="m125-card"><strong>Planejamento:</strong> agende a inspeção antes de o caminhão atingir o próximo limite de 125 horas. A data é um compromisso operacional; o horímetro continua sendo o limite técnico.</div><h3>Controle de prazo por caminhão</h3>
     <div class="m125-table-wrap"><table><thead><tr><th>Equipamento</th><th>Horímetro atual</th><th>Última manutenção</th><th>Próxima manutenção</th><th>Faltam</th><th>Agendamento</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="m125Rows"></tbody></table></div>
     <div class="m125-card" style="margin-top:16px"><h3>Agenda programada</h3><div id="m125Agenda"></div></div><div class="m125-card" style="margin-top:16px"><h3>Histórico de manutenções de 125 horas</h3><div id="m125History"></div></div>
-    <div id="m125Modal"></div>
-  `;
+    <div id="m125Modal"></div>`;
+  const ensurePanelMarkup=()=>{
+    const host=liveRoot();
+    if(!host.querySelector("#m125Summary")||!host.querySelector("#m125Rows")||!host.querySelector("#m125Agenda")||!host.querySelector("#m125History")||!host.querySelector("#m125Modal")) host.innerHTML=panelMarkup;
+    return host;
+  };
+  ensurePanelMarkup();
 
   function statusFor(current, next, enabled){
     if(!enabled)return {label:"Controle pausado",kind:""};
@@ -61,6 +66,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
   function controlFor(id){return state.controls.find(c=>c.equipment_id===id);}
   function render(){
+    ensurePanelMarkup();
     const rows=equipment().filter(e=>e.status!=="inactive").map(e=>{
       const c=controlFor(e.id),current=Number(e.current_horimeter||0);
       if(!c)return {e,c,current,next:null,remaining:null,status:{label:"Não configurado",kind:""}};
@@ -112,6 +118,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     finally{state.loading=false;}
   }
   function modal(title,fields,submitLabel){
+    ensurePanelMarkup();
     liveRoot().querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>'+esc125(title)+'</h3><form id="m125Form"><div class="m125-form">'+fields+'</div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">'+esc125(submitLabel||"Salvar")+'</button></div></form></section></div>';
     liveRoot().querySelector(".m125-modal").addEventListener("click",e=>{if(e.target.classList.contains("m125-modal")||e.target.closest("[data-m125-close]"))liveRoot().querySelector("#m125Modal").innerHTML="";});
   }
@@ -187,6 +194,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       }catch(error){feedback(error.message||"Falha ao registrar manutenção.",true);btn.disabled=false;}
     });
   }
+  ensurePanelMarkup();
   liveRoot().addEventListener("click",async event=>{
     const b=event.target.closest("button");if(!b)return;
     if(b.dataset.m125Config){configureForm(b.dataset.m125Config);return;}
