@@ -1,69 +1,74 @@
-/* RelatorioPro PWA — instalação e cache do app shell. Dados privados nunca são armazenados pelo Service Worker. */
+/* RelatorioPro PWA — instalação assistida e cache do app shell.
+   O navegador exige uma ação explícita do usuário para abrir o prompt nativo. */
 (() => {
   const installButtons = [...document.querySelectorAll("[data-pwa-install]")];
-  let installPrompt = null;
+  let deferredInstallPrompt = null;
 
   const isRunningAsApp = () =>
     window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
     window.navigator.standalone === true;
 
-  const showInstall = visible =>
+  const showInstall = visible => {
     installButtons.forEach(button => { button.hidden = !visible; });
-
-  const showManualInstructions = () => {
-    const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-    const isAndroid = /android/i.test(window.navigator.userAgent);
-
-    let instructions;
-    if (isIOS) {
-      instructions = 'Para instalar no iPhone ou iPad:\n1. Abra este site no Safari.\n2. Toque em Compartilhar.\n3. Selecione “Adicionar à Tela de Início”.\n4. Confirme em “Adicionar”.';
-    } else if (isAndroid) {
-      instructions = 'Para instalar no Android:\n1. Abra este site no Chrome.\n2. Toque no menu (⋮).\n3. Selecione “Instalar aplicativo” ou “Adicionar à tela inicial”.\n4. Confirme a instalação.';
-    } else {
-      instructions = 'Para instalar no computador:\n1. Abra este site no Google Chrome ou Microsoft Edge.\n2. Procure o ícone de instalação na barra de endereço ou abra o menu do navegador.\n3. Selecione “Instalar RelatorioPro”.';
-    }
-
-    window.alert(instructions);
   };
 
-  // O botão permanece acessível mesmo quando o navegador não oferece
-  // beforeinstallprompt; nesse caso, orienta o usuário pela instalação manual.
-  showInstall(!isRunningAsApp());
+  const manualInstructions = () => {
+    const ua = window.navigator.userAgent;
+    if (/iphone|ipad|ipod/i.test(ua)) {
+      window.alert('Para instalar no iPhone/iPad: abra este site no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.');
+    } else if (/android/i.test(ua)) {
+      window.alert('Para instalar no Android: abra este site no Chrome, toque no menu (⋮) e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.');
+    } else {
+      window.alert('Para instalar no computador: abra no Chrome ou Edge e use o ícone Instalar na barra de endereço ou a opção “Instalar RelatorioPro” no menu do navegador.');
+    }
+  };
+
+  const syncInstallVisibility = () => showInstall(!isRunningAsApp());
+
+  // Exibe a opção de instalação assim que o site é carregado, sem depender do login.
+  syncInstallVisibility();
 
   window.addEventListener("beforeinstallprompt", event => {
     event.preventDefault();
-    installPrompt = event;
-    showInstall(true);
+    deferredInstallPrompt = event;
+    syncInstallVisibility();
   });
 
   installButtons.forEach(button => button.addEventListener("click", async () => {
-    if (!installPrompt) {
-      showManualInstructions();
+    if (isRunningAsApp()) {
+      showInstall(false);
       return;
     }
 
-    const promptEvent = installPrompt;
-    installPrompt = null;
-
-    try {
-      await promptEvent.prompt();
-      await promptEvent.userChoice;
-    } catch (error) {
-      console.warn("[RelatorioPro PWA] Não foi possível abrir a instalação automática:", error);
-      showManualInstructions();
+    if (!deferredInstallPrompt) {
+      manualInstructions();
+      return;
     }
 
-    showInstall(!isRunningAsApp());
+    const promptEvent = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    try {
+      await promptEvent.prompt();
+      const choice = await promptEvent.userChoice;
+      if (choice?.outcome === "accepted") showInstall(false);
+      else syncInstallVisibility();
+    } catch (error) {
+      console.warn("[RelatorioPro PWA] Falha ao abrir o prompt nativo:", error);
+      manualInstructions();
+      syncInstallVisibility();
+    }
   }));
 
   window.addEventListener("appinstalled", () => {
-    installPrompt = null;
+    deferredInstallPrompt = null;
     showInstall(false);
   });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("/sw.js", { scope: "/" })
+        .then(registration => registration.update().catch(() => {}))
         .catch(error => console.error("[RelatorioPro PWA] Falha ao registrar Service Worker:", error));
     }, { once: true });
   }
