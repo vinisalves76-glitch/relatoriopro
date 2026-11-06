@@ -17,7 +17,7 @@ export async function initOperationalModule({supabase, profile}) {
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
   const fixedArea = isSupervisor ? profile.operationalAreaId : null;
-  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], controls125h:[], controls125hAvailable:false, overviewPeriod:90, busy:false};
+  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], schedules125h:[], overviewPeriod:90, busy:false};
   root.innerHTML = `
     <style>
       #gestaoOperacional .go-live-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:18px 0}
@@ -147,17 +147,15 @@ export async function initOperationalModule({supabase, profile}) {
       }
       const area=activeArea();
       if(!area)throw new Error("Área operacional não encontrada ou inativa.");
-      const [equipment,orders,events,readings]=await Promise.all([
+      const [equipment,orders,events,readings,schedules125h]=await Promise.all([
         supabase.from("operational_equipment").select("*").eq("area_id",state.areaId).order("asset_code"),
         supabase.from("operational_work_orders").select("*").eq("area_id",state.areaId).order("opened_at",{ascending:false}),
         supabase.from("operational_maintenance_events").select("*").eq("area_id",state.areaId).order("occurred_at",{ascending:false}),
-        supabase.from("operational_horimeter_readings").select("*").eq("area_id",state.areaId).order("recorded_at",{ascending:false})
+        supabase.from("operational_horimeter_readings").select("*").eq("area_id",state.areaId).order("recorded_at",{ascending:false}),
+        supabase.from("operational_125h_schedules").select("id,equipment_id,planned_for,status").eq("area_id",state.areaId)
       ]);
-      for(const result of [equipment,orders,events,readings])if(result.error)throw result.error;
-      state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];
-      const controls125h = await supabase.from("operational_125h_control").select("equipment_id,last_service_horimeter,interval_hours,enabled").eq("area_id",state.areaId);
-      state.controls125hAvailable=!controls125h.error;
-      state.controls125h=controls125h.error?[]:(controls125h.data||[]);
+      for(const result of [equipment,orders,events,readings,schedules125h])if(result.error)throw result.error;
+      state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];state.schedules125h=schedules125h.data||[];
       $("#goLiveAreaName").textContent=area.name;
       render();
       setFeedback("Dados atualizados · "+new Date().toLocaleTimeString("pt-BR"));
@@ -174,8 +172,9 @@ export async function initOperationalModule({supabase, profile}) {
     const criticalOrders=openOrders.filter(o=>["critical","high"].includes(o.priority));
     const waitingOrders=openOrders.filter(o=>o.status==="waiting").length;
     const closedOrders=state.orders.filter(o=>o.status==="completed").length;
-    const due125=state.controls125h.filter(c=>c.enabled&&activeEquipment.some(e=>e.id===c.equipment_id)&&Number(c.last_service_horimeter||0)+Number(c.interval_hours||125)-Number(activeEquipment.find(e=>e.id===c.equipment_id)?.current_horimeter||0)<=25);
-    const overdue125=due125.filter(c=>Number(c.last_service_horimeter||0)+Number(c.interval_hours||125)-Number(activeEquipment.find(e=>e.id===c.equipment_id)?.current_horimeter||0)<=0).length;
+    const today125=new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0")+"-"+String(new Date().getDate()).padStart(2,"0");
+    const activeSchedules125=state.schedules125h.filter(s=>["scheduled","in_progress"].includes(s.status)&&activeEquipment.some(e=>e.id===s.equipment_id));
+    const overdue125=activeSchedules125.filter(s=>s.planned_for<today125).length;
     const periodStart=new Date();periodStart.setDate(periodStart.getDate()-state.overviewPeriod);
     const periodEvents=state.events.filter(e=>e.occurred_at&&new Date(e.occurred_at)>=periodStart);
     const periodOrders=state.orders.filter(o=>o.opened_at&&new Date(o.opened_at)>=periodStart);
@@ -215,7 +214,7 @@ export async function initOperationalModule({supabase, profile}) {
         <article class="bi-kpi"><span>OS em aberto</span><strong>${openOrders.length}</strong><small>${waitingOrders} aguardando recurso · ${closedOrders} concluídas no total</small></article>
         <article class="bi-kpi ${criticalOrders.length?"alert":""}"><span>OS prioritárias</span><strong>${criticalOrders.length}</strong><small>Alta ou crítica · backlog atual</small></article>
         <article class="bi-kpi"><span>Disponíveis</span><strong>${available}</strong><small>${activeEquipment.length?Math.round(available/activeEquipment.length*100):0}% da frota ativa com status disponível</small></article>
-        <article class="bi-kpi ${due125.length?"warn":""}"><span>Preventivas 125h próximas</span><strong>${state.controls125hAvailable?due125.length:"—"}</strong><small>${state.controls125hAvailable?overdue125+" vencidas · "+(due125.length-overdue125)+" próximas":"Controle 125h não consultado"}</small></article>
+        <article class="bi-kpi ${overdue125?"warn":""}"><span>Inspeções 250h programadas</span><strong>${activeSchedules125.length}</strong><small>${overdue125} com data atrasada · ${activeSchedules125.length-overdue125} dentro do prazo</small></article>
         <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} OS abertas no período</small></article>
         <article class="bi-kpi"><span>Leituras de horímetro</span><strong>${state.readings.length}</strong><small>Registros disponíveis no histórico</small></article>
       </div>
