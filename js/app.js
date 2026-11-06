@@ -552,8 +552,6 @@ function newReport(){
 }
 function printNow(){if(!requirePermission('reports.print'))return;preview();window.print()}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showPage(t.dataset.page)));
-initGestaoOperacional({ $, isMaster });
-
 document.querySelectorAll('[data-home-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.homePage)));
 fields.forEach(id=>{ $(id).addEventListener('input',()=>{preview();schedule()});$(id).addEventListener('change',()=>{preview();schedule()})});
 $('saveBtn').onclick=saveReport;$('newTop').onclick=newReport;$('printBtn').onclick=printNow;$('refresh').onclick=preview;
@@ -653,6 +651,7 @@ async function initializeUserOnce(user){
   $('authGate').hidden=true;
   $('appShell').hidden=false;
   applyAccessControl();
+  if(isMaster()) initGestaoOperacional({ $, isMaster });
   $('appShell').classList.toggle('report-editor-active',!!document.querySelector('#editor.active'));
 
   if(can('model.view')||can('model.edit')){
