@@ -79,16 +79,28 @@ export async function initMechanicSchedule({supabase,profile,areaId,root}){
     try{
       const bounds=monthBounds(state.month);
       const [team,equipment,assignments]=await Promise.all([
-        supabase.rpc("list_operational_area_mechanics",{area_key:areaId}),
+        (async()=>{
+          // A RPC é a fonte principal, pois lista a equipe com privilégio controlado no banco.
+          const rpc=await supabase.rpc("list_operational_area_mechanics",{area_key:areaId});
+          if(!rpc.error&&Array.isArray(rpc.data)&&rpc.data.length)return rpc.data;
+          // Fallback para instalações em que a RPC ainda não foi atualizada; a consulta continua
+          // estritamente limitada a mecânicos ativos vinculados à área do supervisor.
+          const direct=await supabase.from("profiles").select("id,name,email")
+            .eq("operational_area_id",areaId).eq("role","mecanico").eq("active",true).order("name");
+          if(!direct.error&&Array.isArray(direct.data)&&direct.data.length)return direct.data;
+          if(rpc.error)throw new Error("Não foi possível listar os mecânicos pela função do banco: "+rpc.error.message+(direct.error?" | Consulta alternativa: "+direct.error.message:""));
+          if(direct.error)throw new Error("A função de listagem não retornou mecânicos e a consulta alternativa foi bloqueada: "+direct.error.message);
+          return [];
+        })(),
         supabase.from("operational_equipment").select("id,asset_code,model,status").eq("area_id",areaId).neq("status","inactive").order("asset_code"),
         supabase.from("operational_mechanic_assignments").select("*").eq("area_id",areaId).gte("work_date",bounds.start).lte("work_date",bounds.end).order("work_date").order("created_at")
       ]);
-      for(const result of [team,equipment,assignments])if(result.error)throw result.error;
-      state.mechanics=team.data||[];state.equipment=equipment.data||[];state.assignments=assignments.data||[];
+      for(const result of [equipment,assignments])if(result.error)throw result.error;
+      state.mechanics=team;state.equipment=equipment.data||[];state.assignments=assignments.data||[];
       $("#scEquipment").innerHTML='<option value="">Selecione a TAG</option>'+state.equipment.map(item=>'<option value="'+esc(item.id)+'">'+esc(item.asset_code)+' · '+esc(item.model||"")+'</option>').join("");
-      $("#scMechanics").innerHTML=state.mechanics.length?state.mechanics.map(item=>'<label><input type="checkbox" name="mechanic" value="'+esc(item.id)+'"> '+esc(item.name||item.email||"Mecânico")+'</label>').join(""):'<span class="sc-muted">Não há mecânicos ativos vinculados a esta área.</span>';
-      render();feedback("Escala atualizada · "+state.assignments.length+" alocação(ões) no mês.");
-    }catch(error){feedback(error.message||"Não foi possível carregar a escala.",true);$("#scCalendar").innerHTML='<div class="sc-empty">Falha ao carregar as alocações.</div>';}
+      $("#scMechanics").innerHTML=state.mechanics.length?'<div class="sc-muted" style="grid-column:1/-1;margin-bottom:3px">'+state.mechanics.length+' mecânico(s) ativo(s) nesta área — selecione quantos forem necessários.</div>'+state.mechanics.map(item=>'<label><input type="checkbox" name="mechanic" value="'+esc(item.id)+'"> '+esc(item.name||item.email||"Mecânico")+(item.email?' <span class="sc-muted">('+esc(item.email)+')</span>':'')+'</label>').join(""):'<span class="sc-muted">Não há mecânicos ativos vinculados a esta área. Confira se o cadastro está ativo, com cargo Mecânico e área ArcelorMittal Andradas.</span>';
+      render();feedback("Escala atualizada · "+state.mechanics.length+" mecânico(s) disponível(is) · "+state.assignments.length+" alocação(ões) no mês.");
+    }catch(error){feedback(error.message||"Não foi possível carregar a escala.",true);$("#scMechanics").innerHTML='<span class="sc-error">Falha ao carregar a lista de mecânicos: '+esc(error.message||"Erro desconhecido")+'</span>';$("#scCalendar").innerHTML='<div class="sc-empty">Falha ao carregar as alocações.</div>';}
     finally{state.busy=false;}
   }
   $("#scForm").addEventListener("submit",async event=>{
