@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "RelatorioPro | IRMEN",
+  "short_name": "RelatorioPro",
+  "description": "Aplicativo técnico da IRMEN para relatórios e operações.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101820",
+  "theme_color": "#e4a900",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
