@@ -97,7 +97,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
   async function load(){
     if(state.loading)return;
-    state.loading=true;feedback("Atualizando controle de 125 horas…");
+    state.loading=true;feedback("Carregando agenda e horímetros…");
     try{
       const id=areaId();
       const [controls,services,schedules]=await Promise.all([
@@ -109,7 +109,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       if(services.error)throw services.error;
       if(schedules.error)throw schedules.error;
       state.controls=controls.data||[];state.services=services.data||[];state.schedules=schedules.data||[];
-      render();feedback("Controle atualizado · "+new Date().toLocaleTimeString("pt-BR"));
+      render();feedback("Agenda atualizada · "+new Date().toLocaleTimeString("pt-BR"));
     }catch(error){feedback(error.message||"Não foi possível carregar o controle.",true);throw error;}
     finally{state.loading=false;}
   }
@@ -141,30 +141,37 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
 
   function scheduleForm(id){
-    const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e||!c)return;
-    const next=Number(c.last_service_horimeter||0)+125;
+    const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e)return;
+    const baseline=Number(c?.last_service_horimeter??e.current_horimeter??0);
+    const due=baseline+125;
+    const targetLimit=Math.max(Number(e.current_horimeter||0),due);
     const existing=state.schedules.find(s=>s.equipment_id===id&&["scheduled","in_progress"].includes(s.status));
-    modal("Agendar inspeção de 125 horas · "+e.asset_code,
-      '<div class="full"><p>Programe a inspeção antes do limite de '+num125(next)+' h.</p></div>'+(c?'':'<div class="full"><label>Horímetro da última manutenção / referência (h)</label><input name="baseline" type="number" min="0" step="0.1" value="'+num125(baseline)+'" required><small>Informe o horímetro real da última manutenção. O sistema calculará o próximo prazo somando 125 horas.</small></div>')+
+    modal("Agendar manutenção de 125 horas · "+e.asset_code,
+      '<div class="full"><p>Defina quando a inspeção será realizada. O limite técnico calculado é '+num125(due)+' h.</p></div>'+
+      (c?'':'<div class="full"><label>Horímetro da última manutenção / referência (h)</label><input name="baseline" type="number" min="0" step="0.1" value="'+num125(baseline)+'" required><small>Informe o horímetro real da última manutenção. O sistema calculará o próximo prazo somando 125 horas.</small></div>')+
       '<div><label>Data planejada</label><input name="planned_for" type="date" min="'+new Date().toISOString().slice(0,10)+'" value="'+(existing?.planned_for||new Date().toISOString().slice(0,10))+'" required></div>'+
-      '<div><label>Horímetro previsto (h)</label><input name="planned_horimeter" type="number" min="'+Number(e.current_horimeter||0)+'" max="'+next+'" step="0.1" value="'+(existing?.planned_horimeter??next)+'" required></div>'+
+      '<div><label>Horímetro previsto (h)</label><input name="planned_horimeter" type="number" min="'+Number(e.current_horimeter||0)+'" max="'+targetLimit+'" step="0.1" value="'+(existing?.planned_horimeter??targetLimit)+'" required></div>'+
       '<div><label>Responsável</label><input name="responsible_name" value="'+esc125(existing?.responsible_name||"")+'" required></div>'+
       '<div class="full"><label>Observações</label><textarea name="notes" rows="3">'+esc125(existing?.notes||"")+'</textarea></div>',"Salvar agendamento");
     root.querySelector("#m125Form").addEventListener("submit",async ev=>{
       ev.preventDefault();const btn=ev.currentTarget.querySelector('[type="submit"]');btn.disabled=true;
       try{
-        const d=Object.fromEntries(new FormData(ev.currentTarget).entries()),target=Number(d.planned_horimeter),reference=c?baseline:Number(d.baseline),due=reference+125;
+        const d=Object.fromEntries(new FormData(ev.currentTarget).entries());
+        const reference=c?baseline:Number(d.baseline),nextDue=reference+125,target=Number(d.planned_horimeter);
+        if(!Number.isFinite(reference)||reference<0)throw new Error("Informe um horímetro de referência válido.");
         if(d.planned_for<new Date().toISOString().slice(0,10))throw new Error("A data planejada não pode estar no passado.");
-        if(!Number.isFinite(target)||target<Number(e.current_horimeter||0)||target>due)throw new Error("O horímetro planejado deve ficar entre a leitura atual e "+num125(due)+" h.");
-        if(!c){const configured=await supabase.from("operational_125h_control").upsert({area_id:areaId(),equipment_id:id,interval_hours:125,last_service_horimeter:reference,enabled:true,updated_by:userId},{onConflict:"equipment_id"});if(configured.error)throw configured.error;}
+        if(!Number.isFinite(target)||target<Number(e.current_horimeter||0)||target>Math.max(Number(e.current_horimeter||0),nextDue))throw new Error("O horímetro previsto deve ficar entre a leitura atual e o limite calculado de "+num125(nextDue)+" h.");
+        if(!c){
+          const configured=await supabase.from("operational_125h_control").upsert({area_id:areaId(),equipment_id:id,interval_hours:125,last_service_horimeter:reference,enabled:true,updated_by:userId},{onConflict:"equipment_id"});
+          if(configured.error)throw configured.error;
+        }
         const payload={area_id:areaId(),equipment_id:id,planned_for:d.planned_for,planned_horimeter:target,responsible_name:d.responsible_name.trim(),notes:d.notes||"",status:"scheduled",created_by:userId,updated_at:new Date().toISOString()};
         const result=existing?await supabase.from("operational_125h_schedules").update(payload).eq("id",existing.id).eq("area_id",areaId()):await supabase.from("operational_125h_schedules").insert(payload);
         if(result.error)throw result.error;
-        root.querySelector("#m125Modal").innerHTML="";await load();feedback("Inspeção agendada com sucesso.");
+        root.querySelector("#m125Modal").innerHTML="";await load();feedback("Manutenção agendada com sucesso.");
       }catch(error){feedback(error.message||"Falha ao agendar.",true);btn.disabled=false;}
     });
   }
-
   function serviceForm(id){
     const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e||!c)return;
     modal("Registrar manutenção de 125 horas · "+e.asset_code,
