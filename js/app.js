@@ -1,5 +1,5 @@
 import { createSupabaseAdapter } from "./core/supabase-adapter.js";
-import { hasPermission, PERMISSIONS } from "./core/permissions.js";
+import { hasPermission, PERMISSIONS, ROLE_DEFAULTS } from "./core/permissions.js";
 import { escapeHtml } from "./shared/html.js";
 import { initOperationalModule } from "./modules/operational-crud.js";
 const $ = id => document.getElementById(id);
