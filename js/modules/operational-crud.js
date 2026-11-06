@@ -130,6 +130,7 @@ export async function initOperationalModule({supabase, profile}) {
   const activeArea = () => state.areas.find(a=>a.id===state.areaId);
   const switchTab = name => {
     root.querySelectorAll("[data-live-panel]").forEach(p=>{const active=p.dataset.livePanel===name;p.hidden=!active;p.classList.toggle("active",active)});
+    const sharedToolbar=root.querySelector(".go-live-toolbar");if(sharedToolbar)sharedToolbar.hidden=name==="maintenance125";
     document.querySelectorAll(".operational-main-tab").forEach(b=>b.classList.toggle("active",b.dataset.operationalSection===name));
   };
   root.showOperationalSection = switchTab;
