@@ -187,9 +187,6 @@ export function initGestaoOperacional({ $, isMaster }) {
       const asset=state.assets.find(x=>x.id===data.asset_id); if(asset)asset.current_hourmeter=Math.max(Number(asset.current_hourmeter||0),reading);
     }
     if(editing.type==="assets") data.current_hourmeter=Number(data.current_hourmeter||0);
-    if(editing.type==="components"||editing.type==="workOrders"||editing.type==="failures"||editing.type==="downtimes") {
-      if(data.hourmeter!=="") data.hourmeter=Number(data.hourmeter);
-    }
     if(editing.type==="downtimes"){data.planned=data.planned==="Sim";data.counts_unavailable=data.counts_unavailable==="Sim";}
     const list=state[editing.type], existing=list.find(x=>x.id===editing.id);
     if(existing) Object.assign(existing,data,{updated_at:now()});
@@ -236,7 +233,6 @@ export function initGestaoOperacional({ $, isMaster }) {
     Object.keys(state).forEach(k=>state[k]=[]);localStorage.removeItem(STORAGE_KEY);seedDemo();renderAll();
   });
   root.querySelectorAll("[data-go-search]").forEach(input=>input.addEventListener("input",()=>renderList(input.dataset.goSearch)));
-  root.querySelectorAll("[data-go-tab]").forEach(b=>b.addEventListener("click",()=>{activeTab=b.dataset.goTab;renderAll()}));
   load();
   renderAll();
   if(!isMaster()) { root.innerHTML='<div class="go-denied">A Gestão Operacional está disponível somente para o administrador master.</div>'; }
