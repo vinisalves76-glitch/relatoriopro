@@ -7,7 +7,7 @@ create table if not exists public.operational_125h_control (
   id uuid primary key default gen_random_uuid(),
   area_id text not null references public.operational_areas(id),
   equipment_id uuid not null references public.operational_equipment(id) on delete cascade,
-  interval_hours numeric(8,1) not null default 125 check (interval_hours > 0),
+  interval_hours numeric(8,1) not null default 125 check (interval_hours = 125),
   last_service_horimeter numeric(12,1) not null default 0 check (last_service_horimeter >= 0),
   enabled boolean not null default true,
   updated_by uuid references auth.users(id) on delete set null,
@@ -121,6 +121,12 @@ begin
     (p_area_id, p_equipment_id, p_service_horimeter, coalesce(p_performed_at, now()),
      coalesce(p_checklist, ''), coalesce(p_notes, ''), auth.uid())
   returning id into v_service_id;
+
+  insert into public.operational_horimeter_readings
+    (area_id, equipment_id, reading, recorded_at, notes, created_by)
+  values
+    (p_area_id, p_equipment_id, p_service_horimeter, coalesce(p_performed_at, now()),
+     'Leitura registrada na manutenção preventiva de 125 horas.', auth.uid());
 
   insert into public.operational_125h_control
     (area_id, equipment_id, interval_hours, last_service_horimeter, enabled, updated_by)
