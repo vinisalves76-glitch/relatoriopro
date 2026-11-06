@@ -1,5 +1,6 @@
 import { init125hMaintenanceModule } from "./maintenance-125h.js";
 import { initMechanicShiftReports } from "./operational-shift-reports.js";
+import { initMechanicSchedule } from "./operational-mechanic-schedule.js";
 
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
@@ -124,12 +125,16 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>TAG do equipamento</th><th>Equipamento</th><th>Horímetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="goLiveEquipmentRows"></tbody></table></div>
     </section>
     <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
+    <section class="go-panel" data-live-panel="mechanicSchedule" hidden><div id="goLiveMechanicSchedule"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
       <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
     </section>
     <div id="goLiveModalHost"></div>
   `;
+  const scheduleTab=document.querySelector('.operational-main-tab[data-operational-section="mechanicSchedule"]');
+  if(scheduleTab){scheduleTab.hidden=!isSupervisor;scheduleTab.style.display=isSupervisor?"":"none";}
+  if(isSupervisor) await initMechanicSchedule({supabase,profile,areaId:fixedArea||AREA_DEFAULT,root:$("#goLiveMechanicSchedule")});
   const setFeedback = (message, error=false) => { const el=$("#goLiveFeedback"); if(el){el.textContent=message;el.classList.toggle("go-live-error",error);} };
   const areaLabel = id => state.areas.find(a=>a.id===id)?.name || (id===AREA_DEFAULT?AREA_LABEL:id);
   const activeArea = () => state.areas.find(a=>a.id===state.areaId);
