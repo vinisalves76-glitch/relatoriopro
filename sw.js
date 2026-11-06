@@ -1,4 +1,4 @@
-const CACHE_NAME = "relatoriopro-shell-v1";
+const CACHE_NAME = "relatoriopro-shell-v2";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -23,10 +23,21 @@ const APP_SHELL = [
   "/Logo%20Sany.png"
 ];
 
+// Dependências externas do frontend. O cache é uma preparação para reabertura
+// offline; chamadas de autenticação, banco e Storage do Supabase nunca são cacheadas.
+const EXTERNAL_MODULES = [
+  "https://esm.sh/@supabase/supabase-js@2",
+  "https://esm.sh/tus-js-client@4.3.1/lib.esm/browser/index.js"
+];
+
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_SHELL);
+    await Promise.allSettled(EXTERNAL_MODULES.map(async url => {
+      const response = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (response.ok) await cache.put(url, response);
+    }));
     await self.skipWaiting();
   })());
 });
@@ -44,8 +55,8 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
 
-  // Cache apenas módulos CDN usados pelo frontend. Chamadas ao Supabase,
-  // autenticação, banco e Storage nunca entram neste cache.
+  // Só módulos estáticos do CDN entram no cache. Não armazenar respostas
+  // autenticadas, consultas, relatórios ou arquivos privados do Supabase.
   if (url.origin !== self.location.origin) {
     if (url.hostname === "esm.sh") {
       event.respondWith((async () => {
@@ -68,8 +79,10 @@ self.addEventListener("fetch", event => {
     event.respondWith((async () => {
       try {
         const response = await fetch(request);
-        const cache = await caches.open(CACHE_NAME);
-        if (response.ok) await cache.put("/index.html", response.clone());
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put("/index.html", response.clone());
+        }
         return response;
       } catch (error) {
         return (await caches.match("/index.html")) || (await caches.match("/offline.html"));
@@ -85,7 +98,7 @@ self.addEventListener("fetch", event => {
       const response = await fetch(request);
       if (response.ok && response.type === "basic") {
         const cache = await caches.open(CACHE_NAME);
-        cache.put(request, response.clone());
+        await cache.put(request, response.clone());
       }
       return response;
     } catch (error) {
