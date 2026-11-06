@@ -327,7 +327,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     try {
       const recordId=data.record_id;delete data.record_id;
       if(form.querySelector('[name="shift_report"]')){
-        const participants=String(data.other_mechanics||"").split(/[,;\\n]+/).map(value=>value.trim()).filter(Boolean);
+        const participants=String(data.other_mechanics||"").replace(/\r?\n/g,",").split(/[,;]+/).map(value=>value.trim()).filter(Boolean);
         const payload={area_id:state.areaId,equipment_id:data.equipment_id,report_date:data.report_date,horimeter:Number(data.horimeter),created_by:profile.uid||profile.id,created_by_name:profile.name||"",other_mechanics:participants,work_performed:String(data.work_performed||"").trim(),anomalies:String(data.anomalies||"").trim(),actions_taken:String(data.actions_taken||"").trim(),pending_items:String(data.pending_items||"").trim(),final_condition:data.final_condition,final_condition_notes:String(data.final_condition_notes||"").trim(),idempotency_key:crypto.randomUUID(),client_created_at:new Date().toISOString()};
         if(!Number.isFinite(payload.horimeter)||payload.horimeter<0)throw new Error("Informe um horímetro válido.");
         const {error}=await supabase.from("operational_shift_reports").insert(payload);
