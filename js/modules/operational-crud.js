@@ -26,7 +26,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
   const fixedArea = isSupervisor ? profile.operationalAreaId : null;
-  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], statusHistory:[], activities:[], controls125h:[], controls125hAvailable:false, overviewPeriod:90, busy:false};
+  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], statusHistory:[], shiftReports:[], activities:[], controls125h:[], controls125hAvailable:false, overviewPeriod:90, busy:false};
   root.innerHTML = `
     <style>
       #gestaoOperacional .go-live-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:18px 0}
@@ -153,21 +153,23 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       }
       const area=activeArea();
       if(!area)throw new Error("Área operacional não encontrada ou inativa.");
-      const [equipment,events,readings,statusHistory]=await Promise.all([
+      const [equipment,events,readings,statusHistory,shiftReports]=await Promise.all([
         supabase.from("operational_equipment").select("*").eq("area_id",state.areaId).order("asset_code"),
         supabase.from("operational_maintenance_events").select("*").eq("area_id",state.areaId).order("occurred_at",{ascending:false}),
         supabase.from("operational_horimeter_readings").select("*").eq("area_id",state.areaId).order("recorded_at",{ascending:false}),
         supabase.from("operational_equipment_status_history").select("*").eq("area_id",state.areaId).order("changed_at",{ascending:false}),
+        supabase.from("operational_shift_reports").select("*").eq("area_id",state.areaId).order("report_date",{ascending:false})
       ]);
       // O banco principal é o ambiente de trabalho. Caso as tabelas auxiliares
       // de histórico ainda não existam, mantém a Gestão Operacional disponível
       // com os dados operacionais existentes, sem bloquear o módulo.
       for(const result of [equipment,events,readings])if(result.error)throw result.error;
-      for(const result of [statusHistory]){
-        if(result.error && result.error.code!=="PGRST205")throw result.error;
+      for(const result of [statusHistory,shiftReports]){
+        if(result.error && !["PGRST205","42P01"].includes(result.error.code))throw result.error;
       }
       state.equipment=equipment.data||[];state.orders=[];state.events=events.data||[];state.readings=readings.data||[];
       state.statusHistory=statusHistory.error?[]:(statusHistory.data||[]);
+      state.shiftReports=shiftReports.error?[]:(shiftReports.data||[]);
       state.activities=[];
       const controls125h = await supabase.from("operational_125h_control").select("equipment_id,last_service_horimeter,interval_hours,enabled").eq("area_id",state.areaId);
       state.controls125hAvailable=!controls125h.error;
@@ -270,7 +272,9 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   function equipmentHistory(item) {
     const history=state.statusHistory.filter(entry=>entry.equipment_id===item.id);
     const timeline=history.length?'<div class="go-timeline">'+history.map(entry=>'<article class="go-timeline-item"><strong>'+(entry.previous_status?esc(equipmentStatusLabel(entry.previous_status,""))+' → ':'Condição inicial · ')+esc(equipmentStatusLabel(entry.new_status,entry.maintenance_type))+'</strong><div>'+esc(dateTime(entry.changed_at))+' · '+esc(entry.source==="initial_snapshot"?"Registro de implantação":entry.source==="legacy_application"?(entry.actor_name||"Versão anterior da aplicação"):(entry.actor_name||"Usuário não identificado"))+'</div><p>'+esc(entry.reason)+'</p>'+(entry.work_order_id?'<small>OS '+esc(state.orders.find(order=>order.id===entry.work_order_id)?.order_number||"vinculada")+'</small>':'')+(entry.notes?'<p>'+esc(entry.notes)+'</p>':'')+'</article>').join("")+'</div>':'<p class="go-live-empty">Ainda não há transições de status registradas.</p>';
-    openModal("Histórico operacional · "+item.asset_code,'<p>Status atual: <strong>'+esc(equipmentStatusLabel(item.status,item.maintenance_type))+'</strong></p><h3>Histórico operacional</h3>'+timeline+'<button type="button" class="primary" data-change-equipment-status="'+item.id+'">Alterar status</button>',"",false);
+    const reports=state.shiftReports.filter(report=>report.equipment_id===item.id);
+    const reportTimeline=reports.length?'<div class="go-timeline">'+reports.map(report=>'<article class="go-timeline-item"><strong>Relatório de final de turno · '+esc(dateOnly(report.report_date))+'</strong><div>Preenchido por '+esc(report.created_by_name||"Mecânico")+' · Horímetro '+esc(report.horimeter)+' h</div><p><strong>Serviços:</strong> '+esc(report.work_performed)+'</p>'+(report.other_mechanics?.length?'<p><strong>Participantes:</strong> '+esc(report.other_mechanics.join(", "))+'</p>':'')+(report.anomalies?'<p><strong>Anormalidades:</strong> '+esc(report.anomalies)+'</p>':'')+(report.actions_taken?'<p><strong>Ações:</strong> '+esc(report.actions_taken)+'</p>':'')+(report.pending_items?'<p><strong>Pendências:</strong> '+esc(report.pending_items)+'</p>':'')+'<p><strong>Condição final:</strong> '+esc(equipmentStatusLabel(report.final_condition,""))+'</p>'+(report.final_condition_notes?'<p>'+esc(report.final_condition_notes)+'</p>':'')+'</article>').join("")+'</div>':'<p class="go-live-empty">Ainda não há relatórios de final de turno para esta TAG.</p>';
+    openModal("Histórico operacional · "+item.asset_code,'<p>Status atual: <strong>'+esc(equipmentStatusLabel(item.status,item.maintenance_type))+'</strong></p><h3>Histórico de status</h3>'+timeline+'<h3>Relatórios de final de turno</h3>'+reportTimeline+'<button type="button" class="primary" data-change-equipment-status="'+item.id+'">Alterar status</button>',"",false);
   }
   function equipmentStatusForm(item) {
     
