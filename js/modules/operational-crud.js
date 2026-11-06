@@ -76,6 +76,29 @@ export async function initOperationalModule({supabase, profile}) {
       #gestaoOperacional .bi-table th{font-size:10px;text-transform:uppercase;color:var(--muted,#68737d)}
       #gestaoOperacional .bi-note{font-size:11px;color:var(--muted,#68737d);padding:10px 12px;border-radius:8px;background:var(--surface,#f5f7f9);margin-top:12px}
       #gestaoOperacional .bi-empty{padding:16px;text-align:center;color:var(--muted,#68737d);font-size:12px}
+      #gestaoOperacional .bi-pie-wrap{display:flex;align-items:center;gap:20px;min-height:180px;flex-wrap:wrap}
+      #gestaoOperacional .bi-pie{width:158px;height:158px;flex:0 0 158px;border-radius:50%;position:relative;background:conic-gradient(#dce3e9 0 100%)}
+      #gestaoOperacional .bi-pie:after{content:"";position:absolute;inset:29px;border-radius:50%;background:var(--panel,#fff);box-shadow:0 0 0 1px var(--line,#e5e9ed)}
+      #gestaoOperacional .bi-pie-center{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center}
+      #gestaoOperacional .bi-pie-center strong{font-size:25px;line-height:1.1}
+      #gestaoOperacional .bi-pie-center span{font-size:10px;color:var(--muted,#68737d);margin-top:3px}
+      #gestaoOperacional .bi-legend{display:grid;gap:9px;flex:1;min-width:145px}
+      #gestaoOperacional .bi-legend-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px}
+      #gestaoOperacional .bi-legend-label{display:flex;align-items:center;gap:7px;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-dot{width:9px;height:9px;border-radius:3px;display:inline-block;flex:0 0 9px}
+      #gestaoOperacional .bi-section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:22px 0 10px}
+      #gestaoOperacional .bi-section-title h3{margin:0;font-size:16px}
+      #gestaoOperacional .bi-section-title p{margin:3px 0 0;font-size:11px;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+      #gestaoOperacional .bi-metric{border:1px solid var(--line,#dfe4e8);background:var(--panel,#fff);border-radius:11px;padding:14px;min-width:0}
+      #gestaoOperacional .bi-metric .bi-metric-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+      #gestaoOperacional .bi-metric strong{font-size:23px;display:block;margin:9px 0 4px}
+      #gestaoOperacional .bi-metric span{font-size:11px;color:var(--muted,#68737d)}
+      #gestaoOperacional .bi-metric small{font-size:10px;color:var(--muted,#68737d);display:block;line-height:1.45}
+      #gestaoOperacional .bi-tag{font-size:9px;padding:4px 7px;border-radius:20px;background:#fff2d6;color:#875600;font-weight:750;white-space:nowrap}
+      @media(max-width:900px){#gestaoOperacional .bi-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:560px){#gestaoOperacional .bi-pie-wrap{justify-content:center;gap:12px}#gestaoOperacional .bi-pie{width:136px;height:136px;flex-basis:136px}#gestaoOperacional .bi-metric-grid{grid-template-columns:1fr}}
+
       @media(max-width:900px){#gestaoOperacional .bi-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#gestaoOperacional .bi-layout{grid-template-columns:1fr}}
       @media(max-width:480px){#gestaoOperacional .bi-kpi{padding:11px}#gestaoOperacional .bi-kpi strong{font-size:22px}#gestaoOperacional .bi-bar-row{grid-template-columns:92px 1fr 26px;gap:6px}}
 
@@ -156,12 +179,23 @@ export async function initOperationalModule({supabase, profile}) {
     const periodStart=new Date();periodStart.setDate(periodStart.getDate()-state.overviewPeriod);
     const periodEvents=state.events.filter(e=>e.occurred_at&&new Date(e.occurred_at)>=periodStart);
     const periodOrders=state.orders.filter(o=>o.opened_at&&new Date(o.opened_at)>=periodStart);
-    const eventTypes=[["preventive","Preventivas"],["corrective","Corretivas"],["inspection","Inspeções"],["occurrence","Ocorrências"]];
-    const maxType=Math.max(1,...eventTypes.map(([key])=>periodEvents.filter(e=>e.event_type===key).length));
-    const eventBars=eventTypes.map(([key,label])=>{const n=periodEvents.filter(e=>e.event_type===key).length;return '<div class="bi-bar-row"><span class="bi-bar-label">'+label+'</span><div class="bi-bar-track"><div class="bi-bar-fill '+(key==="corrective"||key==="occurrence"?"warning":"success")+'" style="width:'+(n/maxType*100)+'%"></div></div><strong class="bi-bar-value">'+n+'</strong></div>';}).join("");
-    const orderTypes=[["open","Abertas"],["in_progress","Em andamento"],["waiting","Aguardando recurso"],["completed","Concluídas"]];
-    const maxOrder=Math.max(1,...orderTypes.map(([key])=>state.orders.filter(o=>o.status===key).length));
-    const orderBars=orderTypes.map(([key,label])=>{const n=state.orders.filter(o=>o.status===key).length;return '<div class="bi-bar-row"><span class="bi-bar-label">'+label+'</span><div class="bi-bar-track"><div class="bi-bar-fill '+(key==="waiting"?"warning":key==="completed"?"success":key==="open"?"danger":"")+'" style="width:'+(n/maxOrder*100)+'%"></div></div><strong class="bi-bar-value">'+n+'</strong></div>';}).join("");
+
+    const eventTypes=[["preventive","Preventivas","#31966b"],["corrective","Corretivas","#d45b50"],["inspection","Inspeções","#4779a8"],["occurrence","Ocorrências","#d69a27"]];
+    const orderTypes=[["open","Abertas","#4779a8"],["in_progress","Em andamento","#d69a27"],["waiting","Aguardando recurso","#d45b50"],["completed","Concluídas","#31966b"],["cancelled","Canceladas","#9aa5af"]];
+    const equipmentTypes=[["available","Disponíveis","#31966b"],["stopped","Parados","#d45b50"],["maintenance","Em manutenção","#d69a27"]];
+    const pieData=(items,source,key)=>items.map(([value,label,color])=>({label,color,count:source.filter(x=>x[key]===value).length})).filter(x=>x.count>0);
+    const eventPie=pieData(eventTypes,periodEvents,"event_type");
+    const orderPie=pieData(orderTypes,state.orders,"status");
+    const equipmentPie=pieData(equipmentTypes,activeEquipment,"status");
+    const pieMarkup=(items,total,label)=>{let cursor=0;const slices=items.map(x=>{const from=cursor;cursor+=total?x.count/total*100:0;return x.color+" "+from+"% "+cursor+"%";}).join(", ")||"#dce3e9 0% 100%";return '<div class="bi-pie-wrap"><div class="bi-pie" style="background:conic-gradient('+slices+')"><div class="bi-pie-center"><strong>'+total+'</strong><span>'+label+'</span></div></div><div class="bi-legend">'+(items.length?items.map(x=>'<div class="bi-legend-row"><span class="bi-legend-label"><i class="bi-dot" style="background:'+x.color+'"></i>'+x.label+'</span><strong>'+x.count+' · '+(total?Math.round(x.count/total*100):0)+'%</strong></div>').join(""):'<div class="bi-empty">Sem registros no período.</div>')+'</div></div>';};
+    const metricCards=[
+      {name:"Disponibilidade física",value:"—",tag:"Dados insuficientes",detail:"Exige horas programadas e horas efetivamente disponíveis por equipamento e turno."},
+      {name:"MTBF · Tempo entre falhas",value:"—",tag:"Dados insuficientes",detail:"Exige horas de operação acumuladas e registro confiável de cada falha."},
+      {name:"MTTR · Tempo médio de reparo",value:"—",tag:"Dados insuficientes",detail:"Exige início e término de cada intervenção corretiva."},
+      {name:"Downtime · Horas paradas",value:"—",tag:"Dados insuficientes",detail:"Exige apontamento de início e fim da parada e classificação do motivo."},
+      {name:"Cumprimento preventivo",value:"—",tag:"Dados insuficientes",detail:"Exige plano preventivo previsto e ordens preventivas concluídas no período."},
+      {name:"Backlog de manutenção",value:openOrders.length+" OS",tag:"Parcial · por quantidade",detail:"Mostra OS em aberto. Para backlog em horas, precisamos da estimativa e do saldo de homem-hora."}
+    ];
     const attention=activeEquipment.map(e=>{
       const related=openOrders.filter(o=>o.equipment_id===e.id);
       const critical=related.some(o=>["critical","high"].includes(o.priority));
@@ -182,10 +216,19 @@ export async function initOperationalModule({supabase, profile}) {
         <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} OS abertas no período</small></article>
         <article class="bi-kpi"><span>Leituras de horímetro</span><strong>${state.readings.length}</strong><small>Registros disponíveis no histórico</small></article>
       </div>
+
+      <div class="bi-section-title"><div><h3>Distribuição da operação</h3><p>Visão proporcional da frota, das ordens e das intervenções</p></div></div>
       <div class="bi-layout">
-        <section class="bi-panel"><h3>Perfil das intervenções</h3><p class="bi-sub">Eventos registrados nos últimos ${periodLabel.toLowerCase()}</p><div class="bi-bars">${eventBars}</div><div class="bi-note">A distribuição considera os eventos cadastrados. Ela não representa horas paradas nem custo de manutenção.</div></section>
-        <section class="bi-panel"><h3>Carteira de ordens de serviço</h3><p class="bi-sub">Situação atual das OS cadastradas</p><div class="bi-bars">${orderBars}</div><div class="bi-note">${criticalOrders.length} OS de alta prioridade ou críticas exigem acompanhamento.</div></section>
+        <section class="bi-panel"><h3>Status da frota</h3><p class="bi-sub">Equipamentos ativos · situação cadastrada</p>${pieMarkup(equipmentPie,activeEquipment.length,"equipamentos")}<div class="bi-note">Este gráfico representa o status informado no cadastro, não substitui o cálculo de disponibilidade física.</div></section>
+        <section class="bi-panel"><h3>Ordens de serviço</h3><p class="bi-sub">Distribuição por situação atual</p>${pieMarkup(orderPie,state.orders.length,"ordens")}</section>
       </div>
+      <div class="bi-layout">
+        <section class="bi-panel"><h3>Tipos de intervenção</h3><p class="bi-sub">Eventos registrados nos últimos ${periodLabel.toLowerCase()}</p>${pieMarkup(eventPie,periodEvents.length,"eventos")}<div class="bi-note">A classificação depende do preenchimento correto do tipo de evento.</div></section>
+        <section class="bi-panel"><h3>Resumo de prioridades</h3><p class="bi-sub">Fila atual que exige acompanhamento</p><div class="bi-bars">${orderBars}</div><div class="bi-note">${criticalOrders.length} OS de alta prioridade ou críticas · ${waitingOrders} aguardando recurso.</div></section>
+      </div>
+      <div class="bi-section-title"><div><h3>Indicadores de desempenho da manutenção</h3><p>KPIs de gestão da frota e confiabilidade</p></div></div>
+      <div class="bi-metric-grid">${metricCards.map(m=>'<article class="bi-metric"><div class="bi-metric-top"><span>'+m.name+'</span><i class="bi-tag">'+m.tag+'</i></div><strong>'+m.value+'</strong><small>'+m.detail+'</small></article>').join("")}</div>
+      <div class="bi-note">Indicadores marcados como dados insuficientes ainda não podem ser calculados com rigor a partir dos registros atuais. A próxima etapa é implantar apontamento de disponibilidade, paradas e planejamento preventivo.</div>
       <section class="bi-panel"><h3>Equipamentos que exigem atenção</h3><p class="bi-sub">Prioridade sugerida por status do equipamento e criticidade das OS</p>
         ${attention.length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Equipamento</th><th>Status</th><th>OS abertas</th><th>Prioridade</th><th>Motivo</th></tr></thead><tbody>'+attention.map(x=>'<tr><td><strong>'+esc(x.e.asset_code)+'</strong><br><small>'+esc([x.e.brand,x.e.model].filter(Boolean).join(" · "))+'</small></td><td><span class="go-live-status '+statusClass(x.e.status)+'">'+esc(statusLabel(x.e.status))+'</span></td><td>'+x.related.length+'</td><td>'+ (x.critical?'<span class="go-live-status danger">Alta / crítica</span>':'—')+'</td><td>'+esc(x.reason)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Nenhum equipamento parado, em manutenção ou com OS aberta.</div>'}
       </section>
