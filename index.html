@@ -197,6 +197,7 @@
   <button class="go-subtab" type="button" data-go-tab="workOrders">Ordens de serviço</button>
   <button class="go-subtab" type="button" data-go-tab="failures">Falhas</button>
   <button class="go-subtab" type="button" data-go-tab="downtimes">Paradas</button>
+  <button class="go-subtab" type="button" data-go-tab="checklist">Checklist Trem de Força</button>
  </nav>
  <section class="go-panel active" data-go-panel="overview">
   <div class="go-section-heading"><div><h2>Fundação operacional</h2><p>Visão consolidada dos cadastros e registros do protótipo.</p></div><span class="go-updated">Dados locais de demonstração</span></div>
@@ -239,6 +240,7 @@
   <div class="go-section-heading"><div><h2>Eventos de parada</h2><p>Registre início, fim, motivo e se o evento conta como indisponibilidade.</p></div><button class="primary" type="button" data-go-add="downtimes">＋ Registrar parada</button></div>
   <input class="go-list-search" type="search" placeholder="Pesquisar parada..." data-go-search="downtimes"><div id="goList-downtimes"></div>
  </section>
+ <section class="go-panel" data-go-panel="checklist" hidden><div class="tf-loading">Carregando checklist...</div></section>
  <div class="go-footer-note">Protótipo funcional local · Sem conexão com o banco · Sem dados reais · Acesso master</div>
  <div class="go-modal" id="goModal" hidden>
   <div class="go-modal-card" role="dialog" aria-modal="true" aria-labelledby="goModalTitle">
