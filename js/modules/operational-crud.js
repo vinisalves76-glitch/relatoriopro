@@ -106,7 +106,7 @@ export async function initOperationalModule({supabase, profile}) {
     </style>
     <div class="go-page-head"><div><span class="go-eyebrow">IRMEN · GESTÃO TÉCNICA E OPERACIONAL</span><h1>Gestão Operacional</h1><p class="muted">Dados operacionais gravados no Supabase e protegidos por área.</p></div><span class="go-master-badge" id="goLiveScope"></span></div>
     <div class="go-contract-bar"><div><small>CLIENTE / OPERAÇÃO</small><strong>ArcelorMittal Andradas</strong></div><div><small>ÁREA DE ACESSO</small><strong id="goLiveAreaName">ArcelorMittal Andradas</strong></div><div><small>ORIGEM DOS DADOS</small><strong>Supabase · Atualização em tempo real ao recarregar</strong></div></div>
-    <div class="go-live-toolbar"><div id="goLiveFeedback" role="status" aria-live="polite">Carregando dados da área…</div><button class="light" type="button" id="goLiveRefresh">Atualizar dados</button></div>
+    <div class="go-live-toolbar"><div id="goLiveFeedback" role="status" aria-live="polite">Carregando dados da área…</div><div class="go-live-actions"><button class="light" type="button" id="goLiveRefresh">Atualizar dados</button><button class="primary" type="button" id="goLiveOpenChecklist" hidden>Checklist Trem de Força</button></div></div>
         <section class="go-panel active" data-live-panel="overview"><div id="goLiveOverview"></div></section>
         <section class="go-panel" data-live-panel="equipment" hidden>
       <div class="go-section-heading"><div><h2>Equipamentos</h2><p>Cadastro, situação operacional e horímetros.</p></div><button class="primary" type="button" id="goLiveAddEquipment">＋ Cadastrar equipamento</button></div>
@@ -119,6 +119,7 @@ export async function initOperationalModule({supabase, profile}) {
       <div id="goLiveOrderList"></div>
     </section>
     <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
+    <section class="go-panel" data-live-panel="checklist" hidden><div id="goLiveChecklist"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
       <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>OS vinculada</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
@@ -316,6 +317,7 @@ export async function initOperationalModule({supabase, profile}) {
     const button=event.target.closest("button");if(!button)return;
     if(button.dataset.liveTab){switchTab(button.dataset.liveTab);return;}
     if(button.id==="goLiveRefresh"){loadData().catch(()=>{});return;}
+    if(button.id==="goLiveOpenChecklist"){switchTab("checklist");return;}
     if(button.id==="goLiveAddEquipment"){equipmentForm();return;}
     if(button.id==="goLiveAddOrder"){orderForm();return;}
     if(button.id==="goLiveAddEvent"){eventForm();return;}
@@ -329,4 +331,13 @@ export async function initOperationalModule({supabase, profile}) {
   $("#goLiveOrderStatus").addEventListener("change",render);
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
+  if(isMaster){
+    const checklistPanel=root.querySelector('[data-live-panel="checklist"]');
+    const checklistButton=root.querySelector("#goLiveOpenChecklist");
+    if(checklistPanel&&checklistButton){
+      checklistButton.hidden=false;
+      const {initChecklistTremForca}=await import("../checklist-trem-forca.js");
+      initChecklistTremForca({root,isMaster:()=>isMaster,getAssets:()=>state.equipment});
+    }
+  }
 }
