@@ -85,7 +85,9 @@ function mapWrite(ref,data) {
     if (Object.prototype.hasOwnProperty.call(d,k)) { if (!["id","ownerUid","createdAt","updatedAt","roleLabel","mustChangePassword","reviewComment","approvedBy","approvedAt","assigneeName","updatedBy","attachments","size","contentType","order"].includes(k)) legacy[k]=d[k]; delete d[k]; }
   }
   if (table === "profiles") {
-    const out={id:ref.id,email:data.email||"",name:data.name||"",role:data.role||"consultor_tecnico",role_label:data.roleLabel||data.role_label||"",permissions:data.permissions||[],operational_area_id:data.operationalAreaId||data.operational_area_id||null,active:data.active!==false,must_change_password:data.mustChangePassword??data.must_change_password??false,updated_at:new Date().toISOString()};
+    const out={id:ref.id,email:data.email||"",name:data.name||"",role:data.role||"consultor_tecnico",role_label:data.roleLabel||data.role_label||"",permissions:data.permissions||[],active:data.active!==false,must_change_password:data.mustChangePassword??data.must_change_password??false,updated_at:new Date().toISOString()};
+    const operationalAreaId=data.operationalAreaId||data.operational_area_id||null;
+    if(operationalAreaId)out.operational_area_id=operationalAreaId;
     if (data.createdBy) out.created_by=data.createdBy;
     const extra={...legacy}; if(Object.keys(extra).length)out.legacy_data=extra;
     return out;
