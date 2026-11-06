@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#e4a900">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
 <title>RelatorioPro | IRMEN SANY</title>
 <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -18,6 +21,7 @@
       <div class="auth-actions"><button class="primary" id="authSubmit" type="submit">Entrar</button></div>
       <div class="auth-error" id="authError" role="alert" aria-live="polite"></div>
     </form>
+    <button class="light pwa-install-button" type="button" data-pwa-install hidden>Instalar aplicativo</button>
     <div class="auth-sany-logo"><img src="./Logo%20Sany.png" alt="Logo SANY"></div>
   </section>
   <aside class="auth-video-panel" aria-label="Vídeo institucional IRMEN SANY">
@@ -41,7 +45,7 @@
   </section>
 </div>
 <div id="appShell" hidden>
-<header><div class="logohead"><img class="app-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="dark" id="newTop">+ Novo relatório</button></div></header>
+<header><div class="logohead"><img class="app-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"><div><strong style="font-size:19px">RelatorioPro</strong><div class="sub">IRMEN | Soluções técnicas SANY</div></div></div><div class="actions"><button class="light pwa-install-button" type="button" data-pwa-install hidden>Instalar aplicativo</button><button class="dark" id="newTop">+ Novo relatório</button></div></header>
 <nav class="tabs">
 <div class="sidebar-brand"><img src="./Logo%20Irmen.webp" alt="IRMEN"><span>Central de<br><strong>Treinamentos</strong></span></div><button class="tab" data-page="home">⌂ &nbsp; Home</button><button class="tab" data-page="editor">Novo relatório</button><button class="tab" data-page="model">Modelo e identidade</button><button class="tab" data-page="saved" data-permission="reports.view">Relatórios salvos</button><button class="tab" data-page="trainings" id="trainingsTab">Treinamentos</button><button class="tab" data-page="agenda" id="agendaTab" hidden>Agenda técnica</button><button class="tab" data-page="agendaDashboard" id="agendaDashboardTab" hidden>▥ Painel gerencial</button><button class="tab" data-page="users" id="usersTab" hidden>Usuários e acessos</button>
 <button class="tab operational-main-tab" data-operational-section="overview" hidden>▦ &nbsp; Visão geral</button>
@@ -246,6 +250,7 @@
 <section class="page" id="simulation"><div class="simulation-head"><div><h1 id="simulationTitle">Simulação do RelatorioPro</h1><p class="muted">Ambiente de demonstração integrado ao sistema, com dados fictícios.</p></div><button id="closeSimulation" class="light" type="button">Voltar ao sistema</button></div><div class="simulation-warning">MODO TESTE LOCAL: funcionários, relatórios e agendas são fictícios. Nada é gravado no Supabase. Ao sair, os dados de demonstração são descartados.</div><div class="simulation-stats" id="simulationStats"></div><nav class="simulation-tabs" aria-label="Seções da simulação"><button class="simulation-tab active" data-simpage="employees">Funcionários</button><button class="simulation-tab" data-simpage="reports">Relatórios prontos</button><button class="simulation-tab" data-simpage="agenda">Agenda por funcionário</button></nav><section class="simulation-page active" id="sim-employees"><div class="simulation-toolbar"><div><h3>Equipe técnica de demonstração</h3><p>Selecione um funcionário para ver seus dados e atividades.</p></div><input id="simEmployeeSearch" placeholder="Pesquisar funcionário..." aria-label="Pesquisar funcionário"></div><div id="simulationEmployees" class="simulation-grid"></div></section><section class="simulation-page" id="sim-reports" hidden><div class="simulation-toolbar"><div><h3>Relatórios técnicos de exemplo</h3><p>15 relatórios completos de demonstração, um por funcionário.</p></div><input id="simReportSearch" placeholder="Pesquisar cliente, equipamento ou responsável..." aria-label="Pesquisar relatório"></div><div id="simulationReports" class="simulation-report-list"></div><div id="simulationReportDetail" class="simulation-report-detail" hidden></div></section><section class="simulation-page" id="sim-agenda" hidden><div class="simulation-toolbar"><div><h3>Agenda individual</h3><p>Consulte compromissos agrupados por profissional.</p></div><select id="simAgendaPerson" aria-label="Filtrar agenda por funcionário"><option value="">Todos os funcionários</option></select></div><div id="simulationAgenda" class="simulation-agenda-list"></div></section></section>
 
 <script type="module" src="/js/app.js"></script>
+<script src="/js/pwa.js" defer></script>
 </div>
 </body>
 </html>
