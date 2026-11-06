@@ -138,12 +138,13 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     state.busy=true;
     try {
       if(!state.areas.length){
-        const {data,error}=await supabase.from("operational_areas").select("id,name,active").eq("active",true).order("name");
-        if(error)throw error;
-        state.areas=data||[];
-        if(fixedArea)state.areas=state.areas.filter(a=>a.id===fixedArea);
-        if(!state.areas.length)throw new Error("Nenhuma área operacional ativa foi encontrada para este perfil.");
-        if(!state.areas.some(a=>a.id===state.areaId))state.areaId=state.areas[0].id;
+        // A interface atual trabalha com a área inicial única. Não consulta
+        // operational_areas: isso evita depender de GRANT SELECT nessa tabela
+        // para montar a tela. O acesso aos dados continua protegido pelas RLS
+        // das tabelas operacionais, sempre filtradas pela área vinculada.
+        const resolvedAreaId=fixedArea||AREA_DEFAULT;
+        state.areas=[{id:resolvedAreaId,name:resolvedAreaId===AREA_DEFAULT?AREA_LABEL:resolvedAreaId,active:true}];
+        if(!state.areas.some(a=>a.id===state.areaId))state.areaId=resolvedAreaId;
       }
       const area=activeArea();
       if(!area)throw new Error("Área operacional não encontrada ou inativa.");
@@ -177,25 +178,16 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     const activeEquipment=state.equipment.filter(e=>e.status!=="inactive");
     const available=activeEquipment.filter(e=>e.status==="available").length;
     const stopped=activeEquipment.filter(e=>["stopped","maintenance"].includes(e.status)).length;
-    const openOrders=state.orders.filter(o=>["open","in_progress","waiting"].includes(o.status));
-    const criticalOrders=openOrders.filter(o=>["critical","high"].includes(o.priority));
-    const waitingOrders=openOrders.filter(o=>o.status==="waiting").length;
-    const closedOrders=state.orders.filter(o=>o.status==="completed").length;
     const due125=state.controls125h.filter(c=>c.enabled&&activeEquipment.some(e=>e.id===c.equipment_id)&&Number(c.last_service_horimeter||0)+Number(c.interval_hours||125)-Number(activeEquipment.find(e=>e.id===c.equipment_id)?.current_horimeter||0)<=25);
     const overdue125=due125.filter(c=>Number(c.last_service_horimeter||0)+Number(c.interval_hours||125)-Number(activeEquipment.find(e=>e.id===c.equipment_id)?.current_horimeter||0)<=0).length;
     const periodStart=new Date();periodStart.setDate(periodStart.getDate()-state.overviewPeriod);
     const periodEvents=state.events.filter(e=>e.occurred_at&&new Date(e.occurred_at)>=periodStart);
-    const periodOrders=state.orders.filter(o=>o.opened_at&&new Date(o.opened_at)>=periodStart);
 
     const eventTypes=[["preventive","Preventivas","#31966b"],["corrective","Corretivas","#d45b50"],["inspection","Inspeções","#4779a8"],["occurrence","Ocorrências","#d69a27"]];
-    const orderTypes=[["open","Abertas","#4779a8"],["in_progress","Em andamento","#d69a27"],["waiting","Aguardando recurso","#d45b50"],["completed","Concluídas","#31966b"],["cancelled","Canceladas","#9aa5af"]];
     const equipmentTypes=[["available","Produzindo","#31966b"],["stopped","Parados","#d45b50"],["maintenance","Em manutenção","#d69a27"]];
     const pieData=(items,source,key)=>items.map(([value,label,color])=>({label,color,count:source.filter(x=>x[key]===value).length})).filter(x=>x.count>0);
     const eventPie=pieData(eventTypes,periodEvents,"event_type");
-    const orderPie=pieData(orderTypes,state.orders,"status");
     const equipmentPie=pieData(equipmentTypes,activeEquipment,"status");
-    const maxOrder=Math.max(1,...orderTypes.map(([key])=>state.orders.filter(o=>o.status===key).length));
-    const orderBars=orderTypes.map(([key,label])=>{const n=state.orders.filter(o=>o.status===key).length;return '<div class="bi-bar-row"><span class="bi-bar-label">'+label+'</span><div class="bi-bar-track"><div class="bi-bar-fill '+(key==="waiting"?"warning":key==="completed"?"success":key==="open"?"danger":"")+'" style="width:'+(n/maxOrder*100)+'%"></div></div><strong class="bi-bar-value">'+n+'</strong></div>';}).join("");
 
     const pieMarkup=(items,total,label)=>{let cursor=0;const slices=items.map(x=>{const from=cursor;cursor+=total?x.count/total*100:0;return x.color+" "+from+"% "+cursor+"%";}).join(", ")||"#dce3e9 0% 100%";return '<div class="bi-pie-wrap"><div class="bi-pie" style="background:conic-gradient('+slices+')"><div class="bi-pie-center"><strong>'+total+'</strong><span>'+label+'</span></div></div><div class="bi-legend">'+(items.length?items.map(x=>'<div class="bi-legend-row"><span class="bi-legend-label"><i class="bi-dot" style="background:'+x.color+'"></i>'+x.label+'</span><strong>'+x.count+' · '+(total?Math.round(x.count/total*100):0)+'%</strong></div>').join(""):'<div class="bi-empty">Sem registros no período.</div>')+'</div></div>';};
     const metricCards=[
@@ -204,13 +196,10 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       {name:"MTTR · Tempo médio de reparo",value:"—",tag:"Dados insuficientes",detail:"Exige início e término de cada intervenção corretiva."},
       {name:"Downtime · Horas paradas",value:"—",tag:"Dados insuficientes",detail:"Exige apontamento de início e fim da parada e classificação do motivo."},
       {name:"Cumprimento preventivo",value:"—",tag:"Dados insuficientes",detail:"Exige plano preventivo previsto e ordens preventivas concluídas no período."},
-      {name:"Backlog de manutenção",value:openOrders.length+" OS",tag:"Parcial · por quantidade",detail:"Mostra . Para backlog em horas, precisamos da estimativa e do saldo de homem-hora."}
     ];
     const attention=activeEquipment.map(e=>{
-      const related=openOrders.filter(o=>o.equipment_id===e.id);
-      const critical=related.some(o=>["critical","high"].includes(o.priority));
-      const reason=critical?"":e.status==="stopped"?"Equipamento parado":e.status==="maintenance"?"Em manutenção":related.length?"":"";
-      return {e,related,critical,reason,rank:critical?0:e.status==="stopped"?1:e.status==="maintenance"?2:related.length?3:9};
+      const reason=e.status==="stopped"?"Equipamento parado":e.status==="maintenance"?"Em manutenção":"";
+      return {e,reason,rank:e.status==="stopped"?1:e.status==="maintenance"?2:9};
     }).filter(x=>x.rank<9).sort((a,b)=>a.rank-b.rank).slice(0,8);
     const periodLabel=state.overviewPeriod+" dias";
     $("#goLiveOverview").innerHTML=`
@@ -235,7 +224,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       <div class="bi-metric-grid">${metricCards.map(m=>'<article class="bi-metric"><div class="bi-metric-top"><span>'+m.name+'</span><i class="bi-tag">'+m.tag+'</i></div><strong>'+m.value+'</strong><small>'+m.detail+'</small></article>').join("")}</div>
       <div class="bi-note">Indicadores marcados como dados insuficientes ainda não podem ser calculados com rigor a partir dos registros atuais. A próxima etapa é implantar apontamento de disponibilidade, paradas e planejamento preventivo.</div>
       <section class="bi-panel"><h3>Equipamentos que exigem atenção</h3><p class="bi-sub">Equipamentos parados ou em manutenção</p>
-        ${attention.length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Equipamento</th><th>Status</th><th>Motivo</th></tr></thead><tbody>'+attention.map(x=>'<tr><td><strong>'+esc(x.e.asset_code)+'</strong><br><small>'+esc([x.e.brand,x.e.model].filter(Boolean).join(" · "))+'</small></td><td><span class="go-live-status '+statusClass(x.e.status)+'">'+esc(equipmentStatusLabel(x.e.status,x.e.maintenance_type))+'</span></td><td>'+x.related.length+'</td><td>'+ (x.critical?'<span class="go-live-status danger">Alta / crítica</span>':'—')+'</td><td>'+esc(x.reason)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Nenhum equipamento parado, em manutenção ou com OS aberta.</div>'}
+        ${attention.length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Equipamento</th><th>Status</th><th>Motivo</th></tr></thead><tbody>'+attention.map(x=>'<tr><td><strong>'+esc(x.e.asset_code)+'</strong><br><small>'+esc([x.e.brand,x.e.model].filter(Boolean).join(" · "))+'</small></td><td><span class="go-live-status '+statusClass(x.e.status)+'">'+esc(equipmentStatusLabel(x.e.status,x.e.maintenance_type))+'</span></td><td>'+esc(x.reason)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Nenhum equipamento parado ou em manutenção.</div>'}
       </section>
       <div class="bi-layout">
         <section class="bi-panel"><h3>Movimentações recentes</h3><p class="bi-sub">Últimos registros de manutenção e ocorrência</p>
@@ -254,9 +243,6 @@ export async function initOperationalModule({supabase, profile, isMaster: master
     const term=($("#goLiveEquipmentSearch")?.value||"").toLocaleLowerCase("pt-BR"),status=$("#goLiveEquipmentStatus")?.value||"";
     const equipment=state.equipment.filter(e=>(!status||e.status===status)&&(!term||[e.asset_code,e.description,e.brand,e.model].join(" ").toLocaleLowerCase("pt-BR").includes(term)));
     $("#goLiveEquipmentRows").innerHTML=equipment.length?equipment.map(e=>'<tr><td><strong>'+esc(e.asset_code)+'</strong></td><td>'+esc([e.brand,e.model,e.description].filter(Boolean).join(" · "))+'</td><td>'+Number(e.current_horimeter||0).toLocaleString("pt-BR")+' h</td><td><span class="go-live-status '+statusClass(e.status)+'">'+esc(equipmentStatusLabel(e.status,e.maintenance_type))+'</span></td><td><div class="go-live-actions"><button type="button" class="light" data-equipment-history="'+e.id+'">Histórico</button><button type="button" class="light" data-change-equipment-status="'+e.id+'">Alterar status</button><button type="button" class="light" data-edit-equipment="'+e.id+'">Editar</button><button type="button" class="light" data-add-reading="'+e.id+'">Horímetro</button></div></td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum equipamento encontrado.</td></tr>';
-    const orderTerm=($("#goLiveOrderSearch")?.value||"").toLocaleLowerCase("pt-BR"),orderStatus=$("#goLiveOrderStatus")?.value||"";
-    const orders=state.orders.filter(o=>(!orderStatus||o.status===orderStatus)&&(!orderTerm||[o.order_number,o.title,o.description,equipmentName(o.equipment_id)].join(" ").toLocaleLowerCase("pt-BR").includes(orderTerm)));
-    $("#goLiveOrderList").innerHTML=orders.length?orders.map(o=>'<article class="go-os-card"><div class="go-os-top"><div><span class="go-live-status '+statusClass(o.status)+'">'+esc(statusLabel(o.status))+' · '+esc(statusLabel(o.priority))+'</span><h3>'+esc(o.order_number)+' · '+esc(equipmentName(o.equipment_id))+'</h3><p>'+esc(o.title)+'</p></div><span class="go-os-date">'+esc(dateOnly(o.opened_at))+'</span></div><p>'+esc(o.diagnosis||o.description)+'</p><div class="go-live-actions"><button class="light" type="button" data-order-details="'+o.id+'">Acompanhar</button>'+(!["completed","cancelled"].includes(o.status)?'<button class="light" type="button" data-edit-order="'+o.id+'">Atualizar OS</button>':'')+'</div></article>').join(""):'<div class="go-live-empty">Nenhuma ordem de serviço cadastrada nesta área.</div>';
     $("#goLiveEventRows").innerHTML=state.events.length?state.events.map(e=>'<tr><td>'+esc(dateTime(e.occurred_at))+'</td><td>'+esc(equipmentName(e.equipment_id))+'</td><td>'+esc(statusLabel(e.event_type))+'</td><td>'+esc(e.description)+'</td></tr>').join(""):'<tr><td colspan="4" class="go-live-empty">Nenhum evento registrado.</td></tr>';
   }
   function openModal(title,body,submitLabel="Salvar",hasForm=true) {
