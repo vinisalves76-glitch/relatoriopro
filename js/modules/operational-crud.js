@@ -218,27 +218,23 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       <div class="bi-kpis">
         <article class="bi-kpi"><span>Frota ativa</span><strong>${activeEquipment.length}</strong><small>${state.equipment.length-activeEquipment.length} inativos / fora de operação</small></article>
         <article class="bi-kpi ${stopped?"alert":""}"><span>Parados ou em manutenção</span><strong>${stopped}</strong><small>${activeEquipment.length?Math.round(stopped/activeEquipment.length*100):0}% da frota ativa</small></article>
-        <article class="bi-kpi"><span>OS em aberto</span><strong>${openOrders.length}</strong><small>${waitingOrders} aguardando recurso · ${closedOrders} concluídas no total</small></article>
-        <article class="bi-kpi ${criticalOrders.length?"alert":""}"><span></span><strong>${criticalOrders.length}</strong><small>Alta ou crítica · backlog atual</small></article>
         <article class="bi-kpi"><span>Produzindo</span><strong>${available}</strong><small>${activeEquipment.length?Math.round(available/activeEquipment.length*100):0}% da frota ativa com status produzindo</small></article>
         <article class="bi-kpi ${due125.length?"warn":""}"><span>Preventivas 125h próximas</span><strong>${state.controls125hAvailable?due125.length:"—"}</strong><small>${state.controls125hAvailable?overdue125+" vencidas · "+(due125.length-overdue125)+" próximas":"Controle 125h não consultado"}</small></article>
-        <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} Registros de manutenção e ocorrências</small></article>
+        <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>Registros de manutenção e ocorrências</small></article>
         <article class="bi-kpi"><span>Leituras de horímetro</span><strong>${state.readings.length}</strong><small>Registros disponíveis no histórico</small></article>
       </div>
 
-      <div class="bi-section-title"><div><h3>Distribuição da operação</h3><p>Visão proporcional da frota, das ordens e das intervenções</p></div></div>
+      <div class="bi-section-title"><div><h3>Distribuição da operação</h3><p>Visão proporcional da frota e das intervenções</p></div></div>
       <div class="bi-layout">
         <section class="bi-panel"><h3>Status da frota</h3><p class="bi-sub">Equipamentos ativos · situação cadastrada</p>${pieMarkup(equipmentPie,activeEquipment.length,"equipamentos")}<div class="bi-note">Este gráfico representa o status informado no cadastro, não substitui o cálculo de disponibilidade física.</div></section>
-        <section class="bi-panel"><h3></h3><p class="bi-sub">Distribuição por situação atual</p>${pieMarkup(orderPie,state.orders.length,"ordens")}</section>
       </div>
       <div class="bi-layout">
         <section class="bi-panel"><h3>Tipos de intervenção</h3><p class="bi-sub">Eventos registrados nos últimos ${periodLabel.toLowerCase()}</p>${pieMarkup(eventPie,periodEvents.length,"eventos")}<div class="bi-note">A classificação depende do preenchimento correto do tipo de evento.</div></section>
-        <section class="bi-panel"><h3>Resumo de prioridades</h3><p class="bi-sub">Fila atual que exige acompanhamento</p><div class="bi-bars">${orderBars}</div><div class="bi-note">${criticalOrders.length} OS de alta prioridade ou críticas · ${waitingOrders} aguardando recurso.</div></section>
       </div>
       <div class="bi-section-title"><div><h3>Indicadores de desempenho da manutenção</h3><p>KPIs de gestão da frota e confiabilidade</p></div></div>
       <div class="bi-metric-grid">${metricCards.map(m=>'<article class="bi-metric"><div class="bi-metric-top"><span>'+m.name+'</span><i class="bi-tag">'+m.tag+'</i></div><strong>'+m.value+'</strong><small>'+m.detail+'</small></article>').join("")}</div>
       <div class="bi-note">Indicadores marcados como dados insuficientes ainda não podem ser calculados com rigor a partir dos registros atuais. A próxima etapa é implantar apontamento de disponibilidade, paradas e planejamento preventivo.</div>
-      <section class="bi-panel"><h3>Equipamentos que exigem atenção</h3><p class="bi-sub">Prioridade sugerida por status do equipamento e criticidade das OS</p>
+      <section class="bi-panel"><h3>Equipamentos que exigem atenção</h3><p class="bi-sub">Equipamentos parados ou em manutenção</p>
         ${attention.length?'<div class="go-live-table-wrap"><table class="bi-table"><thead><tr><th>Equipamento</th><th>Status</th><th>Motivo</th></tr></thead><tbody>'+attention.map(x=>'<tr><td><strong>'+esc(x.e.asset_code)+'</strong><br><small>'+esc([x.e.brand,x.e.model].filter(Boolean).join(" · "))+'</small></td><td><span class="go-live-status '+statusClass(x.e.status)+'">'+esc(equipmentStatusLabel(x.e.status,x.e.maintenance_type))+'</span></td><td>'+x.related.length+'</td><td>'+ (x.critical?'<span class="go-live-status danger">Alta / crítica</span>':'—')+'</td><td>'+esc(x.reason)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="bi-empty">Nenhum equipamento parado, em manutenção ou com OS aberta.</div>'}
       </section>
       <div class="bi-layout">
