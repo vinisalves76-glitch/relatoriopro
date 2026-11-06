@@ -1,4 +1,5 @@
 import { init125hMaintenanceModule } from "./maintenance-125h.js";
+import { initMechanicShiftReports } from "./operational-shift-reports.js";
 
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
@@ -20,6 +21,8 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   const $ = selector => liveRoot().querySelector(selector);
   const isMaster = !!masterAccess || profile.role === "super_admin";
   const isSupervisor = profile.role === "supervisor_area";
+  const isMechanic = profile.role === "mecanico";
+  if (isMechanic) { await initMechanicShiftReports({supabase,profile,root}); return; }
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
   const fixedArea = isSupervisor ? profile.operationalAreaId : null;
