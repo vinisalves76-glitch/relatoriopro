@@ -2,7 +2,6 @@ import { init125hMaintenanceModule } from "./maintenance-125h.js";
 
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
-const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const dateTime = value => value ? new Date(value).toLocaleString("pt-BR") : "—";
 const dateOnly = value => value ? new Date(value).toLocaleDateString("pt-BR") : "—";
@@ -15,6 +14,10 @@ const localDateTime = value => value ? new Date(new Date(value).getTime()-new Da
 export async function initOperationalModule({supabase, profile, isMaster: masterAccess = false}) {
   const root = document.getElementById("gestaoOperacional");
   if (!root || !supabase || !profile || profile.active === false) return;
+  const liveRoot = () => document.getElementById("gestaoOperacional") || root;
+  // Todos os seletores do módulo devem ficar limitados ao contêiner da Gestão Operacional.
+  // document.querySelector podia perder os elementos quando a navegação substituía a página.
+  const $ = selector => liveRoot().querySelector(selector);
   const isMaster = !!masterAccess || profile.role === "super_admin";
   const isSupervisor = profile.role === "supervisor_area";
   if (!isMaster && !isSupervisor) return;
@@ -129,10 +132,10 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   const areaLabel = id => state.areas.find(a=>a.id===id)?.name || (id===AREA_DEFAULT?AREA_LABEL:id);
   const activeArea = () => state.areas.find(a=>a.id===state.areaId);
   const switchTab = name => {
-    root.querySelectorAll("[data-live-panel]").forEach(p=>{const active=p.dataset.livePanel===name;p.hidden=!active;p.classList.toggle("active",active)});
+    liveRoot().querySelectorAll("[data-live-panel]").forEach(p=>{const active=p.dataset.livePanel===name;p.hidden=!active;p.classList.toggle("active",active)});
     document.querySelectorAll(".operational-main-tab").forEach(b=>b.classList.toggle("active",b.dataset.operationalSection===name));
   };
-  root.showOperationalSection = switchTab;
+  liveRoot().showOperationalSection = switchTab;
   async function loadData() {
     if(state.busy)return;
     state.busy=true;
@@ -364,7 +367,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       setFeedback("Registro salvo com sucesso.");
     } catch(error){setFeedback(error.message||"Não foi possível salvar o registro.",true);if(button)button.disabled=false;}
   }
-  root.addEventListener("click",event=>{
+  liveRoot().addEventListener("click",event=>{
     const button=event.target.closest("button");if(!button)return;
     if(button.dataset.liveTab){switchTab(button.dataset.liveTab);return;}
     if(button.id==="goLiveOpenChecklist"){switchTab("checklist");return;}
