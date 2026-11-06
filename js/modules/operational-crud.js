@@ -21,14 +21,7 @@ export async function initOperationalModule({supabase, profile}) {
   root.innerHTML = `
     <style>
       #gestaoOperacional .go-live-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:18px 0}
-      #gestaoOperacional .go-workspace{display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}
-      #gestaoOperacional .go-subnav{display:flex;flex-direction:column;gap:5px;padding:12px;background:var(--panel,#fff);border:1px solid var(--line,#dfe4e8);border-radius:12px;position:sticky;top:14px}
-      #gestaoOperacional .go-subnav-caption{padding:7px 10px 10px;color:var(--muted,#68737d);font-size:10px;font-weight:800;letter-spacing:.1em}
-      #gestaoOperacional .go-subtab{display:flex;align-items:center;width:100%;min-height:44px;padding:10px 12px;text-align:left;white-space:normal;border:0;border-radius:8px;background:transparent;color:var(--text,#26323d);font-size:13px;font-weight:650}
-      #gestaoOperacional .go-subtab.active{background:#202b35;color:#fff;border-left:3px solid var(--brand,#e4b21b);padding-left:9px}
-      #gestaoOperacional .go-workspace-content{min-width:0}
-      #gestaoOperacional .go-workspace-content .go-live-toolbar{margin:0 0 14px}
-      @media(max-width:760px){#gestaoOperacional .go-workspace{grid-template-columns:1fr;gap:12px}#gestaoOperacional .go-subnav{position:static;display:flex;flex-direction:row;overflow-x:auto;align-items:stretch}#gestaoOperacional .go-subnav-caption{display:none}#gestaoOperacional .go-subtab{width:auto;min-width:max-content;min-height:42px}}
+      #gestaoOperacional .go-live-toolbar{margin:18px 0}
       #gestaoOperacional .go-live-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:18px 0}
       #gestaoOperacional .go-live-card{background:var(--panel,#fff);border:1px solid var(--line,#dfe4e8);border-radius:12px;padding:16px}
       #gestaoOperacional .go-live-card h3{margin:0 0 8px;font-size:15px}
@@ -57,17 +50,7 @@ export async function initOperationalModule({supabase, profile}) {
     </style>
     <div class="go-page-head"><div><span class="go-eyebrow">IRMEN · GESTÃO TÉCNICA E OPERACIONAL</span><h1>Gestão Operacional</h1><p class="muted">Dados operacionais gravados no Supabase e protegidos por área.</p></div><span class="go-master-badge" id="goLiveScope"></span></div>
     <div class="go-contract-bar"><div><small>CLIENTE / OPERAÇÃO</small><strong>ArcelorMittal Andradas</strong></div><div><small>ÁREA DE ACESSO</small><strong id="goLiveAreaName">ArcelorMittal Andradas</strong></div><div><small>ORIGEM DOS DADOS</small><strong>Supabase · Atualização em tempo real ao recarregar</strong></div></div>
-    <div class="go-workspace">
-      <nav class="go-subnav" aria-label="Seções operacionais">
-        <span class="go-subnav-caption">MENU OPERACIONAL</span>
-        <button class="go-subtab active" type="button" data-live-tab="overview">▦ &nbsp; Visão geral</button>
-        <button class="go-subtab" type="button" data-live-tab="equipment">▣ &nbsp; Equipamentos</button>
-        <button class="go-subtab" type="button" data-live-tab="orders">▤ &nbsp; Ordens de serviço</button>
-        <button class="go-subtab" type="button" data-live-tab="events">⚙ &nbsp; Manutenção e ocorrências</button>
-        <button class="go-subtab" type="button" data-live-tab="maintenance125">◷ &nbsp; Manutenção 125h</button>
-      </nav>
-      <div class="go-workspace-content">
-        <div class="go-live-toolbar"><div id="goLiveFeedback" role="status" aria-live="polite">Carregando dados da área…</div><button class="light" type="button" id="goLiveRefresh">Atualizar dados</button></div>
+    <div class="go-live-toolbar"><div id="goLiveFeedback" role="status" aria-live="polite">Carregando dados da área…</div><button class="light" type="button" id="goLiveRefresh">Atualizar dados</button></div>
         <section class="go-panel active" data-live-panel="overview"><div id="goLiveOverview"></div></section>
         <section class="go-panel" data-live-panel="equipment" hidden>
       <div class="go-section-heading"><div><h2>Equipamentos</h2><p>Cadastro, situação operacional e horímetros.</p></div><button class="primary" type="button" id="goLiveAddEquipment">＋ Cadastrar equipamento</button></div>
@@ -84,17 +67,16 @@ export async function initOperationalModule({supabase, profile}) {
       <div class="go-section-heading"><div><h2>Manutenção e ocorrências</h2><p>Histórico de intervenções, inspeções e ocorrências.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar evento</button></div>
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>OS vinculada</th></tr></thead><tbody id="goLiveEventRows"></tbody></table></div>
     </section>
-      </div>
-    </div>
     <div id="goLiveModalHost"></div>
   `;
   const setFeedback = (message, error=false) => { const el=$("#goLiveFeedback"); if(el){el.textContent=message;el.classList.toggle("go-live-error",error);} };
   const areaLabel = id => state.areas.find(a=>a.id===id)?.name || (id===AREA_DEFAULT?AREA_LABEL:id);
   const activeArea = () => state.areas.find(a=>a.id===state.areaId);
   const switchTab = name => {
-    root.querySelectorAll("[data-live-tab]").forEach(b=>b.classList.toggle("active",b.dataset.liveTab===name));
     root.querySelectorAll("[data-live-panel]").forEach(p=>{const active=p.dataset.livePanel===name;p.hidden=!active;p.classList.toggle("active",active)});
+    document.querySelectorAll(".operational-main-tab").forEach(b=>b.classList.toggle("active",b.dataset.operationalSection===name));
   };
+  root.showOperationalSection = switchTab;
   async function loadData() {
     if(state.busy)return;
     state.busy=true;setFeedback("Atualizando dados…");
