@@ -1,6 +1,6 @@
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
-const $ = (root, selector) => root.querySelector(selector);
+const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const dateTime = value => value ? new Date(value).toLocaleString("pt-BR") : "—";
 const dateOnly = value => value ? new Date(value).toLocaleDateString("pt-BR") : "—";
@@ -71,7 +71,7 @@ export async function initOperationalModule({supabase, profile}) {
     </section>
     <div id="goLiveModalHost"></div>
   `;
-  const setFeedback = (message, error=false) => { const el=$("#", "#goLiveFeedback"); if(el){el.textContent=message;el.classList.toggle("go-live-error",error);} };
+  const setFeedback = (message, error=false) => { const el=$("#goLiveFeedback"); if(el){el.textContent=message;el.classList.toggle("go-live-error",error);} };
   const areaLabel = id => state.areas.find(a=>a.id===id)?.name || (id===AREA_DEFAULT?AREA_LABEL:id);
   const activeArea = () => state.areas.find(a=>a.id===state.areaId);
   const switchTab = name => {
@@ -100,7 +100,7 @@ export async function initOperationalModule({supabase, profile}) {
       ]);
       for(const result of [equipment,orders,events,readings])if(result.error)throw result.error;
       state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];
-      $("#", "#goLiveAreaName").textContent=area.name;
+      $("#goLiveAreaName").textContent=area.name;
       render();
       setFeedback("Dados atualizados · "+new Date().toLocaleTimeString("pt-BR"));
     } catch(error) { setFeedback(error.message||"Falha ao carregar dados operacionais.",true); throw error; }
@@ -111,8 +111,8 @@ export async function initOperationalModule({supabase, profile}) {
     const open=state.orders.filter(o=>["open","in_progress","waiting"].includes(o.status)).length;
     const available=state.equipment.filter(e=>e.status==="available").length;
     const stopped=state.equipment.filter(e=>["stopped","maintenance"].includes(e.status)).length;
-    $("#", "#goLiveScope").textContent=isMaster?"Acesso global · Administrador master":"Área vinculada · "+areaLabel(state.areaId);
-    $("#", "#goLiveOverview").innerHTML=`
+    $("#goLiveScope").textContent=isMaster?"Acesso global · Administrador master":"Área vinculada · "+areaLabel(state.areaId);
+    $("#goLiveOverview").innerHTML=`
       <div class="go-live-grid">
         <article class="go-live-card"><h3>Equipamentos cadastrados</h3><strong>${state.equipment.length}</strong><p>${available} disponíveis · ${stopped} parados ou em manutenção</p></article>
         <article class="go-live-card"><h3>Ordens em aberto</h3><strong>${open}</strong><p>${state.orders.filter(o=>o.status==="waiting").length} aguardando recurso</p></article>
@@ -121,18 +121,18 @@ export async function initOperationalModule({supabase, profile}) {
       </div>
       <div class="go-live-card"><h3>Últimas movimentações</h3>${state.events.slice(0,5).length?'<ul>'+state.events.slice(0,5).map(e=>'<li><strong>'+esc(equipmentName(e.equipment_id))+'</strong> · '+esc(statusLabel(e.event_type))+' · '+esc(e.description)+' <span style="color:#718096">('+esc(dateTime(e.occurred_at))+')</span></li>').join("")+'</ul>':'<p>Nenhum evento registrado até o momento.</p>'}</div>
       <div class="go-live-card" style="margin-top:12px"><h3>Equipamentos recentes</h3>${state.equipment.slice(0,6).length?'<ul>'+state.equipment.slice(0,6).map(e=>'<li><strong>'+esc(e.asset_code)+'</strong> · '+esc([e.brand,e.model,e.description].filter(Boolean).join(" · "))+' · '+esc(statusLabel(e.status))+' · '+Number(e.current_horimeter||0).toLocaleString("pt-BR")+' h</li>').join("")+'</ul>':'<p>Nenhum equipamento cadastrado. Comece cadastrando o primeiro equipamento da área.</p>'}</div>`;
-    const term=($("#", "#goLiveEquipmentSearch")?.value||"").toLocaleLowerCase("pt-BR"),status=$("#", "#goLiveEquipmentStatus")?.value||"";
+    const term=($("#goLiveEquipmentSearch")?.value||"").toLocaleLowerCase("pt-BR"),status=$("#goLiveEquipmentStatus")?.value||"";
     const equipment=state.equipment.filter(e=>(!status||e.status===status)&&(!term||[e.asset_code,e.description,e.brand,e.model].join(" ").toLocaleLowerCase("pt-BR").includes(term)));
-    $("#", "#goLiveEquipmentRows").innerHTML=equipment.length?equipment.map(e=>'<tr><td><strong>'+esc(e.asset_code)+'</strong></td><td>'+esc([e.brand,e.model,e.description].filter(Boolean).join(" · "))+'</td><td>'+Number(e.current_horimeter||0).toLocaleString("pt-BR")+' h</td><td><span class="go-live-status '+statusClass(e.status)+'">'+esc(statusLabel(e.status))+'</span></td><td><div class="go-live-actions"><button type="button" class="light" data-edit-equipment="'+e.id+'">Editar</button><button type="button" class="light" data-add-reading="'+e.id+'">Horímetro</button></div></td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum equipamento encontrado.</td></tr>';
-    const orderTerm=($("#", "#goLiveOrderSearch")?.value||"").toLocaleLowerCase("pt-BR"),orderStatus=$("#", "#goLiveOrderStatus")?.value||"";
+    $("#goLiveEquipmentRows").innerHTML=equipment.length?equipment.map(e=>'<tr><td><strong>'+esc(e.asset_code)+'</strong></td><td>'+esc([e.brand,e.model,e.description].filter(Boolean).join(" · "))+'</td><td>'+Number(e.current_horimeter||0).toLocaleString("pt-BR")+' h</td><td><span class="go-live-status '+statusClass(e.status)+'">'+esc(statusLabel(e.status))+'</span></td><td><div class="go-live-actions"><button type="button" class="light" data-edit-equipment="'+e.id+'">Editar</button><button type="button" class="light" data-add-reading="'+e.id+'">Horímetro</button></div></td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum equipamento encontrado.</td></tr>';
+    const orderTerm=($("#goLiveOrderSearch")?.value||"").toLocaleLowerCase("pt-BR"),orderStatus=$("#goLiveOrderStatus")?.value||"";
     const orders=state.orders.filter(o=>(!orderStatus||o.status===orderStatus)&&(!orderTerm||[o.order_number,o.title,o.description,equipmentName(o.equipment_id)].join(" ").toLocaleLowerCase("pt-BR").includes(orderTerm)));
-    $("#", "#goLiveOrderList").innerHTML=orders.length?orders.map(o=>'<article class="go-os-card"><div class="go-os-top"><div><span class="go-live-status '+statusClass(o.status)+'">'+esc(statusLabel(o.status))+' · '+esc(statusLabel(o.priority))+'</span><h3>'+esc(o.order_number)+' · '+esc(equipmentName(o.equipment_id))+'</h3><p>'+esc(o.title)+'</p></div><span class="go-os-date">'+esc(dateOnly(o.opened_at))+'</span></div><p>'+esc(o.description)+'</p><div class="go-live-actions"><button class="light" type="button" data-edit-order="'+o.id+'">Atualizar OS</button></div></article>').join(""):'<div class="go-live-empty">Nenhuma ordem de serviço cadastrada nesta área.</div>';
-    $("#", "#goLiveEventRows").innerHTML=state.events.length?state.events.map(e=>'<tr><td>'+esc(dateTime(e.occurred_at))+'</td><td>'+esc(equipmentName(e.equipment_id))+'</td><td>'+esc(statusLabel(e.event_type))+'</td><td>'+esc(e.description)+'</td><td>'+esc(state.orders.find(o=>o.id===e.work_order_id)?.order_number||"—")+'</td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum evento registrado.</td></tr>';
+    $("#goLiveOrderList").innerHTML=orders.length?orders.map(o=>'<article class="go-os-card"><div class="go-os-top"><div><span class="go-live-status '+statusClass(o.status)+'">'+esc(statusLabel(o.status))+' · '+esc(statusLabel(o.priority))+'</span><h3>'+esc(o.order_number)+' · '+esc(equipmentName(o.equipment_id))+'</h3><p>'+esc(o.title)+'</p></div><span class="go-os-date">'+esc(dateOnly(o.opened_at))+'</span></div><p>'+esc(o.description)+'</p><div class="go-live-actions"><button class="light" type="button" data-edit-order="'+o.id+'">Atualizar OS</button></div></article>').join(""):'<div class="go-live-empty">Nenhuma ordem de serviço cadastrada nesta área.</div>';
+    $("#goLiveEventRows").innerHTML=state.events.length?state.events.map(e=>'<tr><td>'+esc(dateTime(e.occurred_at))+'</td><td>'+esc(equipmentName(e.equipment_id))+'</td><td>'+esc(statusLabel(e.event_type))+'</td><td>'+esc(e.description)+'</td><td>'+esc(state.orders.find(o=>o.id===e.work_order_id)?.order_number||"—")+'</td></tr>').join(""):'<tr><td colspan="5" class="go-live-empty">Nenhum evento registrado.</td></tr>';
   }
   function openModal(title,body,submitLabel="Salvar") {
-    $("#", "#goLiveModalHost").innerHTML='<div class="go-live-modal" role="presentation"><section class="go-live-dialog" role="dialog" aria-modal="true"><div class="go-live-dialog-head"><h2>'+esc(title)+'</h2><button type="button" class="light" data-close-live-modal>Fechar</button></div>'+body+'<div class="go-live-dialog-foot"><button type="button" class="light" data-close-live-modal>Cancelar</button><button type="submit" form="goLiveForm" class="primary">'+esc(submitLabel)+'</button></div></section></div>';
-    $("#", "#goLiveModalHost .go-live-modal").addEventListener("click",e=>{if(e.target.classList.contains("go-live-modal")||e.target.closest("[data-close-live-modal]"))$("#", "#goLiveModalHost").innerHTML="";});
-    $("#", "#goLiveForm").addEventListener("submit",submitForm);
+    $("#goLiveModalHost").innerHTML='<div class="go-live-modal" role="presentation"><section class="go-live-dialog" role="dialog" aria-modal="true"><div class="go-live-dialog-head"><h2>'+esc(title)+'</h2><button type="button" class="light" data-close-live-modal>Fechar</button></div>'+body+'<div class="go-live-dialog-foot"><button type="button" class="light" data-close-live-modal>Cancelar</button><button type="submit" form="goLiveForm" class="primary">'+esc(submitLabel)+'</button></div></section></div>';
+    $("#goLiveModalHost .go-live-modal").addEventListener("click",e=>{if(e.target.classList.contains("go-live-modal")||e.target.closest("[data-close-live-modal]"))$("#goLiveModalHost").innerHTML="";});
+    $("#goLiveForm").addEventListener("submit",submitForm);
   }
   const field=(label,name,value="",type="text",required=true)=>'<div><label for="live_'+name+'">'+esc(label)+'</label><input id="live_'+name+'" name="'+name+'" type="'+type+'" value="'+esc(value)+'" '+(required?"required":"")+'></div>';
   const selectField=(label,name,options,value)=>'<div><label for="live_'+name+'">'+esc(label)+'</label><select id="live_'+name+'" name="'+name+'">'+options.map(o=>'<option value="'+esc(o[0])+'" '+(o[0]===value?"selected":"")+'>'+esc(o[1])+'</option>').join("")+'</select></div>';
@@ -155,7 +155,7 @@ export async function initOperationalModule({supabase, profile}) {
   }
   async function submitForm(event) {
     event.preventDefault();
-    const form=event.currentTarget, data=Object.fromEntries(new FormData(form).entries()), button=$("#", "#goLiveModalHost button[type=submit]");
+    const form=event.currentTarget, data=Object.fromEntries(new FormData(form).entries()), button=$("#goLiveModalHost button[type=submit]");
     if(button)button.disabled=true;
     try {
       const recordId=data.record_id;delete data.record_id;
@@ -179,7 +179,7 @@ export async function initOperationalModule({supabase, profile}) {
         const update=await supabase.from("operational_equipment").update({current_horimeter:reading,updated_by:profile.uid||profile.id}).eq("id",data.equipment_id).eq("area_id",state.areaId);
         if(update.error)throw update.error;
       }
-      $("#", "#goLiveModalHost").innerHTML="";
+      $("#goLiveModalHost").innerHTML="";
       setFeedback("Registro salvo com sucesso.");
       await loadData();
     } catch(error){setFeedback(error.message||"Não foi possível salvar o registro.",true);if(button)button.disabled=false;}
@@ -195,9 +195,9 @@ export async function initOperationalModule({supabase, profile}) {
     if(button.dataset.editOrder){const item=state.orders.find(o=>o.id===button.dataset.editOrder);if(item)orderForm(item);return;}
     if(button.dataset.addReading){const item=state.equipment.find(e=>e.id===button.dataset.addReading);if(item)horimeterForm(item);return;}
   });
-  $("#", "#goLiveEquipmentSearch").addEventListener("input",render);
-  $("#", "#goLiveEquipmentStatus").addEventListener("change",render);
-  $("#", "#goLiveOrderSearch").addEventListener("input",render);
-  $("#", "#goLiveOrderStatus").addEventListener("change",render);
+  $("#goLiveEquipmentSearch").addEventListener("input",render);
+  $("#goLiveEquipmentStatus").addEventListener("change",render);
+  $("#goLiveOrderSearch").addEventListener("input",render);
+  $("#goLiveOrderStatus").addEventListener("change",render);
   await loadData();
 }
