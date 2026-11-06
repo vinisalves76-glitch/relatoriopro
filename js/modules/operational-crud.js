@@ -216,7 +216,7 @@ export async function initOperationalModule({supabase, profile}) {
         <article class="bi-kpi"><span>OS em aberto</span><strong>${openOrders.length}</strong><small>${waitingOrders} aguardando recurso · ${closedOrders} concluídas no total</small></article>
         <article class="bi-kpi ${criticalOrders.length?"alert":""}"><span>OS prioritárias</span><strong>${criticalOrders.length}</strong><small>Alta ou crítica · backlog atual</small></article>
         <article class="bi-kpi"><span>Disponíveis</span><strong>${available}</strong><small>${activeEquipment.length?Math.round(available/activeEquipment.length*100):0}% da frota ativa com status disponível</small></article>
-        <article class="bi-kpi ${overdue125?"warn":""}"><span>Inspeções 250h programadas</span><strong>${state.schedules125hAvailable?activeSchedules125.length:"—"}</strong><small>${state.schedules125hAvailable?overdue125+" com data atrasada · "+(activeSchedules125.length-overdue125)+" dentro do prazo":"Agenda não disponível no banco"}</small></article>
+        <article class="bi-kpi ${overdue125?"warn":""}"><span>Inspeções 125h programadas</span><strong>${state.schedules125hAvailable?activeSchedules125.length:"—"}</strong><small>${state.schedules125hAvailable?overdue125+" com data atrasada · "+(activeSchedules125.length-overdue125)+" dentro do prazo":"Agenda não disponível no banco"}</small></article>
         <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} OS abertas no período</small></article>
         <article class="bi-kpi"><span>Leituras de horímetro</span><strong>${state.readings.length}</strong><small>Registros disponíveis no histórico</small></article>
       </div>

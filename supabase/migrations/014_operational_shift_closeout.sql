@@ -1,6 +1,6 @@
 -- Relatorio Pro | Fechamento de turno e acompanhamento de frota
 -- Base técnica para turnos customizáveis, localização física + setor e DF automática + oficial.
--- Não altera as regras de manutenção preventiva de 125h nem a agenda de inspeções de 250h.
+-- Preserva integralmente o processo existente de Inspeção de 125 Horas.
 
 begin;
 

@@ -48,11 +48,11 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       @media(max-width:600px){#goLive125h .m125-form{grid-template-columns:1fr}#goLive125h .m125-form .full{grid-column:auto}#goLive125h .m125-dialog{padding:16px}}
     </style>
     <div class="go-section-heading">
-      <div><h2>Agenda de inspeções de 250 horas</h2><p>Programação e acompanhamento das inspeções de toda a frota da área.</p></div>
+      <div><h2>Agenda de inspeções de 125 horas</h2><p>Programação e acompanhamento das inspeções de toda a frota da área.</p></div>
     </div>
     <div class="m125-toolbar"><div id="m125Feedback" role="status" aria-live="polite">Carregando agenda da frota…</div><span class="m125-pill">Programação por data</span></div>
     <div class="m125-grid" id="m125Summary"></div>
-    <div class="m125-card"><strong>Como funciona:</strong><p>Consulte todos os equipamentos ativos, escolha o caminhão e informe a data prevista para a inspeção de 250 horas. A agenda reúne os compromissos da frota em ordem de data. O horímetro exibido é apenas a leitura atual cadastrada no equipamento.</p></div>
+    <div class="m125-card"><strong>Como funciona:</strong><p>Consulte todos os equipamentos ativos, escolha o caminhão e informe a data prevista para a inspeção de 125 horas. A agenda reúne os compromissos da frota em ordem de data. O horímetro exibido é apenas a leitura atual cadastrada no equipamento.</p></div>
     <div class="m125-toolbar"><h3 style="margin:0">Programação da frota</h3><button class="primary" type="button" id="m125NewSchedule">＋ Programar inspeção</button></div>
     <div class="m125-filters"><input id="m125Search" type="search" placeholder="Buscar caminhão, marca ou modelo"><select id="m125Filter"><option value="all">Toda a frota</option><option value="scheduled">Com inspeção programada</option><option value="unscheduled">Sem programação</option><option value="overdue">Programação atrasada</option><option value="completed">Inspeções concluídas</option></select></div>
     <div class="m125-table-wrap"><table><thead><tr><th>Equipamento</th><th>Horímetro atual</th><th>Data da inspeção</th><th>Responsável</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="m125FleetRows"></tbody></table></div>
@@ -136,7 +136,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
   function modal(title,e,existing){
     const today=today125();
-    root.querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>'+esc125(title)+'</h3><p>'+esc125(e.asset_code||"Equipamento")+' · '+esc125([e.brand,e.model].filter(Boolean).join(" "))+'</p><form id="m125Form"><div class="m125-form"><div><label>Data prevista da inspeção de 250 horas</label><input name="planned_for" type="date" min="'+today+'" value="'+esc125(existing?.planned_for||today)+'" required></div><div><label>Responsável pela inspeção</label><input name="responsible_name" value="'+esc125(existing?.responsible_name||"")+'" placeholder="Nome do responsável"></div><div class="full"><label>Observações</label><textarea name="notes" rows="3" placeholder="Turno, equipe, janela de parada ou outras informações">'+esc125(existing?.notes||"")+'</textarea></div><div class="full"><small>O horímetro atual ('+num125(e.current_horimeter)+' h) será registrado como referência no agendamento. A programação é organizada pela data informada.</small></div></div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">Salvar programação</button></div></form></section></div>';
+    root.querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>'+esc125(title)+'</h3><p>'+esc125(e.asset_code||"Equipamento")+' · '+esc125([e.brand,e.model].filter(Boolean).join(" "))+'</p><form id="m125Form"><div class="m125-form"><div><label>Data prevista da inspeção de 125 horas</label><input name="planned_for" type="date" min="'+today+'" value="'+esc125(existing?.planned_for||today)+'" required></div><div><label>Responsável pela inspeção</label><input name="responsible_name" value="'+esc125(existing?.responsible_name||"")+'" placeholder="Nome do responsável"></div><div class="full"><label>Observações</label><textarea name="notes" rows="3" placeholder="Turno, equipe, janela de parada ou outras informações">'+esc125(existing?.notes||"")+'</textarea></div><div class="full"><small>O horímetro atual ('+num125(e.current_horimeter)+' h) será registrado como referência no agendamento. A programação é organizada pela data informada.</small></div></div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">Salvar programação</button></div></form></section></div>';
     root.querySelector(".m125-modal").addEventListener("click",ev=>{if(ev.target.classList.contains("m125-modal")||ev.target.closest("[data-m125-close]"))root.querySelector("#m125Modal").innerHTML="";});
     root.querySelector("#m125Form").addEventListener("submit",async ev=>{
       ev.preventDefault();const btn=ev.currentTarget.querySelector('[type="submit"]');btn.disabled=true;
@@ -146,16 +146,16 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
         const payload={area_id:areaId(),equipment_id:e.id,planned_for:d.planned_for,planned_horimeter:Number(e.current_horimeter||0),responsible_name:(d.responsible_name||"").trim(),notes:d.notes||"",status:"scheduled",created_by:userId,updated_at:new Date().toISOString()};
         const result=existing?await supabase.from("operational_125h_schedules").update(payload).eq("id",existing.id).eq("area_id",areaId()):await supabase.from("operational_125h_schedules").insert(payload);
         if(result.error)throw result.error;
-        root.querySelector("#m125Modal").innerHTML="";await load();feedback("Inspeção de 250 horas programada com sucesso.");
+        root.querySelector("#m125Modal").innerHTML="";await load();feedback("Inspeção de 125 horas programada com sucesso.");
       }catch(error){feedback(error.message||"Falha ao salvar a programação.",true);btn.disabled=false;}
     });
   }
   function chooseEquipment(){
     const list=equipment().filter(e=>e.status!=="inactive");
     if(!list.length){feedback("Não há equipamentos ativos cadastrados para programar.");return;}
-    root.querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>Escolher equipamento</h3><p>Selecione o caminhão para programar ou reprogramar a inspeção de 250 horas.</p><form id="m125ChooseForm"><div class="m125-form"><div class="full"><label>Equipamento da frota</label><select name="equipment_id" required style="width:100%;padding:10px;border:1px solid #d5dce2;border-radius:8px">'+list.map(e=>'<option value="'+esc125(e.id)+'">'+esc125(e.asset_code)+' · '+esc125([e.brand,e.model].filter(Boolean).join(" "))+'</option>').join("")+'</select></div></div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">Continuar</button></div></form></section></div>';
+    root.querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>Escolher equipamento</h3><p>Selecione o caminhão para programar ou reprogramar a inspeção de 125 horas.</p><form id="m125ChooseForm"><div class="m125-form"><div class="full"><label>Equipamento da frota</label><select name="equipment_id" required style="width:100%;padding:10px;border:1px solid #d5dce2;border-radius:8px">'+list.map(e=>'<option value="'+esc125(e.id)+'">'+esc125(e.asset_code)+' · '+esc125([e.brand,e.model].filter(Boolean).join(" "))+'</option>').join("")+'</select></div></div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">Continuar</button></div></form></section></div>';
     root.querySelector(".m125-modal").addEventListener("click",ev=>{if(ev.target.classList.contains("m125-modal")||ev.target.closest("[data-m125-close]"))root.querySelector("#m125Modal").innerHTML="";});
-    root.querySelector("#m125ChooseForm").addEventListener("submit",ev=>{ev.preventDefault();const id=new FormData(ev.currentTarget).get("equipment_id");const e=list.find(x=>x.id===id);if(!e)return;root.querySelector("#m125Modal").innerHTML="";modal(currentSchedule(id)?"Reprogramar inspeção de 250 horas":"Programar inspeção de 250 horas",e,currentSchedule(id));});
+    root.querySelector("#m125ChooseForm").addEventListener("submit",ev=>{ev.preventDefault();const id=new FormData(ev.currentTarget).get("equipment_id");const e=list.find(x=>x.id===id);if(!e)return;root.querySelector("#m125Modal").innerHTML="";modal(currentSchedule(id)?"Reprogramar inspeção de 125 horas":"Programar inspeção de 125 horas",e,currentSchedule(id));});
   }
   async function changeScheduleStatus(id,status){
     const result=await supabase.from("operational_125h_schedules").update({status,updated_at:new Date().toISOString()}).eq("id",id).eq("area_id",areaId());
@@ -167,7 +167,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     if(b.id==="m125NewSchedule"){chooseEquipment();return;}
     if(b.dataset.m125Schedule){
       const e=equipment().find(x=>x.id===b.dataset.m125Schedule);if(!e)return;
-      modal(currentSchedule(e.id)?"Reprogramar inspeção de 250 horas":"Programar inspeção de 250 horas",e,currentSchedule(e.id));return;
+      modal(currentSchedule(e.id)?"Reprogramar inspeção de 125 horas":"Programar inspeção de 125 horas",e,currentSchedule(e.id));return;
     }
     if(b.dataset.m125Complete){changeScheduleStatus(b.dataset.m125Complete,"completed");return;}
     if(b.dataset.m125Cancel){changeScheduleStatus(b.dataset.m125Cancel,"cancelled");return;}
