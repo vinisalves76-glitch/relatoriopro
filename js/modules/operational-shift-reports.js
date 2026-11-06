@@ -1,5 +1,6 @@
 const DB_NAME = "relatoriopro-offline";
 const STORE = "shiftReports";
+const EQUIPMENT_STORE = "equipmentCache";
 const AREA_LABELS = {"arcelormittal-andradas":"ArcelorMittal Andradas"};
 let activeController=null;
 const esc = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -10,7 +11,7 @@ function openQueue(){
   return new Promise((resolve,reject)=>{
     if(!("indexedDB" in window)){reject(new Error("Este navegador não oferece armazenamento local necessário para trabalhar offline."));return;}
     const request=indexedDB.open(DB_NAME,1);
-    request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE)){const store=db.createObjectStore(STORE,{keyPath:"localId"});store.createIndex("ownerUid","ownerUid",{unique:false});store.createIndex("status","status",{unique:false});}};
+    request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE)){const store=db.createObjectStore(STORE,{keyPath:"localId"});store.createIndex("ownerUid","ownerUid",{unique:false});store.createIndex("status","status",{unique:false});}if(!db.objectStoreNames.contains(EQUIPMENT_STORE))db.createObjectStore(EQUIPMENT_STORE,{keyPath:"areaId"});};
     request.onsuccess=()=>resolve(request.result);
     request.onerror=()=>reject(request.error||new Error("Não foi possível abrir o armazenamento offline."));
   });
@@ -27,6 +28,8 @@ async function queueDelete(id){
   const db=await openQueue();
   return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(id);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)};});
 }
+async function cacheEquipment(areaId,items){const db=await openQueue();return new Promise((resolve,reject)=>{const tx=db.transaction(EQUIPMENT_STORE,"readwrite");tx.objectStore(EQUIPMENT_STORE).put({areaId,items,updatedAt:new Date().toISOString()});tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)};});}
+async function readEquipmentCache(areaId){const db=await openQueue();return new Promise((resolve,reject)=>{const tx=db.transaction(EQUIPMENT_STORE,"readonly"),req=tx.objectStore(EQUIPMENT_STORE).get(areaId);req.onsuccess=()=>resolve(req.result?.items||[]);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close();});}
 
 export async function initMechanicShiftReports({supabase,profile,root}){
   if(activeController)activeController.abort();
@@ -89,9 +92,16 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   }
   function statusPill(status){return '<span class="ms-pill '+(status==="synced"?"synced":status==="error"||status==="conflict"?"error":"")+'">'+esc(statusText(status))+'</span>'}
   async function loadEquipment(){
-    const {data,error}=await supabase.from("operational_equipment").select("id,asset_code,model,description,current_horimeter,status").eq("area_id",areaId).neq("status","inactive").order("asset_code");
-    if(error)throw error;
-    state.equipment=data||[];
+    try{
+      const {data,error}=await supabase.from("operational_equipment").select("id,asset_code,model,description,current_horimeter,status").eq("area_id",areaId).neq("status","inactive").order("asset_code");
+      if(error)throw error;
+      state.equipment=data||[];
+      await cacheEquipment(areaId,state.equipment);
+    }catch(error){
+      if(navigator.onLine)throw error;
+      state.equipment=await readEquipmentCache(areaId);
+      if(!state.equipment.length)throw new Error("Não há equipamentos armazenados neste dispositivo. Conecte-se uma vez para carregar a frota da mina.");
+    }
     $("#msEquipment").innerHTML='<option value="">Selecione a TAG</option>'+state.equipment.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
     $("#msEquipmentCount").textContent=String(state.equipment.length);
   }
