@@ -18,8 +18,16 @@ export async function initMechanicSchedule({supabase,profile,areaId,root}){
       #gestaoOperacional .sc-field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}
       #gestaoOperacional .sc-field input,#gestaoOperacional .sc-field select,#gestaoOperacional .sc-field textarea{box-sizing:border-box;width:100%;padding:10px;border:1px solid var(--line,#d5dce2);border-radius:8px;background:var(--surface,#fff);color:inherit;font:inherit}
       #gestaoOperacional .sc-full{grid-column:1/-1}
-      #gestaoOperacional .sc-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px;max-height:180px;overflow:auto;padding:10px;border:1px solid var(--line,#d5dce2);border-radius:8px}
-      #gestaoOperacional .sc-checks label{display:flex;gap:8px;align-items:center;font-weight:500;margin:0}
+      #gestaoOperacional .sc-mechanic-picker{position:relative}
+      #gestaoOperacional .sc-mechanic-trigger{box-sizing:border-box;width:100%;min-height:40px;padding:10px 36px 10px 10px;border:1px solid var(--line,#d5dce2);border-radius:8px;background:var(--surface,#fff);color:inherit;font:inherit;text-align:left;cursor:pointer;position:relative}
+      #gestaoOperacional .sc-mechanic-trigger:after{content:"";position:absolute;right:14px;top:14px;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg)}
+      #gestaoOperacional .sc-mechanic-picker.open .sc-mechanic-trigger:after{top:18px;transform:rotate(225deg)}
+      #gestaoOperacional .sc-mechanic-menu{display:none;position:absolute;z-index:30;top:calc(100% + 5px);left:0;right:0;max-height:220px;overflow:auto;padding:9px;background:var(--surface,#fff);border:1px solid var(--line,#d5dce2);border-radius:8px;box-shadow:0 8px 22px rgba(0,0,0,.12)}
+      #gestaoOperacional .sc-mechanic-picker.open .sc-mechanic-menu{display:block}
+      #gestaoOperacional .sc-mechanic-menu label{display:flex;gap:9px;align-items:center;padding:7px 5px;font-weight:500;margin:0;cursor:pointer}
+      #gestaoOperacional .sc-mechanic-menu label+label{border-top:1px solid var(--line,#edf0f2)}
+      #gestaoOperacional .sc-mechanic-menu input{width:auto;margin:0}
+      #gestaoOperacional .sc-mechanic-count{font-size:12px;color:var(--muted,#68737d);margin-top:5px}
       #gestaoOperacional .sc-days{display:flex;gap:8px;flex-wrap:wrap}
       #gestaoOperacional .sc-days label{display:flex;align-items:center;gap:5px;font-size:12px}
       #gestaoOperacional .sc-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -41,7 +49,7 @@ export async function initMechanicSchedule({supabase,profile,areaId,root}){
       <form id="scForm" class="sc-form">
         <div class="sc-field"><label for="scEquipment">Equipamento / TAG *</label><select id="scEquipment" required><option value="">Carregando...</option></select></div>
         <div class="sc-field"><label>Período *</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><input id="scStart" type="date" required><input id="scEnd" type="date" required></div></div>
-        <div class="sc-field sc-full"><label>Mecânicos alocados *</label><div class="sc-checks" id="scMechanics"><span class="sc-muted">Carregando equipe...</span></div></div>
+        <div class="sc-field sc-full"><label>Mecânicos alocados *</label><div class="sc-mechanic-picker" id="scMechanicPicker"><button class="sc-mechanic-trigger" id="scMechanicTrigger" type="button" aria-expanded="false" aria-controls="scMechanicMenu">Selecione os mecânicos</button><div class="sc-mechanic-menu" id="scMechanicMenu"><span class="sc-muted">Carregando equipe...</span></div></div><div class="sc-mechanic-count" id="scMechanicCount">Nenhum mecânico selecionado</div></div>
         <div class="sc-field sc-full"><label>Dias da semana</label><div class="sc-days" id="scWeekdays">${weekdayNames.map((name,i)=>'<label><input type="checkbox" value="'+i+'" '+(i>=1&&i<=5?'checked':'')+'> '+name+'</label>').join("")}</div><small class="sc-muted">Deixe todos desmarcados para programar todos os dias do período.</small></div>
         <div class="sc-field sc-full"><label for="scNotes">Observações da alocação</label><textarea id="scNotes" rows="2" placeholder="Ex.: inspeção preventiva, atendimento corretivo, apoio à equipe..."></textarea></div>
         <div class="sc-full sc-actions"><button class="primary" id="scSave" type="submit">Salvar programação</button><button class="light" type="button" id="scReload">Atualizar escala</button></div>
@@ -98,7 +106,8 @@ export async function initMechanicSchedule({supabase,profile,areaId,root}){
       for(const result of [equipment,assignments])if(result.error)throw result.error;
       state.mechanics=team;state.equipment=equipment.data||[];state.assignments=assignments.data||[];
       $("#scEquipment").innerHTML='<option value="">Selecione a TAG</option>'+state.equipment.map(item=>'<option value="'+esc(item.id)+'">'+esc(item.asset_code)+' · '+esc(item.model||"")+'</option>').join("");
-      $("#scMechanics").innerHTML=state.mechanics.length?'<div class="sc-muted" style="grid-column:1/-1;margin-bottom:3px">'+state.mechanics.length+' mecânico(s) ativo(s) nesta área — selecione quantos forem necessários.</div>'+state.mechanics.map(item=>'<label><input type="checkbox" name="mechanic" value="'+esc(item.id)+'"> '+esc(item.name||item.email||"Mecânico")+(item.email?' <span class="sc-muted">('+esc(item.email)+')</span>':'')+'</label>').join(""):'<span class="sc-muted">Não há mecânicos ativos vinculados a esta área. Confira se o cadastro está ativo, com cargo Mecânico e área ArcelorMittal Andradas.</span>';
+      $("#scMechanicMenu").innerHTML=state.mechanics.length?'<div class="sc-muted" style="padding:3px 5px 8px">'+state.mechanics.length+' mecânico(s) ativo(s) nesta área</div>'+state.mechanics.map(item=>'<label><input type="checkbox" name="mechanic" value="'+esc(item.id)+'"> <span>'+esc(item.name||item.email||"Mecânico")+(item.email?' <small class="sc-muted">('+esc(item.email)+')</small>':'')+'</span></label>').join(""):'<span class="sc-muted">Não há mecânicos ativos vinculados a esta área. Confira se o cadastro está ativo, com cargo Mecânico e área ArcelorMittal Andradas.</span>';
+      updateMechanicPicker();
       render();feedback("Escala atualizada · "+state.mechanics.length+" mecânico(s) disponível(is) · "+state.assignments.length+" alocação(ões) no mês.");
     }catch(error){feedback(error.message||"Não foi possível carregar a escala.",true);$("#scMechanics").innerHTML='<span class="sc-error">Falha ao carregar a lista de mecânicos: '+esc(error.message||"Erro desconhecido")+'</span>';$("#scCalendar").innerHTML='<div class="sc-empty">Falha ao carregar as alocações.</div>';}
     finally{state.busy=false;}
@@ -123,9 +132,27 @@ export async function initMechanicSchedule({supabase,profile,areaId,root}){
       if(error)throw error;
       $("#scMonth").value=start.slice(0,7);state.month=start.slice(0,7);
       $("#scForm").reset();$("#scStart").value=start;$("#scEnd").value=end;
+      updateMechanicPicker();
       await load();feedback(records.length+" alocação(ões) programada(s) com sucesso.");
     }catch(error){feedback(error.message||"Não foi possível salvar a programação.",true);}
     finally{button.disabled=false;button.textContent="Salvar programação";}
+  });
+  function updateMechanicPicker(){
+    const selected=[...root.querySelectorAll('input[name="mechanic"]:checked')];
+    const names=selected.map(input=>state.mechanics.find(item=>item.id===input.value)?.name||input.closest("label")?.textContent?.trim()||"Mecânico");
+    $("#scMechanicTrigger").textContent=selected.length?names.join(", "):"Selecione os mecânicos";
+    $("#scMechanicCount").textContent=selected.length?selected.length+" mecânico(s) selecionado(s)":"Nenhum mecânico selecionado";
+  }
+  $("#scMechanicTrigger").addEventListener("click",()=>{
+    const picker=$("#scMechanicPicker"),opened=picker.classList.toggle("open");
+    $("#scMechanicTrigger").setAttribute("aria-expanded",String(opened));
+  });
+  $("#scMechanicMenu").addEventListener("change",event=>{
+    if(event.target.matches('input[name="mechanic"]'))updateMechanicPicker();
+  });
+  document.addEventListener("click",event=>{
+    const picker=$("#scMechanicPicker");
+    if(picker&&!picker.contains(event.target)){picker.classList.remove("open");$("#scMechanicTrigger").setAttribute("aria-expanded","false");}
   });
   $("#scMonth").addEventListener("change",()=>{if(!$("#scMonth").value)return;state.month=$("#scMonth").value;load()});
   $("#scReload").addEventListener("click",load);
