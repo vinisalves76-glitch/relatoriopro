@@ -9,7 +9,7 @@ export function initGestaoOperacional({ $, isMaster }) {
 
   const STORAGE_KEY = "relatoriopro-gestao-operacional-phase1-demo-v1";
   const state = {
-    clients: [], contracts: [], operations: [], assets: [], components: [],
+    contracts: [], operations: [], assets: [], components: [],
     hourmeters: [], workOrders: [], failures: [], downtimes: []
   };
   let editing = null;
@@ -39,12 +39,11 @@ export function initGestaoOperacional({ $, isMaster }) {
         Object.keys(state).forEach(k => { state[k] = Array.isArray(parsed[k]) ? parsed[k] : []; });
       }
     } catch (e) { console.error("[Gestão Operacional] Dados locais inválidos:", e); }
-    if (!state.clients.length && !state.contracts.length && !state.operations.length && !state.assets.length) seedDemo();
+    if (!state.contracts.length && !state.operations.length && !state.assets.length) seedDemo();
   };
   function seedDemo() {
-    const clientId = uid(), contractId = uid(), operationId = uid();
-    state.clients.push({ id:clientId, name:"Cliente demonstração", document:"", contact:"", status:"Ativo", notes:"Registro fictício para avaliação do fluxo.", created_at:now() });
-    state.contracts.push({ id:contractId, client_id:clientId, code:"DEMO-001", name:"Manutenção de frota de caminhões", start_date:"2026-11-01", end_date:"", status:"Ativo", notes:"Contrato fictício.", created_at:now() });
+    const contractId = uid(), operationId = uid();
+    state.contracts.push({ id:contractId, code:"ARC-DEMO-001", name:"Contrato ArcelorMittal — demonstração", start_date:"2026-11-01", end_date:"", status:"Ativo", notes:"Registro fictício para validar os fluxos da operação ArcelorMittal.", created_at:now() });
     state.operations.push({ id:operationId, contract_id:contractId, code:"OP-001", name:"Operação Mina Modelo", location:"Área de demonstração", status:"Ativa", notes:"Operação fictícia e independente.", created_at:now() });
     const a1=uid(),a2=uid();
     state.assets.push(
@@ -59,11 +58,8 @@ export function initGestaoOperacional({ $, isMaster }) {
   }
 
   const configs = {
-    clients: { title:"Cliente", fields:[
-      ["name","Nome do cliente","text",true],["document","CNPJ / identificação","text",false],["contact","Contato responsável","text",false],["status","Status","select",true,["Ativo","Inativo"]],["notes","Observações","textarea",false]
-    ]},
     contracts: { title:"Contrato", fields:[
-      ["client_id","Cliente","select",true,"clients"],["code","Código do contrato","text",true],["name","Nome / escopo do contrato","text",true],["start_date","Início","date",false],["end_date","Término","date",false],["status","Status","select",true,["Ativo","Suspenso","Encerrado"]],["notes","Observações","textarea",false]
+      ["code","Código do contrato","text",true],["name","Nome / escopo do contrato","text",true],["start_date","Início","date",false],["end_date","Término","date",false],["status","Status","select",true,["Ativo","Suspenso","Encerrado"]],["notes","Observações","textarea",false]
     ]},
     operations: { title:"Operação", fields:[
       ["contract_id","Contrato","select",true,"contracts"],["code","Código da operação","text",true],["name","Nome da operação","text",true],["location","Local / área","text",false],["status","Status","select",true,["Ativa","Suspensa","Encerrada"]],["notes","Observações","textarea",false]
@@ -89,15 +85,15 @@ export function initGestaoOperacional({ $, isMaster }) {
   };
 
   const nav = [
-    ["overview","Visão geral","layout"],["clients","Clientes","building"],["contracts","Contratos","file"],["operations","Operações","layers"],["assets","Frota de caminhões","truck"],["components","Componentes","cog"],["hourmeters","Horímetros","clock"],["workOrders","Ordens de serviço","wrench"],["failures","Falhas","alert"],["downtimes","Paradas","pause"]
+    ["overview","Visão geral","layout"],["contracts","Contratos","file"],["operations","Operações","layers"],["assets","Frota de caminhões","truck"],["components","Componentes","cog"],["hourmeters","Horímetros","clock"],["workOrders","Ordens de serviço","wrench"],["failures","Falhas","alert"],["downtimes","Paradas","pause"]
   ];
-  const titles = { clients:"Clientes", contracts:"Contratos", operations:"Operações independentes", assets:"Frota de caminhões", components:"Componentes e conjuntos", hourmeters:"Histórico de horímetros", workOrders:"Ordens de serviço", failures:"Histórico de falhas", downtimes:"Eventos de parada" };
+  const titles = { contracts:"Contratos", operations:"Operações independentes", assets:"Frota de caminhões", components:"Componentes e conjuntos", hourmeters:"Histórico de horímetros", workOrders:"Ordens de serviço", failures:"Histórico de falhas", downtimes:"Eventos de parada" };
 
   function optionsFor(field) {
     const type = field[4];
     if (!Array.isArray(state[type])) return [];
     return state[type].map(item => {
-      const text = type==="clients" ? item.name : type==="contracts" ? item.code+" — "+item.name : type==="operations" ? item.code+" — "+item.name : type==="assets" ? item.asset_code+" — "+item.model : type==="components" ? item.name+" ("+label("assets",item.asset_id)+")" : item.order_number+" — "+label("assets",item.asset_id);
+      const text = type==="contracts" ? item.code+" — "+item.name : type==="operations" ? item.code+" — "+item.name : type==="assets" ? item.asset_code+" — "+item.model : type==="components" ? item.name+" ("+label("assets",item.asset_id)+")" : item.order_number+" — "+label("assets",item.asset_id);
       return '<option value="'+esc(item.id)+'">'+esc(text)+'</option>';
     }).join("");
   }
@@ -123,7 +119,7 @@ export function initGestaoOperacional({ $, isMaster }) {
   }
   function closeForm() { $("goModal").hidden = true; editing = null; }
   function relationSummary(type,item) {
-    if(type==="contracts") return label("clients",item.client_id);
+    if(type==="contracts") return "ArcelorMittal";
     if(type==="operations") return label("contracts",item.contract_id);
     if(type==="assets") return label("operations",item.operation_id);
     if(type==="components") return label("assets",item.asset_id);
@@ -143,7 +139,6 @@ export function initGestaoOperacional({ $, isMaster }) {
     const q = ($("goSearch-"+type)?.value || "").toLocaleLowerCase("pt-BR").trim();
     const all = state[type].filter(item => !q || JSON.stringify(item).toLocaleLowerCase("pt-BR").includes(q));
     const defs = {
-      clients:[["name","Cliente",x=>x.name],["document","CNPJ / ID",x=>x.document||"—"],["status","Status",x=>x.status]],
       contracts:[["code","Código",x=>x.code],["name","Contrato",x=>x.name],["status","Status",x=>x.status]],
       operations:[["code","Código",x=>x.code],["name","Operação",x=>x.name],["status","Status",x=>x.status]],
       assets:[["asset_code","Identificação",x=>x.asset_code],["model","Modelo",x=>x.model],["current_hourmeter","Horímetro",x=>fmtNumber(x.current_hourmeter)+" h"],["status","Status",x=>x.status]],
@@ -164,14 +159,14 @@ export function initGestaoOperacional({ $, isMaster }) {
     state.failures.forEach(f=>repeatSystems[f.system]=(repeatSystems[f.system]||0)+1);
     const top=Object.entries(repeatSystems).sort((a,b)=>b[1]-a[1])[0];
     $("goOverviewKpis").innerHTML=[
-      ["Clientes",state.clients.length],["Contratos",state.contracts.length],["Operações",state.operations.length],["Caminhões ativos",activeAssets],["OS em aberto",openOS],["Paradas abertas",openStops]
+      ["Cliente atendido","ArcelorMittal"],["Contratos",state.contracts.length],["Operações",state.operations.length],["Caminhões ativos",activeAssets],["OS em aberto",openOS],["Paradas abertas",openStops]
     ].map(([t,v])=>'<article class="go-kpi"><span>'+t+'</span><strong>'+v+'</strong><small>Dados do protótipo local</small></article>').join("");
     $("goHealthSummary").innerHTML='<div class="go-health-line"><strong>'+down+'</strong><span>caminhões indisponíveis ou em manutenção</span></div><div class="go-health-line"><strong>'+state.failures.length+'</strong><span>falhas registradas no histórico</span></div><div class="go-health-line"><strong>'+state.hourmeters.length+'</strong><span>leituras de horímetro registradas</span></div><div class="go-health-line"><strong>'+(top?esc(top[0])+" · "+top[1]+" registro(s)":"Sem padrão de falha identificado")+'</strong><span>sistema com maior quantidade de registros de falha</span></div>';
   }
   function renderAll() {
     renderOverview();
     Object.keys(titles).forEach(renderList);
-    $("goDatasetCounts").textContent = state.clients.length+" clientes · "+state.contracts.length+" contratos · "+state.operations.length+" operações · "+state.assets.length+" caminhões";
+    $("goDatasetCounts").textContent = "ArcelorMittal · "+state.contracts.length+" contrato(s) · "+state.operations.length+" operação(ões) · "+state.assets.length+" caminhão(ões)";
     root.querySelectorAll("[data-go-tab]").forEach(b=>b.classList.toggle("active",b.dataset.goTab===activeTab));
     root.querySelectorAll("[data-go-panel]").forEach(p=>{p.hidden=p.dataset.goPanel!==activeTab;p.classList.toggle("active",p.dataset.goPanel===activeTab)});
   }
@@ -196,7 +191,6 @@ export function initGestaoOperacional({ $, isMaster }) {
   function deleteItem(type,id) {
     if(!isMaster())return;
     const refs={
-      clients:()=>state.contracts.some(x=>x.client_id===id),
       contracts:()=>state.operations.some(x=>x.contract_id===id),
       operations:()=>state.assets.some(x=>x.operation_id===id),
       assets:()=>state.components.some(x=>x.asset_id===id)||state.hourmeters.some(x=>x.asset_id===id)||state.workOrders.some(x=>x.asset_id===id)||state.failures.some(x=>x.asset_id===id)||state.downtimes.some(x=>x.asset_id===id),
