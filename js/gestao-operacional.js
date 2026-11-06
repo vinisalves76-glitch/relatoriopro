@@ -1,3 +1,4 @@
+import { initChecklistTremForca } from "./checklist-trem-forca.js";
 /* Gestão Operacional — Fase 1
  * Protótipo funcional isolado: grava somente no localStorage deste navegador.
  * Não envia dados ao Supabase e não altera dados do Relatório Pro.
