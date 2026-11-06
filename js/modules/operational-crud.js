@@ -17,7 +17,7 @@ export async function initOperationalModule({supabase, profile}) {
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
   const fixedArea = isSupervisor ? profile.operationalAreaId : null;
-  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], schedules125h:[], overviewPeriod:90, busy:false};
+  const state = {areas:[], areaId:fixedArea || AREA_DEFAULT, equipment:[], orders:[], events:[], readings:[], schedules125h:[], schedules125hAvailable:false, overviewPeriod:90, busy:false};
   root.innerHTML = `
     <style>
       #gestaoOperacional .go-live-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:18px 0}
@@ -147,15 +147,16 @@ export async function initOperationalModule({supabase, profile}) {
       }
       const area=activeArea();
       if(!area)throw new Error("Área operacional não encontrada ou inativa.");
-      const [equipment,orders,events,readings,schedules125h]=await Promise.all([
+      const [equipment,orders,events,readings]=await Promise.all([
         supabase.from("operational_equipment").select("*").eq("area_id",state.areaId).order("asset_code"),
         supabase.from("operational_work_orders").select("*").eq("area_id",state.areaId).order("opened_at",{ascending:false}),
         supabase.from("operational_maintenance_events").select("*").eq("area_id",state.areaId).order("occurred_at",{ascending:false}),
-        supabase.from("operational_horimeter_readings").select("*").eq("area_id",state.areaId).order("recorded_at",{ascending:false}),
-        supabase.from("operational_125h_schedules").select("id,equipment_id,planned_for,status").eq("area_id",state.areaId)
+        supabase.from("operational_horimeter_readings").select("*").eq("area_id",state.areaId).order("recorded_at",{ascending:false})
       ]);
-      for(const result of [equipment,orders,events,readings,schedules125h])if(result.error)throw result.error;
-      state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];state.schedules125h=schedules125h.data||[];
+      for(const result of [equipment,orders,events,readings])if(result.error)throw result.error;
+      state.equipment=equipment.data||[];state.orders=orders.data||[];state.events=events.data||[];state.readings=readings.data||[];
+      const schedules125h=await supabase.from("operational_125h_schedules").select("id,equipment_id,planned_for,status").eq("area_id",state.areaId);
+      state.schedules125hAvailable=!schedules125h.error;state.schedules125h=schedules125h.error?[]:(schedules125h.data||[]);
       $("#goLiveAreaName").textContent=area.name;
       render();
       setFeedback("Dados atualizados · "+new Date().toLocaleTimeString("pt-BR"));
@@ -214,7 +215,7 @@ export async function initOperationalModule({supabase, profile}) {
         <article class="bi-kpi"><span>OS em aberto</span><strong>${openOrders.length}</strong><small>${waitingOrders} aguardando recurso · ${closedOrders} concluídas no total</small></article>
         <article class="bi-kpi ${criticalOrders.length?"alert":""}"><span>OS prioritárias</span><strong>${criticalOrders.length}</strong><small>Alta ou crítica · backlog atual</small></article>
         <article class="bi-kpi"><span>Disponíveis</span><strong>${available}</strong><small>${activeEquipment.length?Math.round(available/activeEquipment.length*100):0}% da frota ativa com status disponível</small></article>
-        <article class="bi-kpi ${overdue125?"warn":""}"><span>Inspeções 250h programadas</span><strong>${activeSchedules125.length}</strong><small>${overdue125} com data atrasada · ${activeSchedules125.length-overdue125} dentro do prazo</small></article>
+        <article class="bi-kpi ${overdue125?"warn":""}"><span>Inspeções 250h programadas</span><strong>${state.schedules125hAvailable?activeSchedules125.length:"—"}</strong><small>${state.schedules125hAvailable?overdue125+" com data atrasada · "+(activeSchedules125.length-overdue125)+" dentro do prazo":"Agenda não disponível no banco"}</small></article>
         <article class="bi-kpi"><span>Eventos no período</span><strong>${periodEvents.length}</strong><small>${periodOrders.length} OS abertas no período</small></article>
         <article class="bi-kpi"><span>Leituras de horímetro</span><strong>${state.readings.length}</strong><small>Registros disponíveis no histórico</small></article>
       </div>
