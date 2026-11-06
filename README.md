@@ -23,3 +23,21 @@ Sistema de gestão operacional e relatórios da operação ArcelorMittal.
 - Preservar os ciclos e nomenclaturas operacionais definidos. A preventiva permanece identificada como `125h`.
 - Supabase é a linha atual de backend; arquivos Firebase podem existir apenas como legado documentado até a remoção planejada.
 - Não colocar chaves, senhas ou segredos no repositório.
+
+
+## Contexto para desenvolvimento e IAs
+
+Antes de alterar o sistema, leia [AGENTS.md](./AGENTS.md). Ele contém as regras centrais que devem ser respeitadas por qualquer IA ou pessoa que trabalhe no repositório.
+
+Documentação complementar:
+
+- [Contexto e objetivo do projeto](./docs/PROJECT_CONTEXT.md)
+- [Arquitetura atual](./docs/ARCHITECTURE.md)
+- [Banco de dados e Storage](./docs/DATABASE.md)
+- [Regras operacionais e de negócio](./docs/BUSINESS_RULES.md)
+- [Desenvolvimento e validação local](./docs/DEVELOPMENT.md)
+- [Política de branches e publicação](./docs/BRANCHING.md)
+- [Histórico de decisões](./docs/CHANGELOG.md)
+- [Instruções do GitHub Copilot](./.github/copilot-instructions.md)
+
+Esses documentos são contexto para desenvolvimento; não são a biblioteca de manuais e anexos técnicos cadastrados pelos usuários no sistema.
