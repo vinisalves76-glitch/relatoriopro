@@ -10,7 +10,7 @@ const statusText = status => ({pending:"Aguardando sincronização",syncing:"Sin
 function openQueue(){
   return new Promise((resolve,reject)=>{
     if(!("indexedDB" in window)){reject(new Error("Este navegador não oferece armazenamento local necessário para trabalhar offline."));return;}
-    const request=indexedDB.open(DB_NAME,1);
+    const request=indexedDB.open(DB_NAME,2);
     request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE)){const store=db.createObjectStore(STORE,{keyPath:"localId"});store.createIndex("ownerUid","ownerUid",{unique:false});store.createIndex("status","status",{unique:false});}if(!db.objectStoreNames.contains(EQUIPMENT_STORE))db.createObjectStore(EQUIPMENT_STORE,{keyPath:"areaId"});};
     request.onsuccess=()=>resolve(request.result);
     request.onerror=()=>reject(request.error||new Error("Não foi possível abrir o armazenamento offline."));
@@ -99,9 +99,9 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       state.equipment=data||[];
       fetched=true;
     }catch(error){
-      if(navigator.onLine)throw error;
       state.equipment=await readEquipmentCache(areaId);
-      if(!state.equipment.length)throw new Error("Não há equipamentos armazenados neste dispositivo. Conecte-se uma vez para carregar a frota da mina.");
+      if(!state.equipment.length)throw navigator.onLine?error:new Error("Não há equipamentos armazenados neste dispositivo. Conecte-se uma vez para carregar a frota da mina.");
+      feedback("Sem acesso ao servidor neste momento. Usando a última lista de equipamentos salva neste dispositivo.");
     }
     if(fetched){try{await cacheEquipment(areaId,state.equipment)}catch(error){console.warn("[RelatorioPro] Não foi possível atualizar o cache local da frota:",error)}}
     $("#msEquipment").innerHTML='<option value="">Selecione a TAG</option>'+state.equipment.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
