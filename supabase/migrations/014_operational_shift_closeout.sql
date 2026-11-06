@@ -221,7 +221,7 @@ for each row execute function public.validate_operational_shift_links();
 -- classificados como incluídos) / minutos programados * 100.
 -- Usa união de intervalos para não contar duas vezes paradas sobrepostas.
 -- Se houver parada sem classificação, calculated_df_percent fica NULL até revisão.
-create or replace view public.operational_shift_df_summary as
+create or replace view public.operational_shift_df_summary with (security_invoker = true) as
 with shift_base as (
   select s.id as shift_id, s.area_id, s.starts_at,
          coalesce(s.ends_at, now()) as ends_at,
