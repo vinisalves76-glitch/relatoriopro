@@ -120,14 +120,16 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     for(const item of all.filter(x=>x.ownerUid===uid&&x.areaId===areaId&&x.status==="syncing")){item.status="pending";await queuePut(item);}
     state.queue=(await queueAll()).filter(x=>x.ownerUid===uid&&x.areaId===areaId);
     const otherAccounts=all.filter(x=>x.ownerUid!==uid).length;
+    const otherAreas=all.filter(x=>x.ownerUid===uid&&x.areaId!==areaId).length;
     $("#msPendingCount").textContent=String(state.queue.filter(x=>x.status!=="synced").length);
-    renderQueue(otherAccounts);
+    renderQueue(otherAccounts,otherAreas);
   }
-  function renderQueue(otherAccounts=0){
+  function renderQueue(otherAccounts=0,otherAreas=0){
     const box=$("#msQueue");
     if(!state.queue.length){box.innerHTML='<p class="ms-muted">Nenhum relatório aguardando sincronização.</p>';}
     else box.innerHTML=state.queue.slice().sort((a,b)=>String(b.createdLocalAt).localeCompare(String(a.createdLocalAt))).map(item=>'<article class="ms-report"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>'+esc(item.equipmentLabel)+' · '+esc(item.payload.report_date)+'</strong>'+statusPill(item.status)+'</div><p>'+esc(item.payload.work_performed)+'</p>'+(item.error?'<p class="ms-muted">Detalhe: '+esc(item.error)+'</p>':'')+'</article>').join("");
     if(otherAccounts)box.insertAdjacentHTML("beforeend",'<p class="ms-muted">'+otherAccounts+' pendência(s) pertencem a outra conta neste dispositivo e não serão sincronizadas com este login.</p>');
+    if(otherAreas)box.insertAdjacentHTML("beforeend",'<p class="ms-muted">'+otherAreas+' pendência(s) deste usuário estão vinculadas a outra mina. Elas não serão enviadas com o vínculo atual.</p>');
   }
   function renderHistory(){
     const box=$("#msHistory");
