@@ -194,7 +194,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       const idempotencyKey=crypto.randomUUID();
       const payload={area_id:areaId,equipment_id:equipment.id,report_date:form.report_date,horimeter,created_by:uid,created_by_name:profile.name||"",other_mechanics:participants,work_performed:form.work_performed.trim(),anomalies:form.anomalies.trim(),actions_taken:form.actions_taken.trim(),pending_items:form.pending_items.trim(),final_condition:form.final_condition,final_condition_notes:form.final_condition_notes.trim(),idempotency_key:idempotencyKey,client_created_at:new Date().toISOString()};
       const localId=idempotencyKey;
-      const existingLocal=state.queue.find(x=>x.payload.equipment_id===equipment.id&&x.payload.report_date===form.report_date&&x.status!=="conflict");
+      const existingLocal=state.queue.find(x=>x.payload.equipment_id===equipment.id&&x.payload.report_date===form.report_date);
       if(existingLocal)throw new Error("Já existe um relatório local para esta TAG e data. Verifique a fila de sincronização.");
       const existingRemote=state.reports.find(x=>x.equipment_id===equipment.id&&x.report_date===form.report_date);
       if(existingRemote)throw new Error("Já existe um relatório no histórico para esta TAG e data. Não crie um segundo registro.");
