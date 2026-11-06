@@ -88,7 +88,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       </div><div class="ms-actions"><button class="primary" id="msSave" type="submit">Salvar relatório</button><button class="light" type="reset">Limpar formulário</button></div><div class="ms-status" id="msFeedback" role="status" aria-live="polite">Rascunho local protegido contra perda de conexão.</div></form>
     </div>
     <div class="ms-card"><h2 style="margin:0 0 8px">Fila de sincronização</h2><p class="ms-muted">Relatórios locais só são considerados entregues após confirmação do Supabase.</p><div id="msQueue"></div></div>
-    <div class="ms-card"><h2 style="margin:0 0 8px">Histórico por equipamento</h2><p class="ms-muted">Todos os relatórios enviados para a mina vinculada. A consulta não depende da escala individual.</p><div class="ms-field" style="max-width:420px;margin:10px 0"><label for="msHistoryFilter">Filtrar por equipamento</label><select id="msHistoryFilter"><option value="">Todos os equipamentos</option></select></div><div id="msHistory"></div></div>
+    <div class="ms-card"><h2 style="margin:0 0 8px">Histórico por equipamento</h2><p class="ms-muted">Histórico compartilhado com todos os mecânicos da mina. Você pode consultar relatórios de qualquer TAG da área, mesmo que não esteja escalado nela.</p><div class="ms-field" style="max-width:420px;margin:10px 0"><label for="msHistoryFilter">Filtrar por qualquer equipamento da mina</label><select id="msHistoryFilter"><option value="">Todos os equipamentos</option></select></div><div id="msHistory"></div></div>
   `;
 
   function feedback(message,type=""){
@@ -162,8 +162,9 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     const filter=$("#msHistoryFilter");
     const previous=filter?.value||"";
     if(filter){
-      filter.innerHTML='<option value="">Todos os equipamentos</option>'+items.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+'</option>').join("");
-      if(items.some(e=>e.id===previous))filter.value=previous;
+      const visibleEquipment=state.equipment.filter(e=>e.status!=="inactive").sort((a,b)=>String(a.asset_code).localeCompare(String(b.asset_code),"pt-BR"));
+      filter.innerHTML='<option value="">Todos os equipamentos da mina</option>'+visibleEquipment.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.asset_code)+' · '+esc(e.model||e.description||"Equipamento")+(e.status==="maintenance"?" · Em manutenção":"")+'</option>').join("");
+      if(visibleEquipment.some(e=>e.id===previous))filter.value=previous;
     }
     if(!items.length){box.innerHTML='<p class="ms-muted">Não há equipamentos com status “Em manutenção” nesta área no momento.</p>';return;}
     box.innerHTML=items.map(e=>{
