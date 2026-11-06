@@ -179,63 +179,78 @@
 
 <section class="page" id="gestaoOperacional">
  <div class="go-page-head">
-  <div><span class="go-eyebrow">IRMEN · GESTÃO TÉCNICA E OPERACIONAL</span><h1>Gestão Operacional</h1><p class="muted">Painel gerencial para acompanhamento de contratos, equipamentos, manutenção e indicadores.</p></div>
+  <div><span class="go-eyebrow">IRMEN · INTELIGÊNCIA E GESTÃO OPERACIONAL</span><h1>Gestão Operacional</h1><p class="muted">Cadastros estruturados para clientes, contratos, operações e frota de caminhões.</p></div>
   <span class="go-master-badge">Acesso exclusivo · Administrador master</span>
  </div>
- <div class="go-demo-alert"><strong>PREVIEW DE DESENVOLVIMENTO</strong><span>Todos os dados exibidos nesta tela são fictícios. Este módulo ainda não grava nem altera informações no banco do Relatório Pro.</span></div>
- <div class="go-contract-bar"><div><small>CLIENTE / OPERAÇÃO</small><strong>ArcelorMittal · Mina do Andrade</strong></div><div><small>CONTRATO</small><strong>Manutenção de equipamentos móveis</strong></div><div><small>PERÍODO</small><strong>Novembro de 2026</strong></div><button type="button" class="light" id="goChangePeriod">Alterar período</button></div>
- <nav class="go-subnav" aria-label="Seções da Gestão Operacional">
-  <button class="go-subtab active" type="button" data-go-tab="overview">Visão geral</button><button class="go-subtab" type="button" data-go-tab="equipment">Equipamentos</button><button class="go-subtab" type="button" data-go-tab="maintenance">Manutenção</button><button class="go-subtab" type="button" data-go-tab="reports">Relatórios</button>
+ <div class="go-demo-alert"><strong>PREVIEW FASE 1 · PROTÓTIPO LOCAL</strong><span>Os registros desta versão são fictícios e ficam somente neste navegador. Nenhum dado é enviado ao Supabase ou à produção.</span></div>
+ <div class="go-toolbar">
+  <div><strong>Base operacional</strong><small id="goDatasetCounts">Carregando cadastros...</small></div>
+  <div class="go-toolbar-actions"><button class="light" type="button" id="goExportDemo">Exportar dados de teste</button><button class="light" type="button" id="goResetDemo">Restaurar demonstração</button></div>
+ </div>
+ <nav class="go-subnav" aria-label="Módulos da Gestão Operacional">
+  <button class="go-subtab active" type="button" data-go-tab="overview">Visão geral</button>
+  <button class="go-subtab" type="button" data-go-tab="clients">Clientes</button>
+  <button class="go-subtab" type="button" data-go-tab="contracts">Contratos</button>
+  <button class="go-subtab" type="button" data-go-tab="operations">Operações</button>
+  <button class="go-subtab" type="button" data-go-tab="assets">Caminhões</button>
+  <button class="go-subtab" type="button" data-go-tab="components">Componentes</button>
+  <button class="go-subtab" type="button" data-go-tab="hourmeters">Horímetros</button>
+  <button class="go-subtab" type="button" data-go-tab="workOrders">Ordens de serviço</button>
+  <button class="go-subtab" type="button" data-go-tab="failures">Falhas</button>
+  <button class="go-subtab" type="button" data-go-tab="downtimes">Paradas</button>
  </nav>
  <section class="go-panel active" data-go-panel="overview">
-  <div class="go-section-heading"><div><h2>Resumo da operação</h2><p>Indicadores consolidados do contrato selecionado.</p></div><span class="go-updated">Atualização demonstrativa · 05/11/2026</span></div>
-  <div class="go-kpis">
-   <article class="go-kpi"><span>Disponibilidade física · DF</span><strong>92,5%</strong><small class="positive">+1,8 p.p. em relação ao mês anterior</small></article>
-   <article class="go-kpi"><span>Equipamentos acompanhados</span><strong>26</strong><small>22 disponíveis · 4 indisponíveis</small></article>
-   <article class="go-kpi"><span>Horas de indisponibilidade</span><strong>126 h</strong><small>Período demonstrativo</small></article>
-   <article class="go-kpi"><span>Ordens de serviço abertas</span><strong>18</strong><small>6 aguardando execução</small></article>
-  </div>
+  <div class="go-section-heading"><div><h2>Fundação operacional</h2><p>Visão consolidada dos cadastros e registros do protótipo.</p></div><span class="go-updated">Dados locais de demonstração</span></div>
+  <div class="go-kpis go-kpis-phase1" id="goOverviewKpis"></div>
+  <div class="go-card go-health-card"><div class="go-card-title"><div><h3>Saúde e memória da operação</h3><p>Indicadores básicos de estrutura e histórico já registrados.</p></div><span class="go-pill">Fase 1</span></div><div id="goHealthSummary" class="go-health-summary"></div></div>
   <div class="go-two-col">
-   <article class="go-card"><div class="go-card-title"><div><h3>Disponibilidade no período</h3><p>Exemplo de evolução diária da DF</p></div><span class="go-pill">Meta ilustrativa: 90%</span></div>
-    <div class="go-chart" aria-label="Gráfico ilustrativo de disponibilidade"><div class="go-chart-y"><span>100%</span><span>90%</span><span>80%</span></div><div class="go-chart-bars"><i style="height:88%" title="01/11: 88%"></i><i style="height:91%" title="02/11: 91%"></i><i style="height:89%" title="03/11: 89%"></i><i style="height:94%" title="04/11: 94%"></i><i style="height:92.5%" title="05/11: 92,5%"></i><i style="height:95%" title="06/11: 95%"></i><i style="height:93%" title="07/11: 93%"></i></div></div><div class="go-chart-labels"><span>01/11</span><span>02/11</span><span>03/11</span><span>04/11</span><span>05/11</span><span>06/11</span><span>07/11</span></div>
-   </article>
-   <article class="go-card"><div class="go-card-title"><div><h3>Distribuição da frota</h3><p>Situação operacional demonstrativa</p></div></div><div class="go-donut-wrap"><div class="go-donut"><div><strong>26</strong><small>equipamentos</small></div></div><div class="go-legend"><span><i class="available"></i>Disponíveis <b>22</b></span><span><i class="stopped"></i>Indisponíveis <b>4</b></span><span><i class="maintenance"></i>Em manutenção <b>3</b></span></div></div></article>
-  </div>
-  <article class="go-card"><div class="go-card-title"><div><h3>Pontos de atenção</h3><p>Itens que exigem acompanhamento do supervisor</p></div><button class="light" type="button" data-go-tab-jump="maintenance">Ver manutenção</button></div>
-   <div class="go-attention-list"><div><span class="go-status danger">Crítica</span><strong>CB-233 · Vazamento na transmissão</strong><small>Corretiva em andamento · aguardando conclusão</small></div><div><span class="go-status warning">Atenção</span><strong>ES0002 · Sistema hidráulico</strong><small>Aguardando recurso de apoio para continuidade</small></div><div><span class="go-status info">Planejamento</span><strong>Preventivas da próxima semana</strong><small>4 intervenções programadas</small></div></div>
-  </article>
- </section>
- <section class="go-panel" data-go-panel="equipment" hidden>
-  <div class="go-section-heading"><div><h2>Equipamentos do contrato</h2><p>Consulta demonstrativa de frota, status e horímetro.</p></div><button class="primary" type="button" id="goAddEquipment">＋ Cadastrar equipamento</button></div>
-  <div class="go-filters"><input id="goEquipmentSearch" type="search" placeholder="Buscar por código, modelo ou equipamento..."><select id="goEquipmentStatus"><option value="">Todos os status</option><option value="Disponível">Disponível</option><option value="Corretiva">Corretiva</option><option value="Preventiva">Preventiva</option></select></div>
-  <div class="go-table-wrap"><table class="go-table"><thead><tr><th>Identificação</th><th>Equipamento</th><th>Horímetro</th><th>Status</th><th>Última atualização</th></tr></thead><tbody id="goEquipmentRows">
-   <tr data-status="Disponível" data-search="CB-220 caminhão fora de estrada cat 777g"><td><strong>CB-220</strong></td><td>CAT 777G · Caminhão fora de estrada</td><td>18.420 h</td><td><span class="go-status success">Disponível</span></td><td>05/11/2026 · 17:00</td></tr>
-   <tr data-status="Disponível" data-search="CB-221 caminhão fora de estrada cat 777g"><td><strong>CB-221</strong></td><td>CAT 777G · Caminhão fora de estrada</td><td>16.908 h</td><td><span class="go-status success">Disponível</span></td><td>05/11/2026 · 17:00</td></tr>
-   <tr data-status="Corretiva" data-search="CB-233 caminhão fora de estrada cat 777g transmissão"><td><strong>CB-233</strong></td><td>CAT 777G · Caminhão fora de estrada</td><td>20.115 h</td><td><span class="go-status danger">Corretiva</span></td><td>05/11/2026 · 17:00</td></tr>
-   <tr data-status="Corretiva" data-search="CB-227 caminhão fora de estrada cat 777g diferencial"><td><strong>CB-227</strong></td><td>CAT 777G · Caminhão fora de estrada</td><td>19.670 h</td><td><span class="go-status danger">Corretiva</span></td><td>05/11/2026 · 17:00</td></tr>
-   <tr data-status="Preventiva" data-search="ES0002 escavadeira sany skt90s sistema hidraulico"><td><strong>ES0002</strong></td><td>SANY SKT90S · Caminhão articulado</td><td>8.240 h</td><td><span class="go-status warning">Preventiva</span></td><td>05/11/2026 · 16:30</td></tr>
-   <tr data-status="Disponível" data-search="CB-231 caminhão fora de estrada cat 777g"><td><strong>CB-231</strong></td><td>CAT 777G · Caminhão fora de estrada</td><td>17.302 h</td><td><span class="go-status success">Disponível</span></td><td>05/11/2026 · 17:00</td></tr>
-  </tbody></table></div><p class="go-table-note">Exibindo 6 equipamentos de exemplo. O cadastro e os horímetros reais serão implementados após aprovação do fluxo.</p>
- </section>
- <section class="go-panel" data-go-panel="maintenance" hidden>
-  <div class="go-section-heading"><div><h2>Manutenção e ordens de serviço</h2><p>Acompanhamento das intervenções e pendências da oficina.</p></div><button class="primary" type="button" id="goNewOS">＋ Nova ordem de serviço</button></div>
-  <div class="go-kpis go-kpis-small"><article class="go-kpi"><span>OS em andamento</span><strong>12</strong></article><article class="go-kpi"><span>Aguardando recurso</span><strong>3</strong></article><article class="go-kpi"><span>Concluídas no mês</span><strong>42</strong></article></div>
-  <div class="go-os-list">
-   <article class="go-os-card"><div class="go-os-top"><div><span class="go-status danger">Corretiva · Em andamento</span><h3>OS-233 · CB-233</h3><p>Vazamento de óleo na transmissão</p></div><span class="go-os-date">Aberta em 04/11/2026</span></div><div class="go-progress"><i style="width:60%"></i></div><small>3 de 5 atividades concluídas · Responsável: Equipe mecânica A</small></article>
-   <article class="go-os-card"><div class="go-os-top"><div><span class="go-status warning">Aguardando recurso</span><h3>OS-ES0002 · ES0002</h3><p>Limpeza do tanque e linha hidráulica</p></div><span class="go-os-date">Aberta em 05/11/2026</span></div><div class="go-progress"><i style="width:45%"></i></div><small>2 de 4 atividades concluídas · Aguardando munck</small></article>
-   <article class="go-os-card"><div class="go-os-top"><div><span class="go-status info">Corretiva · Programada</span><h3>OS-231 · CB-231</h3><p>Substituição do motor diesel</p></div><span class="go-os-date">Aberta em 03/11/2026</span></div><div class="go-progress"><i style="width:35%"></i></div><small>1 de 3 atividades concluídas · Responsável: Equipe mecânica B</small></article>
+   <article class="go-card"><h3>Como os dados se conectam</h3><div class="go-relationship-flow"><span>Cliente</span><b>→</b><span>Contrato</span><b>→</b><span>Operação</span><b>→</b><span>Caminhão</span></div><p class="go-table-note">Componentes, horímetros, ordens de serviço, falhas e paradas ficam vinculados ao caminhão e à operação correspondente.</p></article>
+   <article class="go-card"><h3>Próxima evolução</h3><p>Com os cadastros estruturados, o próximo passo será transformar os registros em indicadores rastreáveis de disponibilidade, MTBF, MTTR e reincidência.</p><span class="go-status info">Preparado para confiabilidade</span></article>
   </div>
  </section>
- <section class="go-panel" data-go-panel="reports" hidden>
-  <div class="go-section-heading"><div><h2>Relatórios gerenciais</h2><p>Documentos para conferência interna e futura entrega aos setores responsáveis.</p></div><button class="primary" type="button" id="goGenerateReport">＋ Gerar relatório</button></div>
-  <div class="go-report-filters"><select id="goReportType"><option value="">Todos os relatórios</option><option>Disponibilidade física</option><option>Manutenção mensal</option><option>Fechamento de turno</option></select><select id="goReportMonth"><option value="11/2026">Novembro de 2026</option><option value="10/2026">Outubro de 2026</option></select></div>
-  <div class="go-report-list">
-   <article class="go-report-card" data-report-type="Disponibilidade física"><div class="go-report-icon">▥</div><div><span class="go-status success">Pronto para conferência</span><h3>Relatório de Disponibilidade Física</h3><p>ArcelorMittal · Mina do Andrade · Novembro/2026</p><small>Gerado em 05/11/2026 · PDF demonstrativo</small></div><button class="light" type="button" data-go-report="DF">Visualizar</button></article>
-   <article class="go-report-card" data-report-type="Manutenção mensal"><div class="go-report-icon">⚙</div><div><span class="go-status warning">Em elaboração</span><h3>Relatório mensal de manutenção</h3><p>Ordens de serviço, falhas, preventivas e pendências</p><small>Período: Novembro/2026</small></div><button class="light" type="button" data-go-report="Manutenção">Visualizar</button></article>
-   <article class="go-report-card" data-report-type="Fechamento de turno"><div class="go-report-icon">◷</div><div><span class="go-status info">Aguardando conferência</span><h3>Fechamento operacional do turno</h3><p>Equipe, atividades, ocorrências e passagem de turno</p><small>05/11/2026 · Turno 07:00–17:00</small></div><button class="light" type="button" data-go-report="Turno">Visualizar</button></article>
-  </div><div class="go-report-preview" id="goReportPreview" hidden><button class="light" id="goCloseReport" type="button">Fechar prévia</button><h3 id="goReportPreviewTitle">Prévia do relatório</h3><p>Documento demonstrativo. A geração de PDF e o fluxo de aprovação serão implementados na próxima etapa.</p><div class="go-report-preview-body" id="goReportPreviewBody"></div></div>
+ <section class="go-panel" data-go-panel="clients" hidden>
+  <div class="go-section-heading"><div><h2>Clientes</h2><p>Empresas atendidas pela Irmen.</p></div><button class="primary" type="button" data-go-add="clients">＋ Novo cliente</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar cliente..." data-go-search="clients"><div id="goList-clients"></div>
  </section>
- <div class="go-footer-note">Módulo em prototipação · Acesso restrito ao administrador master · Nenhum dado operacional é gravado nesta preview.</div>
+ <section class="go-panel" data-go-panel="contracts" hidden>
+  <div class="go-section-heading"><div><h2>Contratos</h2><p>Contratos vinculados a cada cliente.</p></div><button class="primary" type="button" data-go-add="contracts">＋ Novo contrato</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar contrato..." data-go-search="contracts"><div id="goList-contracts"></div>
+ </section>
+ <section class="go-panel" data-go-panel="operations" hidden>
+  <div class="go-section-heading"><div><h2>Operações independentes</h2><p>Cada operação possui seus próprios equipamentos e histórico.</p></div><button class="primary" type="button" data-go-add="operations">＋ Nova operação</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar operação..." data-go-search="operations"><div id="goList-operations"></div>
+ </section>
+ <section class="go-panel" data-go-panel="assets" hidden>
+  <div class="go-section-heading"><div><h2>Frota de caminhões</h2><p>Cadastro mestre dos equipamentos vinculados às operações.</p></div><button class="primary" type="button" data-go-add="assets">＋ Cadastrar caminhão</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar identificação ou modelo..." data-go-search="assets"><div id="goList-assets"></div>
+ </section>
+ <section class="go-panel" data-go-panel="components" hidden>
+  <div class="go-section-heading"><div><h2>Componentes e conjuntos</h2><p>Estruture os principais sistemas e componentes de cada caminhão.</p></div><button class="primary" type="button" data-go-add="components">＋ Novo componente</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar componente ou sistema..." data-go-search="components"><div id="goList-components"></div>
+ </section>
+ <section class="go-panel" data-go-panel="hourmeters" hidden>
+  <div class="go-section-heading"><div><h2>Histórico de horímetros</h2><p>Registre leituras datadas e preserve a evolução do equipamento.</p></div><button class="primary" type="button" data-go-add="hourmeters">＋ Registrar leitura</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar leitura..." data-go-search="hourmeters"><div id="goList-hourmeters"></div>
+ </section>
+ <section class="go-panel" data-go-panel="workOrders" hidden>
+  <div class="go-section-heading"><div><h2>Ordens de serviço</h2><p>Estrutura inicial para manutenção preventiva, corretiva, inspeções e melhorias.</p></div><button class="primary" type="button" data-go-add="workOrders">＋ Nova ordem de serviço</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar OS..." data-go-search="workOrders"><div id="goList-workOrders"></div>
+ </section>
+ <section class="go-panel" data-go-panel="failures" hidden>
+  <div class="go-section-heading"><div><h2>Histórico de falhas</h2><p>Registre sintomas, sistemas afetados, criticidade e causas identificadas.</p></div><button class="primary" type="button" data-go-add="failures">＋ Registrar falha</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar falha..." data-go-search="failures"><div id="goList-failures"></div>
+ </section>
+ <section class="go-panel" data-go-panel="downtimes" hidden>
+  <div class="go-section-heading"><div><h2>Eventos de parada</h2><p>Registre início, fim, motivo e se o evento conta como indisponibilidade.</p></div><button class="primary" type="button" data-go-add="downtimes">＋ Registrar parada</button></div>
+  <input class="go-list-search" type="search" placeholder="Pesquisar parada..." data-go-search="downtimes"><div id="goList-downtimes"></div>
+ </section>
+ <div class="go-footer-note">Protótipo funcional local · Sem conexão com o banco · Sem dados reais · Acesso master</div>
+ <div class="go-modal" id="goModal" hidden>
+  <div class="go-modal-card" role="dialog" aria-modal="true" aria-labelledby="goModalTitle">
+   <div class="go-modal-head"><div><span class="go-eyebrow">CADASTRO OPERACIONAL</span><h2 id="goModalTitle">Novo cadastro</h2></div><button class="light" type="button" id="goModalClose">Fechar</button></div>
+   <form id="goRecordForm"><div class="go-form-grid" id="goModalFields"></div><div class="status" id="goModalStatus" role="status" aria-live="polite"></div><div class="go-modal-actions"><button class="primary" type="submit">Salvar registro</button><button class="light" type="button" id="goModalCancel">Cancelar</button></div></form>
+  </div>
+ </div>
 </section>
 </main>
 <section class="page" id="simulation"><div class="simulation-head"><div><h1 id="simulationTitle">Simulação do RelatorioPro</h1><p class="muted">Ambiente de demonstração integrado ao sistema, com dados fictícios.</p></div><button id="closeSimulation" class="light" type="button">Voltar ao sistema</button></div><div class="simulation-warning">MODO TESTE LOCAL: funcionários, relatórios e agendas são fictícios. Nada é gravado no Supabase. Ao sair, os dados de demonstração são descartados.</div><div class="simulation-stats" id="simulationStats"></div><nav class="simulation-tabs" aria-label="Seções da simulação"><button class="simulation-tab active" data-simpage="employees">Funcionários</button><button class="simulation-tab" data-simpage="reports">Relatórios prontos</button><button class="simulation-tab" data-simpage="agenda">Agenda por funcionário</button></nav><section class="simulation-page active" id="sim-employees"><div class="simulation-toolbar"><div><h3>Equipe técnica de demonstração</h3><p>Selecione um funcionário para ver seus dados e atividades.</p></div><input id="simEmployeeSearch" placeholder="Pesquisar funcionário..." aria-label="Pesquisar funcionário"></div><div id="simulationEmployees" class="simulation-grid"></div></section><section class="simulation-page" id="sim-reports" hidden><div class="simulation-toolbar"><div><h3>Relatórios técnicos de exemplo</h3><p>15 relatórios completos de demonstração, um por funcionário.</p></div><input id="simReportSearch" placeholder="Pesquisar cliente, equipamento ou responsável..." aria-label="Pesquisar relatório"></div><div id="simulationReports" class="simulation-report-list"></div><div id="simulationReportDetail" class="simulation-report-detail" hidden></div></section><section class="simulation-page" id="sim-agenda" hidden><div class="simulation-toolbar"><div><h3>Agenda individual</h3><p>Consulte compromissos agrupados por profissional.</p></div><select id="simAgendaPerson" aria-label="Filtrar agenda por funcionário"><option value="">Todos os funcionários</option></select></div><div id="simulationAgenda" class="simulation-agenda-list"></div></section></section>
