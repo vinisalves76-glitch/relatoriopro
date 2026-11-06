@@ -1,4 +1,4 @@
-const CACHE_NAME = "relatoriopro-shell-v6";
+const CACHE_NAME = "relatoriopro-shell-v7";
 const APP_SHELL = [
   "/",
   "/index.html",
