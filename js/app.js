@@ -724,7 +724,7 @@ async function initializeUserOnce(user){
   showPage(getInitialPage(user));
   // Exibe automaticamente somente uma vez por usuário. A marcação é
   // gravada antes de abrir para não repetir o guia em inicializações futuras.
-  if(!hasSeenTour(uid))openTour(true);
+  if(!hasSeenTour(uid))openTour(true,uid);
   initializationComplete=true;
  }catch(error){
   if(!isCurrent())return;
@@ -815,20 +815,21 @@ function renderTourStep(){
 function tourStorageKey(uid){return 'relatoriopro-tour-complete-'+uid}
 function markTourSeen(uid){
  if(!uid)return;
- try{localStorage.setItem(tourStorageKey(uid),'1')}catch(e){
-  try{sessionStorage.setItem(tourStorageKey(uid),'1')}catch(_){}
- }
+ const key=tourStorageKey(uid);
+ try{localStorage.setItem(key,'1')}catch(_){}
+ try{sessionStorage.setItem(key,'1')}catch(_){}
 }
 function hasSeenTour(uid){
  if(!uid)return true;
- try{return localStorage.getItem(tourStorageKey(uid))==='1'}catch(e){
-  try{return sessionStorage.getItem(tourStorageKey(uid))==='1'}catch(_){return true}
- }
+ const key=tourStorageKey(uid);
+ try{if(localStorage.getItem(key)==='1')return true}catch(_){}
+ try{if(sessionStorage.getItem(key)==='1')return true}catch(_){}
+ return false;
 }
-function openTour(firstVisit=false){
+function openTour(firstVisit=false,userId=null){
  tourSteps=makeTourSteps();tourIndex=0;
  if(!tourSteps.length)return;
- const uid=activeUser?.uid||activeUser?.id||currentProfile?.uid||currentProfile?.id;
+ const uid=userId||activeUser?.uid||activeUser?.id||currentProfile?.uid||currentProfile?.id;
  if(firstVisit)markTourSeen(uid);
  $('tourBackdrop').hidden=false;document.body.style.overflow='hidden';renderTourStep();
 }
