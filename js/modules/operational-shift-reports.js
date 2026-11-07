@@ -126,6 +126,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   const msWorkspace=msShell.querySelector(".ms-workspace");
   const msPanel=id=>msShell.querySelector('[data-ms-panel="'+id+'"]');
   if(msHead)root.insertBefore(msShell,msHead.nextSibling);
+  msPanel("overview").innerHTML='<div class="ms-section-heading"><div><span class="ms-eyebrow">ÁREA DO MECÂNICO</span><h2>Visão geral</h2><p class="ms-muted">Acompanhe seus registros, equipamentos escalados e a situação da sincronização.</p></div></div>';
   if(msKpis)msPanel("overview").append(msKpis);
   if(msCards[0])msPanel("maintenance").append(msCards[0]);
   if(msCards[1])msPanel("new-report").append(msCards[1]);
