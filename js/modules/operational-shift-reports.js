@@ -166,6 +166,8 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   if(msHead)root.insertBefore(msShell,msHead.nextSibling);
   msPanel("overview").innerHTML='<div class="ms-section-heading"><div><span class="ms-eyebrow">ÁREA DO MECÂNICO</span><h2>Visão geral</h2><p class="ms-muted">Acompanhe seus registros, equipamentos escalados e a situação da sincronização.</p></div></div>';
   if(msKpis)msPanel("overview").append(msKpis);
+  msPanel("overview").insertAdjacentHTML("beforeend",'<div class="ms-overview-resources"><div class="ms-section-heading"><div><span class="ms-eyebrow">CONSULTA TÉCNICA</span><h2>Biblioteca técnica</h2><p class="ms-muted">Acesse rapidamente manuais e procedimentos liberados para consulta.</p></div></div><div class="ms-overview-resource-grid"><button type="button" class="ms-overview-resource" data-ms-overview-open="manuals"><span>▤</span><strong>Manuais técnicos</strong><small>Pesquisar e abrir documentos no visualizador do dispositivo</small></button><button type="button" class="ms-overview-resource" data-ms-overview-open="pops"><span>▣</span><strong>POPs publicados</strong><small>Consultar procedimentos operacionais aprovados</small></button></div><div class="ms-overview-recent"><div><strong>Últimos manuais</strong><div id="msOverviewManuals" class="ms-overview-recent-list"><span class="ms-muted">Carregando…</span></div></div><div><strong>POPs atualizados recentemente</strong><div id="msOverviewPops" class="ms-overview-recent-list"><span class="ms-muted">Carregando…</span></div></div></div></div>');
+  msPanel("overview").querySelectorAll("[data-ms-overview-open]").forEach(button=>button.addEventListener("click",()=>activateMsSection(button.dataset.msOverviewOpen)));
   if(msCards[0])msPanel("maintenance").append(msCards[0]);
   if(msCards[1])msPanel("new-report").append(msCards[1]);
   if(msCards[2])msPanel("sync").append(msCards[2]);
@@ -210,7 +212,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       fillResourceFilter("msManualModel",resourceState.manuals,"model","Todos os modelos");
       fillResourceFilter("msManualSystem",resourceState.manuals,"system","Todos os sistemas");
       fillResourceFilter("msManualCategory",resourceState.manuals,"category","Todas as categorias");
-      renderManualLibrary();
+      renderManualLibrary();renderOverviewResources();
     }catch(error){$("#msManualList").innerHTML='<div class="ms-status error">Não foi possível carregar os manuais autorizados: '+esc(error.message||"Erro de consulta")+'</div>'}
     finally{resourceState.loadingManuals=false}
   }
@@ -250,7 +252,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       fillResourceFilter("msPopModel",resourceState.pops,"model","Todos os modelos");
       fillResourceFilter("msPopSystem",resourceState.pops,"system","Todos os sistemas");
       fillResourceFilter("msPopCategory",resourceState.pops,"category","Todas as categorias");
-      renderPopLibrary();
+      renderPopLibrary();renderOverviewResources();
     }catch(error){$("#msPopList").innerHTML='<div class="ms-status error">Não foi possível carregar os POPs publicados: '+esc(error.message||"Erro de consulta")+'</div>'}
     finally{resourceState.loadingPops=false}
   }
@@ -281,6 +283,13 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       else throw new Error("O anexo não possui um arquivo associado.");
     }catch(error){tab.close();throw error}
   }
+
+  function renderOverviewResources(){
+    const manuals=$("#msOverviewManuals"),pops=$("#msOverviewPops");
+    if(manuals)manuals.innerHTML=resourceState.manuals.slice(0,3).map(item=>'<div class="ms-overview-recent-item"><span>'+esc(item.title)+'</span><small>'+resourceDate(item.updatedAt)+'</small></div>').join("")||'<span class="ms-muted">Nenhum manual publicado.</span>';
+    if(pops)pops.innerHTML=resourceState.pops.slice(0,3).map(item=>'<div class="ms-overview-recent-item"><span>'+esc(item.title)+'</span><small>Versão '+esc(item.version)+' · '+resourceDate(item.updatedAt)+'</small></div>').join("")||'<span class="ms-muted">Nenhum POP publicado.</span>';
+  }
+
   msPanel("manuals").querySelectorAll("input,select").forEach(el=>el.addEventListener(el.tagName==="INPUT"?"input":"change",renderManualLibrary));
   msPanel("pops").querySelectorAll("input,select").forEach(el=>el.addEventListener(el.tagName==="INPUT"?"input":"change",renderPopLibrary));
   $("#msManualRefresh").addEventListener("click",()=>loadManualLibrary(true));
@@ -327,6 +336,14 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     #gestaoOperacional .ms-schedule-tag{background:#f2f4f7;border:1px solid #e1e5e9;border-radius:8px;padding:9px 11px;font-size:12px}
     #gestaoOperacional .ms-empty{background:#fff;border:1px dashed var(--line);border-radius:11px;padding:24px;text-align:center;color:var(--muted)}
     #gestaoOperacional .ms-empty strong{color:var(--ink)}
+    #gestaoOperacional .ms-overview-resources{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+    #gestaoOperacional .ms-overview-resource-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    #gestaoOperacional .ms-overview-resource{display:grid;grid-template-columns:38px 1fr;column-gap:10px;align-items:center;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--ink)}
+    #gestaoOperacional .ms-overview-resource>span{grid-row:span 2;width:36px;height:36px;border-radius:9px;background:#fff5d8;display:grid;place-items:center;font-size:18px}
+    #gestaoOperacional .ms-overview-resource small{font-size:11px;color:var(--muted);font-weight:400}
+    #gestaoOperacional .ms-overview-recent{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+    #gestaoOperacional .ms-overview-recent-item{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12px}
+    #gestaoOperacional .ms-overview-recent-item small{font-size:10px;color:var(--muted);white-space:nowrap}
     #gestaoOperacional .ms-resource-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
     #gestaoOperacional .ms-resource-filters{display:grid;grid-template-columns:2fr repeat(3,minmax(140px,1fr));gap:10px}
     #gestaoOperacional .ms-resource-filters .ms-field{min-width:0}
@@ -356,7 +373,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     #gestaoOperacional .ms-pop-files{margin-top:18px}
     #gestaoOperacional .ms-pop-file{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}
     @media(max-width:900px){#gestaoOperacional .ms-resource-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#gestaoOperacional .ms-resource-grid{grid-template-columns:1fr}}
-    @media(max-width:600px){#gestaoOperacional .ms-schedule-summary{grid-template-columns:1fr}#gestaoOperacional .ms-section-heading h2{font-size:19px}#gestaoOperacional .ms-resource-filters{grid-template-columns:1fr}#gestaoOperacional .ms-resource-item{padding:11px}#gestaoOperacional .ms-pop-file{align-items:flex-start;flex-direction:column}}
+    @media(max-width:600px){#gestaoOperacional .ms-schedule-summary{grid-template-columns:1fr}#gestaoOperacional .ms-section-heading h2{font-size:19px}#gestaoOperacional .ms-resource-filters{grid-template-columns:1fr}#gestaoOperacional .ms-resource-item{padding:11px}#gestaoOperacional .ms-pop-file{align-items:flex-start;flex-direction:column}#gestaoOperacional .ms-overview-resource-grid,#gestaoOperacional .ms-overview-recent{grid-template-columns:1fr}#gestaoOperacional .ms-overview-recent-item{align-items:flex-start;flex-direction:column}}
   `;
   root.append(msStyle);
   // O painel abre sempre na visão geral; as demais áreas ficam disponíveis no menu lateral.
