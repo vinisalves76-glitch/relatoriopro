@@ -125,6 +125,11 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     </div>`;
   const msWorkspace=msShell.querySelector(".ms-workspace");
   const msPanel=id=>msShell.querySelector('[data-ms-panel="'+id+'"]');
+  if(profile?.role==="mecanico"){
+    const mainNav=document.querySelector("#appShell > nav.tabs");
+    const mechanicSidebar=msShell.querySelector(".ms-sidebar");
+    if(mainNav&&mechanicSidebar){mainNav.classList.add("ms-mechanic-main-nav");document.body.classList.add("mechanic-shell-layout");mainNav.append(mechanicSidebar);}
+  }
   if(msHead)root.insertBefore(msShell,msHead.nextSibling);
   msPanel("overview").innerHTML='<div class="ms-section-heading"><div><span class="ms-eyebrow">ÁREA DO MECÂNICO</span><h2>Visão geral</h2><p class="ms-muted">Acompanhe seus registros, equipamentos escalados e a situação da sincronização.</p></div></div>';
   if(msKpis)msPanel("overview").append(msKpis);
@@ -161,7 +166,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   }
   const msStyle=document.createElement("style");
   msStyle.textContent=`
-    #gestaoOperacional .ms-shell{display:grid;grid-template-columns:245px minmax(0,1fr);gap:18px;align-items:start;margin-top:12px}
+    #gestaoOperacional .ms-shell{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;margin-top:12px}
     #gestaoOperacional .ms-sidebar{position:sticky;top:14px;min-height:620px;background:#202832;color:#fff;border-radius:15px;padding:18px 12px;display:flex;flex-direction:column;box-shadow:0 8px 24px #17202b18}
     #gestaoOperacional .ms-sidebar-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;border-bottom:1px solid #ffffff20}
     #gestaoOperacional .ms-brand-mark{width:38px;height:38px;border-radius:10px;background:#e4a900;color:#20242b;display:grid;place-items:center;font-weight:900}
@@ -192,6 +197,13 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     #gestaoOperacional .ms-empty strong{color:var(--ink)}
     @media(max-width:900px){#gestaoOperacional .ms-shell{grid-template-columns:1fr}#gestaoOperacional .ms-sidebar{position:static;min-height:0;padding:12px}#gestaoOperacional .ms-nav{grid-template-columns:repeat(2,minmax(0,1fr))}#gestaoOperacional .ms-sidebar-footer{margin-top:14px}}
     @media(max-width:600px){#gestaoOperacional .ms-nav{grid-template-columns:1fr 1fr}#gestaoOperacional .ms-nav-item{font-size:11px;padding:10px 8px}#gestaoOperacional .ms-schedule-summary{grid-template-columns:1fr}#gestaoOperacional .ms-section-heading h2{font-size:19px}}
+    body.mechanic-shell-layout #appShell>header{margin-left:260px}
+    body.mechanic-shell-layout #appShell>nav.ms-mechanic-main-nav{position:fixed;z-index:100;left:0;top:0;bottom:0;width:260px;overflow-y:auto;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:0;padding:12px;background:#202832;border:0;border-right:1px solid #111923}
+    body.mechanic-shell-layout #appShell>nav.ms-mechanic-main-nav>*:not(.ms-sidebar){display:none!important}
+    body.mechanic-shell-layout #appShell>nav.ms-mechanic-main-nav .ms-sidebar{position:static;min-height:100%;width:100%;margin:0;padding:18px 12px;border-radius:0;box-shadow:none;flex:1}
+    body.mechanic-shell-layout #appShell>main{max-width:none;margin-left:260px;padding:20px}
+    body.mechanic-shell-layout #gestaoOperacional .ms-shell{margin-top:0}
+    @media(max-width:700px){body.mechanic-shell-layout #appShell>header{margin-left:210px}body.mechanic-shell-layout #appShell>nav.ms-mechanic-main-nav{width:210px;padding:8px}body.mechanic-shell-layout #appShell>main{margin-left:210px;padding:12px}body.mechanic-shell-layout #appShell>nav.ms-mechanic-main-nav .ms-nav-item{font-size:11px;padding:10px 7px;gap:7px}}
   `;
   root.append(msStyle);
   // O painel abre sempre na visão geral; as demais áreas ficam disponíveis no menu lateral.
