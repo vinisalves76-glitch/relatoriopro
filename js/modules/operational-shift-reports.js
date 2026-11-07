@@ -191,7 +191,9 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     return (data||[]).map(normalizeResource);
   }
   function fillResourceFilter(id,items,key,label){
-    const select=$(id),current=select.value,values=[...new Set(items.map(item=>resourceMeta(item)[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const select=$("#"+id);
+    if(!select)return;
+    const current=select.value,values=[...new Set(items.map(item=>resourceMeta(item)[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     select.innerHTML='<option value="">'+label+'</option>'+values.map(value=>'<option value="'+esc(value)+'">'+esc(value)+'</option>').join("");
     if(values.includes(current))select.value=current;
   }
