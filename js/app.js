@@ -4,7 +4,7 @@ import { escapeHtml } from "./shared/html.js";
 import { initOperationalModule } from "./modules/operational-crud.js";
 const $ = id => document.getElementById(id);
 const backend = createSupabaseAdapter({ $, supabaseUrl: "https://vwvesygsudhbaqmayhsz.supabase.co", supabaseAnonKey: "sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw" });
-const { supabase, creatorClient, auth, db, storage, MASTER_UID, profilesRef, collection, collectionGroup, doc, where, query, serverTimestamp, getDocs, getDoc, setDoc, createUserProfile, updateDoc, deleteDoc, signInWithEmailAndPassword, signOut, updatePassword, sendPasswordResetEmail, createUserWithEmailAndPassword, onAuthStateChanged, storageRef, uploadBytes, getDownloadURL } = backend;
+const { supabase, creatorClient, auth, db, storage, MASTER_UID, profilesRef, normalizeUser, collection, collectionGroup, doc, where, query, serverTimestamp, getDocs, getDoc, setDoc, createUserProfile, updateDoc, deleteDoc, signInWithEmailAndPassword, signOut, updatePassword, sendPasswordResetEmail, createUserWithEmailAndPassword, onAuthStateChanged, storageRef, uploadBytes, getDownloadURL } = backend;
 
 let currentProfile=null,userProfilesCache=[];
 
