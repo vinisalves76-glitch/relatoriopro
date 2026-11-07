@@ -277,6 +277,7 @@ async function getDownloadURL(ref) {
   return {
     SUPABASE_URL, SUPABASE_ANON_KEY, supabase, creatorClient, auth, db, storage,
     MASTER_UID, fieldMap, reverseFieldMap, profilesRef,
+    normalizeUser,
     collection, collectionGroup, doc, where, query, serverTimestamp,
     mapRow, mapWrite, applyFilters, getDocs, getDoc, setDoc, createUserProfile,
     updateDoc, deleteDoc, signInWithEmailAndPassword, signOut, updatePassword,
