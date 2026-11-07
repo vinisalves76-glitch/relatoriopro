@@ -1,10 +1,9 @@
-const CACHE_NAME = "relatoriopro-shell-v4";
+const CACHE_NAME = "relatoriopro-shell-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/offline.html",
   "/manifest.webmanifest",
-  "/pwa-icon.svg",
   "/css/styles.css",
   "/css/base.css",
   "/css/onboarding.css",
@@ -19,8 +18,10 @@ const APP_SHELL = [
   "/js/core/permissions.js",
   "/js/shared/html.js",
   "/js/modules/operational-crud.js",
+  "/js/modules/operational-shift-reports.js",
   "/js/modules/maintenance-125h.js",
   "/Logo%20Irmen.webp",
+  "/pwa-icon.svg",
   "/Logo%20Sany.png"
 ];
 const EXTERNAL_MODULES = [

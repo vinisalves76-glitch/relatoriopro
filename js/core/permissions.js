@@ -14,7 +14,8 @@ export const ROLE_DEFAULTS = {
   coordenador: PERMISSIONS.map(([key]) => key),
   instrutor_tecnico: ["reports.view", "reports.create", "reports.print"],
   consultor_tecnico: ["reports.view", "reports.create", "reports.print"],
-  supervisor_area: ["operational.view", "equipment.manage", "work_orders.manage", "maintenance.manage", "horimeter.manage", "operational.reports.view"]
+  supervisor_area: ["operational.view", "equipment.manage", "work_orders.manage", "maintenance.manage", "horimeter.manage", "operational.reports.view"],
+  mecanico: ["operational.view", "operational.shift_reports.create", "operational.shift_reports.view"]
 };
 
 export function hasPermission(profile, permission, master = false) {
