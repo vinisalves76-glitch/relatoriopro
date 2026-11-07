@@ -91,26 +91,13 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     <div class="ms-card"><h2 style="margin:0 0 8px">Histórico por equipamento</h2><p class="ms-muted">Histórico compartilhado com todos os mecânicos da mina. Você pode consultar relatórios de qualquer TAG da área, mesmo que não esteja escalado nela.</p><div class="ms-field" style="max-width:420px;margin:10px 0"><label for="msHistoryFilter">Filtrar por qualquer equipamento da mina</label><select id="msHistoryFilter"><option value="">Todos os equipamentos</option></select></div><div id="msHistory"></div></div>
   `;
 
-  // Painel do mecânico: navegação lateral por áreas, mantendo os mesmos formulários e regras de acesso.
+  // O menu do mecânico é integrado à navegação lateral principal do RelatorioPro.
   const msHead=root.querySelector(".ms-head");
   const msKpis=root.querySelector(".ms-kpis");
   const msCards=[...root.querySelectorAll(".ms-card")];
   const msShell=document.createElement("div");
   msShell.className="ms-shell";
   msShell.innerHTML=`
-    <aside class="ms-sidebar" aria-label="Menu do painel do mecânico">
-      <div class="ms-sidebar-brand"><span class="ms-brand-mark">IR</span><div><strong>IRMEN</strong><small>PAINEL DO MECÂNICO</small></div></div>
-      <div class="ms-sidebar-caption">MENU PRINCIPAL</div>
-      <nav class="ms-nav">
-        <button type="button" class="ms-nav-item active" data-ms-section="overview"><span>▦</span>Visão geral</button>
-        <button type="button" class="ms-nav-item" data-ms-section="new-report"><span>＋</span>Novo relatório</button>
-        <button type="button" class="ms-nav-item" data-ms-section="maintenance"><span>⚙</span>Equipamentos em manutenção</button>
-        <button type="button" class="ms-nav-item" data-ms-section="history"><span>▤</span>Histórico de relatórios</button>
-        <button type="button" class="ms-nav-item" data-ms-section="sync"><span>⇅</span>Sincronização</button>
-        <button type="button" class="ms-nav-item" data-ms-section="schedule"><span>▦</span>Minha escala</button>
-      </nav>
-      <div class="ms-sidebar-footer"><span class="ms-online-dot"></span><span id="msConnectionLabel">Verificando conexão…</span></div>
-    </aside>
     <div class="ms-workspace">
       <div class="ms-section" data-ms-panel="overview"></div>
       <div class="ms-section" data-ms-panel="new-report" hidden></div>
@@ -125,6 +112,28 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     </div>`;
   const msWorkspace=msShell.querySelector(".ms-workspace");
   const msPanel=id=>msShell.querySelector('[data-ms-panel="'+id+'"]');
+  const mainNav=document.querySelector("#appShell > nav.tabs");
+  const mechanicMenu=[["overview","▦","Visão geral"],["new-report","＋","Novo relatório"],["maintenance","⚙","Equipamentos em manutenção"],["history","▤","Histórico de relatórios"],["sync","⇅","Sincronização"],["schedule","▦","Minha escala"]];
+  if(mainNav){
+    mainNav.querySelectorAll(".mechanic-main-tab,.mechanic-nav-caption,.mechanic-connection").forEach(el=>el.remove());
+    const anchor=mainNav.querySelector("#sessionInfo");
+    const caption=document.createElement("div");
+    caption.className="mechanic-nav-caption";
+    caption.textContent="ÁREA DO MECÂNICO";
+    caption.style.cssText="padding:18px 20px 7px;color:#8d99a8;font-size:10px;font-weight:800;letter-spacing:.14em";
+    mainNav.insertBefore(caption,anchor||null);
+    mechanicMenu.forEach(([id,icon,label])=>{
+      const button=document.createElement("button");
+      button.type="button";button.className="tab mechanic-main-tab";
+      button.dataset.mechanicSection=id;button.textContent=icon+"   "+label;
+      button.addEventListener("click",()=>activateMsSection(id));
+      mainNav.insertBefore(button,anchor||null);
+    });
+    const connection=document.createElement("div");
+    connection.className="muted mechanic-connection";connection.id="msConnectionLabel";
+    connection.style.cssText="padding:12px 20px;font-size:12px";
+    mainNav.insertBefore(connection,anchor||null);
+  }
   if(msHead)root.insertBefore(msShell,msHead.nextSibling);
   msPanel("overview").innerHTML='<div class="ms-section-heading"><div><span class="ms-eyebrow">ÁREA DO MECÂNICO</span><h2>Visão geral</h2><p class="ms-muted">Acompanhe seus registros, equipamentos escalados e a situação da sincronização.</p></div></div>';
   if(msKpis)msPanel("overview").append(msKpis);
@@ -134,10 +143,9 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   if(msCards[3])msPanel("history").append(msCards[3]);
   const activateMsSection=id=>{
     msShell.querySelectorAll("[data-ms-panel]").forEach(panel=>{panel.hidden=panel.dataset.msPanel!==id});
-    msShell.querySelectorAll("[data-ms-section]").forEach(button=>{const active=button.dataset.msSection===id;button.classList.toggle("active",active);if(active)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current")});
+    document.querySelectorAll(".mechanic-main-tab").forEach(button=>{const active=button.dataset.mechanicSection===id;button.classList.toggle("active",active);if(active)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current")});
     if(id==="schedule")loadMySchedule();
   };
-  msShell.querySelectorAll("[data-ms-section]").forEach(button=>button.addEventListener("click",()=>activateMsSection(button.dataset.msSection)));
   msShell.querySelector("#msScheduleRefresh").addEventListener("click",loadMySchedule);
   function updateMsConnection(){const online=navigator.onLine;const label=msShell.querySelector("#msConnectionLabel");if(label){label.textContent=online?"Conectado":"Trabalhando offline";label.previousElementSibling.style.background=online?"#31b66b":"#e3a900"}}
   window.addEventListener("online",updateMsConnection,listenerOptions);window.addEventListener("offline",updateMsConnection,listenerOptions);updateMsConnection();
@@ -161,21 +169,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   }
   const msStyle=document.createElement("style");
   msStyle.textContent=`
-    #gestaoOperacional .ms-shell{display:grid;grid-template-columns:245px minmax(0,1fr);gap:18px;align-items:start;margin-top:12px}
-    #gestaoOperacional .ms-sidebar{position:sticky;top:14px;min-height:620px;background:#202832;color:#fff;border-radius:15px;padding:18px 12px;display:flex;flex-direction:column;box-shadow:0 8px 24px #17202b18}
-    #gestaoOperacional .ms-sidebar-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;border-bottom:1px solid #ffffff20}
-    #gestaoOperacional .ms-brand-mark{width:38px;height:38px;border-radius:10px;background:#e4a900;color:#20242b;display:grid;place-items:center;font-weight:900}
-    #gestaoOperacional .ms-sidebar-brand strong{display:block;font-size:14px;letter-spacing:.12em}
-    #gestaoOperacional .ms-sidebar-brand small{display:block;font-size:9px;letter-spacing:.1em;color:#b9c1cb;margin-top:4px}
-    #gestaoOperacional .ms-sidebar-caption{font-size:9px;letter-spacing:.14em;color:#8d99a8;font-weight:800;padding:20px 10px 9px}
-    #gestaoOperacional .ms-nav{display:grid;gap:5px}
-    #gestaoOperacional .ms-nav-item{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:transparent;color:#d3d9e0;padding:12px 11px;border-radius:9px;font-size:12px;font-weight:600}
-    #gestaoOperacional .ms-nav-item span{width:20px;text-align:center;font-size:17px;color:#aeb8c4}
-    #gestaoOperacional .ms-nav-item:hover{background:#ffffff12;color:#fff}
-    #gestaoOperacional .ms-nav-item.active{background:#e4a900;color:#20242b;font-weight:800}
-    #gestaoOperacional .ms-nav-item.active span{color:#20242b}
-    #gestaoOperacional .ms-sidebar-footer{margin-top:auto;padding:18px 9px 4px;border-top:1px solid #ffffff20;display:flex;align-items:center;gap:8px;font-size:11px;color:#c5cdd6}
-    #gestaoOperacional .ms-online-dot{width:8px;height:8px;border-radius:50%;background:#31b66b}
+    #gestaoOperacional .ms-shell{display:block;margin-top:12px}
     #gestaoOperacional .ms-workspace{min-width:0}
     #gestaoOperacional .ms-section[hidden]{display:none!important}
     #gestaoOperacional .ms-section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:4px 0 14px}
@@ -190,8 +184,8 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     #gestaoOperacional .ms-schedule-tag{background:#f2f4f7;border:1px solid #e1e5e9;border-radius:8px;padding:9px 11px;font-size:12px}
     #gestaoOperacional .ms-empty{background:#fff;border:1px dashed var(--line);border-radius:11px;padding:24px;text-align:center;color:var(--muted)}
     #gestaoOperacional .ms-empty strong{color:var(--ink)}
-    @media(max-width:900px){#gestaoOperacional .ms-shell{grid-template-columns:1fr}#gestaoOperacional .ms-sidebar{position:static;min-height:0;padding:12px}#gestaoOperacional .ms-nav{grid-template-columns:repeat(2,minmax(0,1fr))}#gestaoOperacional .ms-sidebar-footer{margin-top:14px}}
-    @media(max-width:600px){#gestaoOperacional .ms-nav{grid-template-columns:1fr 1fr}#gestaoOperacional .ms-nav-item{font-size:11px;padding:10px 8px}#gestaoOperacional .ms-schedule-summary{grid-template-columns:1fr}#gestaoOperacional .ms-section-heading h2{font-size:19px}}
+    
+    @media(max-width:600px){#gestaoOperacional .ms-schedule-summary{grid-template-columns:1fr}#gestaoOperacional .ms-section-heading h2{font-size:19px}}
   `;
   root.append(msStyle);
   // O painel abre sempre na visão geral; as demais áreas ficam disponíveis no menu lateral.
