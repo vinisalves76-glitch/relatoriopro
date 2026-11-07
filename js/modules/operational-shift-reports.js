@@ -147,7 +147,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     if(id==="schedule")loadMySchedule();
   };
   msShell.querySelector("#msScheduleRefresh").addEventListener("click",loadMySchedule);
-  function updateMsConnection(){const online=navigator.onLine;const label=msShell.querySelector("#msConnectionLabel");if(label){label.textContent=online?"Conectado":"Trabalhando offline";label.previousElementSibling.style.background=online?"#31b66b":"#e3a900"}}
+  function updateMsConnection(){const online=navigator.onLine;const label=document.querySelector("#msConnectionLabel");if(label){label.innerHTML='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(online?"#31b66b":"#e3a900")+';margin-right:8px"></span>'+(online?"Conectado":"Trabalhando offline")}}
   window.addEventListener("online",updateMsConnection,listenerOptions);window.addEventListener("offline",updateMsConnection,listenerOptions);updateMsConnection();
   async function loadMySchedule(){
     const box=msShell.querySelector("#msMySchedule"),summary=msShell.querySelector("#msScheduleSummary");
