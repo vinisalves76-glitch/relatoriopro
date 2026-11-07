@@ -104,6 +104,35 @@ export async function initMechanicShiftReports({supabase,profile,root}){
       <div class="ms-section" data-ms-panel="maintenance" hidden></div>
       <div class="ms-section" data-ms-panel="history" hidden></div>
       <div class="ms-section" data-ms-panel="sync" hidden></div>
+      <div class="ms-section" data-ms-panel="manuals" hidden>
+        <div class="ms-section-heading"><div><span class="ms-eyebrow">BIBLIOTECA TÉCNICA IRMEN SANY</span><h2>Manuais técnicos</h2><p class="ms-muted">Localize o documento e abra-o no visualizador padrão do seu dispositivo. O RelatorioPro não possui leitor ou editor de PDF integrado.</p></div><button class="light" type="button" id="msManualRefresh">↻ Atualizar biblioteca</button></div>
+        <div class="ms-resource-card">
+          <div class="ms-resource-filters">
+            <div class="ms-field"><label for="msManualSearch">Pesquisar manual</label><input id="msManualSearch" type="search" placeholder="Nome, modelo ou palavra-chave"></div>
+            <div class="ms-field"><label for="msManualModel">Modelo</label><select id="msManualModel"><option value="">Todos os modelos</option></select></div>
+            <div class="ms-field"><label for="msManualSystem">Sistema</label><select id="msManualSystem"><option value="">Todos os sistemas</option></select></div>
+            <div class="ms-field"><label for="msManualCategory">Categoria</label><select id="msManualCategory"><option value="">Todas as categorias</option></select></div>
+          </div>
+          <p class="ms-resource-count" id="msManualCount" aria-live="polite">Carregando manuais autorizados…</p>
+          <div class="ms-resource-grid" id="msManualList"><div class="ms-empty">Carregando biblioteca técnica…</div></div>
+          <p class="ms-resource-note">Os manuais são disponibilizados somente para consulta. Não há opção de edição ou publicação neste perfil. O aplicativo de abertura depende das configurações do dispositivo.</p>
+        </div>
+      </div>
+      <div class="ms-section" data-ms-panel="pops" hidden>
+        <div class="ms-section-heading"><div><span class="ms-eyebrow">PADRONIZAÇÃO E SEGURANÇA</span><h2>POP – Procedimentos Operacionais</h2><p class="ms-muted">Consulte procedimentos aprovados e publicados. O acesso é somente para leitura.</p></div><button class="light" type="button" id="msPopRefresh">↻ Atualizar biblioteca</button></div>
+        <div class="ms-resource-card">
+          <div class="ms-resource-filters">
+            <div class="ms-field"><label for="msPopSearch">Pesquisar POP</label><input id="msPopSearch" type="search" placeholder="Nome, código ou palavra-chave"></div>
+            <div class="ms-field"><label for="msPopModel">Modelo</label><select id="msPopModel"><option value="">Todos os modelos</option></select></div>
+            <div class="ms-field"><label for="msPopSystem">Sistema</label><select id="msPopSystem"><option value="">Todos os sistemas</option></select></div>
+            <div class="ms-field"><label for="msPopCategory">Categoria</label><select id="msPopCategory"><option value="">Todas as categorias</option></select></div>
+          </div>
+          <p class="ms-resource-count" id="msPopCount" aria-live="polite">Carregando POPs aprovados…</p>
+          <div class="ms-resource-grid" id="msPopList"><div class="ms-empty">Carregando procedimentos…</div></div>
+          <div class="ms-pop-detail" id="msPopDetail" hidden></div>
+          <p class="ms-resource-note">Os POPs são apresentados em modo de consulta. Etapas e checklists não são marcados nem enviados pelo mecânico.</p>
+        </div>
+      </div>
       <div class="ms-section" data-ms-panel="schedule" hidden>
         <div class="ms-section-heading"><div><span class="ms-eyebrow">PLANEJAMENTO OPERACIONAL</span><h2>Minha escala</h2><p class="ms-muted">Consulte os equipamentos e as datas em que você foi escalado pelo Supervisor de Área.</p></div><button class="light" type="button" id="msScheduleRefresh">↻ Atualizar escala</button></div>
         <div class="ms-schedule-summary" id="msScheduleSummary"><div class="ms-kpi"><span class="ms-muted">Escalas carregadas</span><strong>—</strong></div></div>
@@ -113,7 +142,7 @@ export async function initMechanicShiftReports({supabase,profile,root}){
   const msWorkspace=msShell.querySelector(".ms-workspace");
   const msPanel=id=>msShell.querySelector('[data-ms-panel="'+id+'"]');
   const mainNav=document.querySelector("#appShell > nav.tabs");
-  const mechanicMenu=[["overview","▦","Visão geral"],["new-report","＋","Novo relatório"],["maintenance","⚙","Equipamentos em manutenção"],["history","▤","Histórico de relatórios"],["sync","⇅","Sincronização"],["schedule","▦","Minha escala"]];
+  const mechanicMenu=[["overview","▦","Visão geral"],["new-report","＋","Novo relatório"],["maintenance","⚙","Equipamentos em manutenção"],["history","▤","Histórico de relatórios"],["sync","⇅","Sincronização"],["manuals","▤","Manuais técnicos"],["pops","▣","POP – Procedimentos Operacionais"],["schedule","▦","Minha escala"]];
   if(mainNav){
     mainNav.querySelectorAll(".mechanic-main-tab,.mechanic-nav-caption,.mechanic-connection").forEach(el=>el.remove());
     const anchor=mainNav.querySelector("#sessionInfo");
@@ -145,7 +174,121 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     msShell.querySelectorAll("[data-ms-panel]").forEach(panel=>{panel.hidden=panel.dataset.msPanel!==id});
     document.querySelectorAll(".mechanic-main-tab").forEach(button=>{const active=button.dataset.mechanicSection===id;button.classList.toggle("active",active);if(active)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current")});
     if(id==="schedule")loadMySchedule();
+    if(id==="manuals")loadManualLibrary();
+    if(id==="pops")loadPopLibrary();
   };
+
+  const resourceState={manuals:[],pops:[],manualsLoaded:false,popsLoaded:false,loadingManuals:false,loadingPops:false};
+  const normalizeResource=row=>({...((row&&row.legacy_data&&typeof row.legacy_data==="object")?row.legacy_data:{}),id:row.id,title:row.title||row.legacy_data?.title||"Documento sem título",description:row.description||row.legacy_data?.description||"",category:row.category||row.legacy_data?.category||"",status:row.status,version:row.version||row.legacy_data?.version||1,updatedAt:row.updated_at||row.legacy_data?.updatedOn||"",legacy:row.legacy_data||{}});
+  const resourceText=value=>String(value??"").trim();
+  const resourceDate=value=>{if(!value)return "Data não informada";const d=new Date(value);return Number.isNaN(d.getTime())?esc(value):d.toLocaleDateString("pt-BR")};
+  const resourceMeta=item=>({model:resourceText(item.equipment||item.model||item.machineModel),system:resourceText(item.system||item.systemName||item.technicalSystem),category:resourceText(item.category||item.docCategory||item.procedureCategory)});
+  async function fetchPublishedResources(){
+    const {data,error}=await supabase.from("trainings").select("id,title,category,description,status,version,legacy_data,updated_at").eq("status","published").order("updated_at",{ascending:false});
+    if(error)throw error;
+    return (data||[]).map(normalizeResource);
+  }
+  function fillResourceFilter(id,items,key,label){
+    const select=$(id),current=select.value,values=[...new Set(items.map(item=>resourceMeta(item)[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    select.innerHTML='<option value="">'+label+'</option>'+values.map(value=>'<option value="'+esc(value)+'">'+esc(value)+'</option>').join("");
+    if(values.includes(current))select.value=current;
+  }
+  function renderManualLibrary(){
+    const term=$("#msManualSearch").value.trim().toLocaleLowerCase("pt-BR"),model=$("#msManualModel").value,system=$("#msManualSystem").value,category=$("#msManualCategory").value;
+    const items=resourceState.manuals.filter(item=>{const meta=resourceMeta(item),haystack=[item.title,item.description,item.fileName,meta.model,meta.system,meta.category,item.language].join(" ").toLocaleLowerCase("pt-BR");return(!term||haystack.includes(term))&&(!model||meta.model===model)&&(!system||meta.system===system)&&(!category||meta.category===category)});
+    $("#msManualCount").textContent=items.length+" de "+resourceState.manuals.length+" manual(is) autorizado(s)";
+    $("#msManualList").innerHTML=items.length?items.map(item=>{const meta=resourceMeta(item);return '<article class="ms-resource-item"><div class="ms-resource-file ms-resource-pdf">PDF</div><div class="ms-resource-body"><span class="ms-resource-tag">PUBLICADO</span><h3>'+esc(item.title)+'</h3>'+(item.description?'<p>'+esc(item.description)+'</p>':'')+'<div class="ms-resource-meta">'+[meta.model,meta.system,meta.category,item.language].filter(Boolean).map(esc).join(" · ")+'</div><small>Arquivo: '+esc(item.fileName||"Documento PDF")+' · Atualizado: '+resourceDate(item.updatedAt)+'</small><div class="ms-resource-actions"><button class="primary" type="button" data-ms-open-manual="'+esc(item.id)+'">↗ Abrir manual</button></div></div></article>'}).join(""):'<div class="ms-empty"><strong>Nenhum manual encontrado.</strong><br>Altere os filtros ou consulte o responsável pela biblioteca técnica.</div>';
+  }
+  async function loadManualLibrary(force=false){
+    if(resourceState.loadingManuals)return;
+    if(resourceState.manualsLoaded&&!force){renderManualLibrary();return;}
+    resourceState.loadingManuals=true;$("#msManualList").innerHTML='<div class="ms-empty">Carregando manuais publicados…</div>';
+    try{
+      const rows=await fetchPublishedResources();
+      resourceState.manuals=rows.filter(item=>item.docType==="technical_manual"&&item.path&&item.status==="published");
+      resourceState.manualsLoaded=true;
+      fillResourceFilter("msManualModel",resourceState.manuals,"model","Todos os modelos");
+      fillResourceFilter("msManualSystem",resourceState.manuals,"system","Todos os sistemas");
+      fillResourceFilter("msManualCategory",resourceState.manuals,"category","Todas as categorias");
+      renderManualLibrary();
+    }catch(error){$("#msManualList").innerHTML='<div class="ms-status error">Não foi possível carregar os manuais autorizados: '+esc(error.message||"Erro de consulta")+'</div>'}
+    finally{resourceState.loadingManuals=false}
+  }
+  async function openManualExternally(id,button){
+    const item=resourceState.manuals.find(entry=>entry.id===id);
+    if(!item||!item.path||item.status!=="published")throw new Error("Manual indisponível ou não publicado.");
+    const tab=window.open("about:blank","_blank");
+    if(!tab)throw new Error("O navegador bloqueou a nova aba. Permita pop-ups para abrir o manual.");
+    try{
+      tab.opener=null;
+      tab.document.title="Abrindo manual técnico…";
+      const {data,error}=await supabase.storage.from("training-attachments-private").createSignedUrl(item.path,3600);
+      if(error)throw error;
+      if(!data?.signedUrl)throw new Error("O serviço não retornou um endereço seguro para o documento.");
+      tab.location.replace(data.signedUrl);
+    }catch(error){tab.close();throw error}
+  }
+  function isPopResource(item){
+    const type=resourceText(item.docType||item.legacy?.docType).toLocaleLowerCase("pt-BR");
+    const category=resourceText(item.category).toLocaleLowerCase("pt-BR");
+    return ["pop","operational_procedure","procedimento_operacional","procedimento operacional"].includes(type)||category==="pop"||category.startsWith("pop -")||category.startsWith("pop –");
+  }
+  function renderPopLibrary(){
+    const term=$("#msPopSearch").value.trim().toLocaleLowerCase("pt-BR"),model=$("#msPopModel").value,system=$("#msPopSystem").value,category=$("#msPopCategory").value;
+    const items=resourceState.pops.filter(item=>{const meta=resourceMeta(item),haystack=[item.title,item.description,item.code,item.keywords,meta.model,meta.system,meta.category].join(" ").toLocaleLowerCase("pt-BR");return(!term||haystack.includes(term))&&(!model||meta.model===model)&&(!system||meta.system===system)&&(!category||meta.category===category)});
+    $("#msPopCount").textContent=items.length+" de "+resourceState.pops.length+" POP(s) aprovado(s) e publicado(s)";
+    $("#msPopList").innerHTML=items.length?items.map(item=>{const meta=resourceMeta(item);return '<article class="ms-resource-item ms-pop-item"><div class="ms-resource-file ms-resource-pop">POP</div><div class="ms-resource-body"><span class="ms-resource-tag">APROVADO · PUBLICADO</span><h3>'+esc(item.title)+'</h3>'+(item.description?'<p>'+esc(item.description)+'</p>':'')+'<div class="ms-resource-meta">'+[meta.model,meta.system,meta.category].filter(Boolean).map(esc).join(" · ")+'</div><small>Versão '+esc(item.version)+' · Atualizado: '+resourceDate(item.updatedAt)+'</small><div class="ms-resource-actions"><button class="primary" type="button" data-ms-view-pop="'+esc(item.id)+'">Visualizar POP</button></div></div></article>'}).join(""):'<div class="ms-empty"><strong>Nenhum POP aprovado e publicado encontrado.</strong><br>Os procedimentos aparecerão aqui após a aprovação e publicação pelo Gerente de Treinamento.</div>';
+  }
+  async function loadPopLibrary(force=false){
+    if(resourceState.loadingPops)return;
+    if(resourceState.popsLoaded&&!force){renderPopLibrary();return;}
+    resourceState.loadingPops=true;$("#msPopList").innerHTML='<div class="ms-empty">Carregando POPs aprovados…</div>';
+    try{
+      const rows=await fetchPublishedResources();
+      resourceState.pops=rows.filter(item=>isPopResource(item)&&item.status==="published");
+      resourceState.popsLoaded=true;
+      fillResourceFilter("msPopModel",resourceState.pops,"model","Todos os modelos");
+      fillResourceFilter("msPopSystem",resourceState.pops,"system","Todos os sistemas");
+      fillResourceFilter("msPopCategory",resourceState.pops,"category","Todas as categorias");
+      renderPopLibrary();
+    }catch(error){$("#msPopList").innerHTML='<div class="ms-status error">Não foi possível carregar os POPs publicados: '+esc(error.message||"Erro de consulta")+'</div>'}
+    finally{resourceState.loadingPops=false}
+  }
+  async function viewPop(id){
+    const item=resourceState.pops.find(entry=>entry.id===id);
+    if(!item||item.status!=="published"||!isPopResource(item))throw new Error("POP indisponível ou não publicado.");
+    const detail=$("#msPopDetail"),meta=resourceMeta(item),steps=Array.isArray(item.steps)?item.steps:Array.isArray(item.procedureSteps)?item.procedureSteps:[];
+    const body=resourceText(item.procedure||item.content||item.instructions||item.legacy?.procedure||item.legacy?.content||item.legacy?.instructions);
+    const stepHtml=steps.length?'<ol class="ms-pop-steps">'+steps.map((step,index)=>{const title=typeof step==="string"?step:step.title||step.name||("Etapa "+(index+1)),description=typeof step==="string"?"":step.description||step.instructions||"";return '<li><strong>'+esc(title)+'</strong>'+(description?'<p>'+esc(description)+'</p>':'')+'</li>'}).join("")+'</ol>':"";
+    const files=Array.isArray(item.attachments)?item.attachments:[];
+    const fileHtml=files.length?'<div class="ms-pop-files"><h3>Materiais do procedimento</h3>'+files.map((file,index)=>'<div class="ms-pop-file"><span>'+esc(file.name||("Anexo "+(index+1)))+' · '+esc(file.kind||"Arquivo")+'</span><button class="light" type="button" data-ms-pop-file="'+index+'">Abrir anexo</button></div>').join("")+'</div>':"";
+    detail.innerHTML='<div class="ms-section-heading"><div><span class="ms-eyebrow">PROCEDIMENTO APROVADO · SOMENTE LEITURA</span><h2>'+esc(item.title)+'</h2><p class="ms-muted">'+[meta.model,meta.system,meta.category,"Versão "+item.version].filter(Boolean).map(esc).join(" · ")+'</p></div><button class="light" type="button" id="msClosePop">← Voltar à biblioteca</button></div>'+(item.description?'<p class="ms-pop-description">'+esc(item.description)+'</p>':'')+(body?'<div class="ms-pop-content">'+esc(body)+'</div>':'')+stepHtml+fileHtml+(!body&&!steps.length&&!files.length?'<div class="ms-empty">Este POP não possui etapas ou anexos cadastrados. Consulte a descrição e as informações de classificação acima.</div>':'');
+    detail.hidden=false;$("#msPopList").hidden=true;detail.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  async function openPopAttachment(index){
+    const item=resourceState.pops.find(entry=>entry.id===$("#msPopDetail").dataset.popId);
+    const file=item?.attachments?.[index];
+    if(!file)throw new Error("Anexo não encontrado.");
+    const tab=window.open("about:blank","_blank");if(!tab)throw new Error("O navegador bloqueou a nova aba. Permita pop-ups para abrir o anexo.");
+    try{
+      tab.opener=null;
+      if(file.path){
+        const {data,error}=await supabase.storage.from("training-attachments-private").createSignedUrl(file.path,3600);
+        if(error)throw error;
+        if(!data?.signedUrl)throw new Error("Não foi possível gerar o acesso ao anexo.");
+        tab.location.replace(data.signedUrl);
+      }else if(file.url){tab.location.replace(file.url)}
+      else throw new Error("O anexo não possui um arquivo associado.");
+    }catch(error){tab.close();throw error}
+  }
+  msPanel("manuals").querySelectorAll("input,select").forEach(el=>el.addEventListener(el.tagName==="INPUT"?"input":"change",renderManualLibrary));
+  msPanel("pops").querySelectorAll("input,select").forEach(el=>el.addEventListener(el.tagName==="INPUT"?"input":"change",renderPopLibrary));
+  $("#msManualRefresh").addEventListener("click",()=>loadManualLibrary(true));
+  $("#msPopRefresh").addEventListener("click",()=>{resourceState.popsLoaded=false;loadPopLibrary(true)});
+  $("#msManualList").addEventListener("click",async event=>{const button=event.target.closest("[data-ms-open-manual]");if(!button)return;button.disabled=true;try{await openManualExternally(button.dataset.msOpenManual,button)}catch(error){feedback(error.message||"Não foi possível abrir o manual.",true)}finally{button.disabled=false}});
+  $("#msPopList").addEventListener("click",event=>{const button=event.target.closest("[data-ms-view-pop]");if(!button)return;$("#msPopDetail").dataset.popId=button.dataset.msViewPop;viewPop(button.dataset.msViewPop).catch(error=>feedback(error.message||"Não foi possível abrir o POP.",true))});
+  $("#msPopDetail").addEventListener("click",async event=>{if(event.target.closest("#msClosePop")){$("#msPopDetail").hidden=true;$("#msPopList").hidden=false;return}const button=event.target.closest("[data-ms-pop-file]");if(button){button.disabled=true;try{await openPopAttachment(Number(button.dataset.msPopFile))}catch(error){feedback(error.message||"Não foi possível abrir o anexo.",true)}finally{button.disabled=false}}});
+
   msShell.querySelector("#msScheduleRefresh").addEventListener("click",loadMySchedule);
   function updateMsConnection(){const online=navigator.onLine;const label=document.querySelector("#msConnectionLabel");if(label){label.innerHTML='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(online?"#31b66b":"#e3a900")+';margin-right:8px"></span>'+(online?"Conectado":"Trabalhando offline")}}
   window.addEventListener("online",updateMsConnection,listenerOptions);window.addEventListener("offline",updateMsConnection,listenerOptions);updateMsConnection();
@@ -184,8 +327,36 @@ export async function initMechanicShiftReports({supabase,profile,root}){
     #gestaoOperacional .ms-schedule-tag{background:#f2f4f7;border:1px solid #e1e5e9;border-radius:8px;padding:9px 11px;font-size:12px}
     #gestaoOperacional .ms-empty{background:#fff;border:1px dashed var(--line);border-radius:11px;padding:24px;text-align:center;color:var(--muted)}
     #gestaoOperacional .ms-empty strong{color:var(--ink)}
-    
-    @media(max-width:600px){#gestaoOperacional .ms-schedule-summary{grid-template-columns:1fr}#gestaoOperacional .ms-section-heading h2{font-size:19px}}
+    #gestaoOperacional .ms-resource-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+    #gestaoOperacional .ms-resource-filters{display:grid;grid-template-columns:2fr repeat(3,minmax(140px,1fr));gap:10px}
+    #gestaoOperacional .ms-resource-filters .ms-field{min-width:0}
+    #gestaoOperacional .ms-resource-filters label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+    #gestaoOperacional .ms-resource-filters input,#gestaoOperacional .ms-resource-filters select{width:100%;min-width:0;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+    #gestaoOperacional .ms-resource-count{font-size:12px;color:var(--muted);margin:14px 0}
+    #gestaoOperacional .ms-resource-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    #gestaoOperacional .ms-resource-item{display:flex;gap:13px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:14px;min-width:0;background:#fff}
+    #gestaoOperacional .ms-resource-file{width:44px;height:50px;flex:0 0 44px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:900}
+    #gestaoOperacional .ms-resource-pdf{background:#fff0ee;color:#b33b32}
+    #gestaoOperacional .ms-resource-pop{background:#fff5d8;color:#8a6500}
+    #gestaoOperacional .ms-resource-body{min-width:0;flex:1}
+    #gestaoOperacional .ms-resource-body h3{font-size:14px;margin:6px 0}
+    #gestaoOperacional .ms-resource-body p{font-size:12px;color:var(--muted);margin:5px 0;white-space:pre-wrap}
+    #gestaoOperacional .ms-resource-body small{display:block;color:var(--muted);font-size:11px;margin-top:6px}
+    #gestaoOperacional .ms-resource-tag{font-size:9px;font-weight:800;letter-spacing:.08em;color:#24764e}
+    #gestaoOperacional .ms-resource-meta{font-size:11px;color:var(--muted);margin-top:7px}
+    #gestaoOperacional .ms-resource-actions{display:flex;gap:8px;margin-top:12px}
+    #gestaoOperacional .ms-resource-actions button{font-size:12px;padding:8px 11px}
+    #gestaoOperacional .ms-resource-note{font-size:11px;color:var(--muted);margin:16px 0 0}
+    #gestaoOperacional .ms-pop-detail{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+    #gestaoOperacional .ms-pop-description{font-size:14px;line-height:1.6;white-space:pre-wrap}
+    #gestaoOperacional .ms-pop-content{white-space:pre-wrap;line-height:1.65;background:#f7f8fa;border-radius:9px;padding:14px;margin:12px 0}
+    #gestaoOperacional .ms-pop-steps{padding-left:24px;line-height:1.6}
+    #gestaoOperacional .ms-pop-steps li{padding:8px 0}
+    #gestaoOperacional .ms-pop-steps p{margin:4px 0;color:var(--muted);white-space:pre-wrap}
+    #gestaoOperacional .ms-pop-files{margin-top:18px}
+    #gestaoOperacional .ms-pop-file{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}
+    @media(max-width:900px){#gestaoOperacional .ms-resource-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#gestaoOperacional .ms-resource-grid{grid-template-columns:1fr}}
+    @media(max-width:600px){#gestaoOperacional .ms-schedule-summary{grid-template-columns:1fr}#gestaoOperacional .ms-section-heading h2{font-size:19px}#gestaoOperacional .ms-resource-filters{grid-template-columns:1fr}#gestaoOperacional .ms-resource-item{padding:11px}#gestaoOperacional .ms-pop-file{align-items:flex-start;flex-direction:column}}
   `;
   root.append(msStyle);
   // O painel abre sempre na visão geral; as demais áreas ficam disponíveis no menu lateral.
