@@ -12,16 +12,16 @@
   "theme_color": "#e4a900",
   "icons": [
     {
-      "src": "/pwa-icon.svg",
-      "sizes": "any",
+      "src": "/pwa-icon.svg?v=2",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/Logo%20Irmen.webp",
-      "sizes": "any",
-      "type": "image/webp",
-      "purpose": "any"
+      "src": "/pwa-icon.svg?v=2",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
