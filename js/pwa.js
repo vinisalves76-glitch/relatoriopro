@@ -1,4 +1,4 @@
-/* RelatorioPro PWA — exibe a instalação somente quando o navegador disponibiliza o prompt nativo. */
+/* RelatorioPro PWA — mantém a instalação acessível na tela de login. */
 (() => {
   const installButtons = [...document.querySelectorAll("[data-pwa-install]")];
   let deferredInstallPrompt = null;
@@ -8,11 +8,10 @@
     window.matchMedia("(display-mode: fullscreen)").matches ||
     window.navigator.standalone === true;
 
-  // O botão só fica visível quando existe um prompt nativo válido para abrir.
-  // Assim, tocar em "Instalar" sempre aciona a confirmação do navegador.
+  const isIOS = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
   const syncInstallVisibility = () => {
-    const canInstall = Boolean(deferredInstallPrompt) && !isRunningAsApp();
-    installButtons.forEach(button => { button.hidden = !canInstall; });
+    const visible = !isRunningAsApp();
+    installButtons.forEach(button => { button.hidden = !visible; });
   };
 
   syncInstallVisibility();
@@ -24,21 +23,28 @@
   });
 
   installButtons.forEach(button => button.addEventListener("click", async () => {
-    if (isRunningAsApp() || !deferredInstallPrompt) {
+    if (isRunningAsApp()) {
       syncInstallVisibility();
       return;
     }
 
-    const promptEvent = deferredInstallPrompt;
-    deferredInstallPrompt = null;
-    syncInstallVisibility();
-
-    try {
-      await promptEvent.prompt();
-      await promptEvent.userChoice;
-    } catch (error) {
-      console.warn("[RelatorioPro PWA] Falha ao abrir o prompt nativo:", error);
+    if (deferredInstallPrompt) {
+      const promptEvent = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      try {
+        await promptEvent.prompt();
+        await promptEvent.userChoice;
+      } catch (error) {
+        console.warn("[RelatorioPro PWA] Falha ao abrir o prompt nativo:", error);
+      }
+      syncInstallVisibility();
+      return;
     }
+
+    const instructions = isIOS()
+      ? "Para instalar no iPhone/iPad:\n1. Abra esta página no Safari.\n2. Toque em Compartilhar.\n3. Selecione “Adicionar à Tela de Início”."
+      : "A instalação automática não está disponível neste navegador agora.\n\nNo Chrome ou Edge, abra o menu do navegador e escolha “Instalar RelatorioPro” ou “Adicionar à tela inicial”.";
+    window.alert(instructions);
   }));
 
   window.addEventListener("appinstalled", () => {
