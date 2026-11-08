@@ -148,6 +148,8 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   async function scheduleForm(id){
     const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e||!c)return;
     const next=Number(c.last_service_horimeter||0)+125;
+    const current=Number(e.current_horimeter||0);
+    const overdue=current>=next;
     const existing=state.schedules.find(s=>s.equipment_id===id&&["scheduled","in_progress"].includes(s.status));
     let mechanics=[];
     try{
@@ -161,30 +163,37 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     const activeChecklist=checklistResult.data?.[0]||null;
     const selectedMechanic=activeChecklist?.assigned_profile_id||mechanics[0]?.id||"";
     modal((existing?"Reprogramar":"Agendar")+" inspeção de 125 horas · "+e.asset_code,
-      '<div class="full"><p>Programe a inspeção antes do limite de '+num125(next)+' h. A confirmação também disponibiliza o checklist na área do mecânico selecionado.</p></div>'+
+      '<div class="full"><p>'+(overdue?'<strong style="color:#a32b21">INSPEÇÃO ATRASADA:</strong> o horímetro atual ('+num125(current)+' h) já atingiu ou ultrapassou o limite de '+num125(next)+' h. O agendamento será permitido e ficará identificado como atrasado.':'Programe a inspeção até o limite de '+num125(next)+' h.')+' A confirmação também disponibiliza o checklist na área do mecânico selecionado.</p></div>'+
       '<div><label>Data planejada</label><input name="planned_for" type="date" min="'+new Date().toISOString().slice(0,10)+'" value="'+(existing?.planned_for||new Date().toISOString().slice(0,10))+'" required></div>'+
-      '<div><label>Horímetro previsto (h)</label><input name="planned_horimeter" type="number" min="'+Number(e.current_horimeter||0)+'" max="'+next+'" step="0.1" value="'+(existing?.planned_horimeter??next)+'" required></div>'+
+      '<div><label>Horímetro previsto (h)</label><input name="planned_horimeter" type="number" min="'+current+'" '+(overdue?'':'max="'+next+'"')+' step="0.1" value="'+(existing?.planned_horimeter??(overdue?current:next))+'" required></div>'+
       '<div class="full"><label>Mecânico responsável *</label><select name="assigned_profile_id" required '+(activeChecklist?'disabled':'')+'>'+mechanics.map(m=>'<option value="'+esc125(m.id)+'" '+(m.id===selectedMechanic?'selected':'')+'>'+esc125(m.name||m.email||"Mecânico")+'</option>').join("")+'</select>'+(activeChecklist?'<input type="hidden" name="assigned_profile_id" value="'+esc125(activeChecklist.assigned_profile_id)+'"><small>Já existe um checklist em andamento. A atribuição atual será preservada durante a reprogramação.</small>':'')+'</div>'+
-      '<div class="full"><label>Observações</label><textarea name="notes" rows="3">'+esc125(existing?.notes||"")+'</textarea></div>',"Confirmar programação");
+      (overdue?'<div class="full"><label>Justificativa obrigatória do atraso *</label><textarea name="overdue_reason" rows="3" required minlength="8" placeholder="Explique por que a inspeção não foi realizada dentro do intervalo de 125 horas.">'+esc125(existing?.overdue_reason||"")+'</textarea></div>':'')+
+      '<div class="full"><label>Observações adicionais</label><textarea name="notes" rows="3">'+esc125(existing?.notes||"")+'</textarea></div>',"Confirmar programação");
     liveRoot().querySelector("#m125Form").addEventListener("submit",async ev=>{
       ev.preventDefault();const btn=ev.currentTarget.querySelector('[type="submit"]');btn.disabled=true;
       try{
         const d=Object.fromEntries(new FormData(ev.currentTarget).entries()),target=Number(d.planned_horimeter);
         if(d.planned_for<new Date().toISOString().slice(0,10))throw new Error("A data planejada não pode estar no passado.");
-        if(!Number.isFinite(target)||target<Number(e.current_horimeter||0)||target>next)throw new Error("O horímetro planejado deve ficar entre a leitura atual e "+num125(next)+" h.");
+        if(!Number.isFinite(target)||target<current||(!overdue&&target>next))throw new Error(overdue?"O horímetro informado não pode ser menor que a leitura atual do equipamento.":"O horímetro planejado deve ficar entre a leitura atual e "+num125(next)+" h.");
+        if(overdue&&String(d.overdue_reason||"").trim().length<8)throw new Error("A justificativa do atraso é obrigatória e deve explicar o motivo.");
         const mechanic=mechanics.find(m=>m.id===d.assigned_profile_id)||mechanics.find(m=>m.id===activeChecklist?.assigned_profile_id);
         if(!mechanic)throw new Error("Selecione um mecânico responsável válido.");
-        const payload={area_id:areaId(),equipment_id:id,planned_for:d.planned_for,planned_horimeter:target,responsible_name:(mechanic.name||mechanic.email||"Mecânico").trim(),notes:d.notes||"",status:"scheduled",created_by:userId,updated_at:new Date().toISOString()};
+        const delayReason=overdue?String(d.overdue_reason||"").trim():"";
+        const payload={area_id:areaId(),equipment_id:id,planned_for:d.planned_for,planned_horimeter:target,responsible_name:(mechanic.name||mechanic.email||"Mecânico").trim(),notes:d.notes||"",is_overdue:overdue,overdue_reason:delayReason,status:"scheduled",created_by:userId,updated_at:new Date().toISOString()};
         const result=existing?await supabase.from("operational_125h_schedules").update(payload).eq("id",existing.id).eq("area_id",areaId()):await supabase.from("operational_125h_schedules").insert(payload);
         if(result.error)throw result.error;
+        const checklistNotes=[overdue?"INSPEÇÃO ATRASADA — "+delayReason:"",d.notes||""].filter(Boolean).join("\\n");
         if(!activeChecklist){
           const assigned=await supabase.from("operational_125h_checklists").insert({
             area_id:areaId(),equipment_id:id,assigned_profile_id:mechanic.id,assigned_for:d.planned_for,
-            status:"assigned",created_by:userId,general_notes:d.notes||"Inspeção preventiva de 125 horas"
+            status:"assigned",created_by:userId,general_notes:checklistNotes||"Inspeção preventiva de 125 horas"
           });
           if(assigned.error)throw new Error("A programação foi salva, mas não foi possível criar a atribuição do checklist: "+assigned.error.message);
+        }else if(overdue){
+          const updatedChecklist=await supabase.from("operational_125h_checklists").update({general_notes:checklistNotes||"Inspeção preventiva de 125 horas"}).eq("id",activeChecklist.id).eq("area_id",areaId());
+          if(updatedChecklist.error)throw new Error("A agenda foi atualizada, mas não foi possível registrar a justificativa no checklist: "+updatedChecklist.error.message);
         }
-        liveRoot().querySelector("#m125Modal").innerHTML="";await load();feedback("Inspeção programada e checklist disponibilizado para "+(mechanic.name||mechanic.email||"o mecânico")+".");
+        liveRoot().querySelector("#m125Modal").innerHTML="";await load();feedback(overdue?"Inspeção registrada como ATRASADA. Justificativa salva na agenda e no checklist.":"Inspeção programada e checklist disponibilizado para "+(mechanic.name||mechanic.email||"o mecânico")+".");
       }catch(error){feedback(error.message||"Falha ao programar a inspeção.",true);btn.disabled=false;}
     });
   }
