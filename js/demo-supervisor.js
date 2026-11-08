@@ -108,6 +108,14 @@ function writeStore(value) {
   catch (error) { console.warn("[DEMO] Não foi possível persistir os dados locais:", error); }
 }
 let store = readStore();
+// Migração local da DEMO: adiciona recursos e uma escala para hoje sem apagar
+// registros que o usuário já criou neste navegador.
+if(!Array.isArray(store.trainings))store.trainings=makeSeed().trainings;
+if(!Array.isArray(store.operational_mechanic_assignments))store.operational_mechanic_assignments=[];
+if(!store.operational_mechanic_assignments.some(row=>row.mechanic_id==="demo-mech-001"&&row.work_date===dateOffset(0)&&row.status==="scheduled")){
+ store.operational_mechanic_assignments.push({id:"demo-assign-today",area_id:AREA_ID,equipment_id:"demo-eq-001",mechanic_id:"demo-mech-001",work_date:dateOffset(0),status:"scheduled",notes:"Escala fictícia para simulação do fluxo completo.",created_by:DEMO_UID});
+}
+writeStore(store);
 const tableRows = table => {
   if (!Array.isArray(store[table])) store[table] = [];
   return store[table];
