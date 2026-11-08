@@ -311,6 +311,7 @@ const DEMO_ROLE_CONFIG = {
   mecanico:{label:"Mecânico",tables:["operational_mechanic_assignments","operational_shift_reports","operational_125h_checklists","operational_equipment"]},
   instrutor_tecnico:{label:"Instrutor Técnico",tables:["demo_training_records","demo_training_materials","demo_appointments","demo_reports"]},
   consultor_tecnico:{label:"Consultor Técnico",tables:["demo_service_calls","demo_reports","operational_equipment","demo_appointments"]},
+  super_admin:{label:"Administrador Master",tables:["demo_users","demo_reports","demo_appointments","demo_training_records","demo_approvals"]},
   gerente:{label:"Gerente",tables:["demo_users","demo_reports","demo_appointments","demo_training_records","demo_approvals"]},
   coordenador:{label:"Coordenador",tables:["demo_users","demo_reports","demo_appointments","demo_training_records","demo_approvals"]},
   auxiliar_administrativo:{label:"Auxiliar Administrativo",tables:["demo_reports","demo_appointments","demo_users","demo_service_calls"]}
