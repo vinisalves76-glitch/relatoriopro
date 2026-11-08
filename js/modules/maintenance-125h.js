@@ -5,7 +5,7 @@ const date125 = value => value ? (/^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? ne
 export async function init125hMaintenanceModule({supabase, profile, getAreaId, getEquipment, onRefresh}) {
   const root=document.getElementById("goLive125h");
   if(!root || !supabase || !profile) return;
-  const state={controls:[],services:[],schedules:[],pendingChecklists:[],offboardedIds:new Set(),mechanics:[],loading:false};
+  const state={controls:[],services:[],schedules:[],pendingChecklists:[],reassignmentHistory:[],offboardedIds:new Set(),mechanics:[],loading:false};
   const userId=profile.uid||profile.id;
   const areaId=()=>getAreaId();
   const equipment=()=>getEquipment()||[];
@@ -106,6 +106,13 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       return '<tr><td>'+esc125(e?.asset_code||"Equipamento")+'</td><td>'+esc125(name)+(state.offboardedIds.has(item.assigned_profile_id)?' <span class="m125-pill overdue">Funcionário desligado</span>':'')+'</td><td>'+date125(item.assigned_for)+'</td><td>'+esc125(item.status)+'</td><td>'+(item.status!=="completed"?'<button class="light" type="button" data-m125-reassign="'+item.id+'">Reatribuir</button>':'—')+'</td></tr>';
     }).join("")+'</tbody></table></div>':'<p class="m125-empty">Não há checklists pendentes de funcionários desligados.</p>'):'';
 
+    if(canReassign&&state.reassignmentHistory.length){
+      liveRoot().querySelector("#m125Pending").insertAdjacentHTML("beforeend",
+        '<h4>Histórico de reatribuições</h4><div class="m125-table-wrap"><table><thead><tr><th>Checklist</th><th>Responsável anterior</th><th>Novo responsável</th><th>Responsável pela alteração</th><th>Data</th><th>Justificativa</th></tr></thead><tbody>'+
+        state.reassignmentHistory.map(h=>'<tr><td>'+esc125(h.checklist_id)+'</td><td>'+esc125(h.original_assignee_name)+'</td><td>'+esc125(h.new_assignee_name)+'</td><td>'+esc125(h.changed_by_name)+'</td><td>'+date125(h.changed_at)+'</td><td>'+esc125(h.reason)+'</td></tr>').join("")+
+        '</tbody></table></div>');
+    }
+
   }
   async function load(){
     if(state.loading)return;
@@ -138,6 +145,10 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
         state.mechanics=mechanics.data||[];
         state.pendingChecklists=state.pendingChecklists.map(x=>({...x,original_name:snapshotMap.get(x.assigned_profile_id)||mechanicMap.get(x.assigned_profile_id)||"Responsável original não identificado"}));
         state.offboardedIds=new Set((snapshots.data||[]).map(x=>x.profile_id));
+        const history=await supabase.from("operational_125h_reassignment_history").select("*").in("checklist_id",state.pendingChecklists.map(x=>x.id)).order("changed_at",{ascending:false});
+        if(history.error)throw history.error;
+        state.reassignmentHistory=history.data||[];
+
       }
       render();feedback("");
     }catch(error){feedback(error.message||"Não foi possível carregar o controle.",true);throw error;}
