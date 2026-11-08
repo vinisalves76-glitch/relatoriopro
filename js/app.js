@@ -54,13 +54,13 @@ async function loadTrainings(){
  try{
   const [publishedSnap,mineSnap]=await Promise.all([getDocs(query(collection(db,TRAININGS),where('status','==','published'))),getDocs(query(collection(db,TRAININGS),where('ownerUid','==',activeUser.uid)))]);
   await loadTechnicalManuals();
-  const published=publishedSnap.docs.map(d=>({id:d.id,...d.data()})),own=mineSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const published=publishedSnap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual'),own=mineSnap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual');
   publishedTrainingItems=await Promise.all(published.map(async t=>{if(t.coverPath){try{t.coverUrl=(await supabase.storage.from('training-attachments-private').createSignedUrl(t.coverPath,3600)).data?.signedUrl||''}catch(_){t.coverUrl=''}}return t}));populateTrainingFilters(publishedTrainingItems);renderPublishedTrainingLibrary();renderFavoriteTrainings();
   $('trainingPublishedCount').textContent=published.length;$('trainingMineCount').textContent=own.length;
   
   mine.innerHTML=own.length?own.map(t=>trainingCard(t,'mine')).join(''):'<div class="training-empty">Você ainda não criou treinamentos.</div>';
   $('trainingPendingCount').textContent=trainingAdmin()?'0':'—';
-  if(trainingAdmin()){const ps=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=ps.docs.map(d=>({id:d.id,...d.data()}));$('trainingPendingCount').textContent=pend.length;pending.innerHTML=pend.length?pend.map(t=>trainingCard(t,'pending')).join(''):'<div class="training-empty">Nenhum treinamento aguardando aprovação.</div>'}
+  if(trainingAdmin()){const ps=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=ps.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual');$('trainingPendingCount').textContent=pend.length;pending.innerHTML=pend.length?pend.map(t=>trainingCard(t,'pending')).join(''):'<div class="training-empty">Nenhum treinamento aguardando aprovação.</div>'}
  }catch(e){pub.innerHTML='<p class="muted">Não foi possível carregar os treinamentos. Verifique as permissões do Supabase.</p>';mine.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>';if(trainingAdmin())pending.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>'}
 }
 async function trainingOpenMaterials(trainingId,mode='access'){
@@ -129,23 +129,19 @@ async function createTraining(status){
  if(!trainingCanCreate()){alert('Seu perfil não pode criar treinamentos.');return}
  if(!trainingValidateStep(0)||!trainingValidateStep(1))return;
  const title=$('trainingTitle').value.trim(),buttons=[$('trainingSaveDraft'),$('trainingSubmit')];buttons.forEach(b=>b.disabled=true);
- let trainingStage='criar registro do treinamento',trainingId=null,trainingRef=null;
+ let trainingStage='preparar cadastro',trainingId=null;
  const uploadedPaths=[];
  try{
   trainingId=doc(collection(db,TRAININGS)).id;
-  trainingRef=doc(db,TRAININGS,trainingId);
-  await setDoc(trainingRef,{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),equipment:$('trainingEquipment').value.trim(),level:$('trainingLevel').value,duration:Number($('trainingDuration').value),keywords:$('trainingKeywords').value.split(',').map(x=>x.trim()).filter(Boolean),coverPath:'',attachments:[],ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status:'draft',createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:2});
   trainingStage='enviar a capa';
   const coverPath=await uploadTrainingCover(trainingId,uploadedPaths);
   trainingStage='enviar anexos';
   const attachments=await uploadTrainingFiles(trainingId,uploadedPaths);
-  trainingStage='concluir cadastro e enviar para aprovação';
-  await updateDoc(trainingRef,{coverPath,attachments,status,updatedAt:serverTimestamp()});
-  // A gravação final foi concluída. Falha ao atualizar a listagem não deve
-  // informar incorretamente que o treinamento não foi enviado.
+  trainingStage='gravar treinamento com status '+status;
+  await setDoc(doc(db,TRAININGS,trainingId),{title,category:$('trainingCategory').value.trim(),audience:$('trainingAudience').value.trim(),description:$('trainingDescription').value.trim(),equipment:$('trainingEquipment').value.trim(),level:$('trainingLevel').value,duration:Number($('trainingDuration').value),keywords:$('trainingKeywords').value.split(',').map(x=>x.trim()).filter(Boolean),coverPath,attachments,ownerUid:activeUser.uid,ownerName:currentProfile.name||activeUser.email,status,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),reviewComment:'',version:2});
   ['trainingTitle','trainingCategory','trainingAudience','trainingDescription','trainingEquipment','trainingDuration','trainingLevel','trainingKeywords','trainingFiles','trainingCover'].forEach(id=>$(id).value='');$('trainingFilesStatus').textContent='';$('trainingCoverPreview').src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22100%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e9edf0%22/%3E%3C/svg%3E';trainingWizardShow(0);
   try{await loadTrainings()}catch(refreshError){console.error('Treinamento salvo, mas a listagem não atualizou:',refreshError)}
-  alert(status==='pending'?'Treinamento enviado para aprovação.':'Rascunho salvo.');
+  alert(status==='pending'?'Treinamento enviado para aprovação.':status==='published'?'Treinamento publicado com sucesso.':'Rascunho salvo.');
  }catch(e){
   $('trainingFilesStatus').textContent='';
   const detail=[e.message,e.statusCode?'HTTP '+e.statusCode:'',e.error?String(e.error):''].filter(Boolean).join(' | ');
@@ -153,11 +149,6 @@ async function createTraining(status){
   if(uploadedPaths.length){
    const {error:removeError}=await supabase.storage.from('training-attachments-private').remove(uploadedPaths);
    if(removeError)cleanupDetail=' Não foi possível limpar todos os arquivos enviados: '+removeError.message;
-  }
-  if(trainingRef&&!cleanupDetail){
-   try{await deleteDoc(trainingRef)}catch(cleanupError){cleanupDetail=' O rascunho '+trainingId+' permaneceu salvo para recuperação: '+cleanupError.message}
-  }else if(trainingRef&&cleanupDetail){
-   cleanupDetail+=' O rascunho '+trainingId+' foi mantido para não deixar os arquivos sem referência.';
   }
   alert('Falha ao '+trainingStage+': '+detail+cleanupDetail);
  }
@@ -171,7 +162,7 @@ $('trainingManualsPanel').addEventListener('click',async e=>{const open=e.target
 $('trainingWizardNext').addEventListener('click',()=>{if(trainingValidateStep(trainingWizardStep))trainingWizardShow(trainingWizardStep+1)});
 $('trainingWizardBack').addEventListener('click',()=>trainingWizardShow(trainingWizardStep-1));
 $('trainingSaveDraft').addEventListener('click',()=>createTraining('draft'));
-$('trainingSubmit').addEventListener('click',()=>createTraining('pending'));
+$('trainingSubmit').addEventListener('click',()=>createTraining(currentProfile?.role==='gerente'?'published':'pending'));
 $('trainingCover').addEventListener('change',e=>{const f=e.target.files?.[0];if(f){if(f.size>8*1024*1024){alert('A imagem deve ter no máximo 8 MB.');e.target.value='';return}$('trainingCoverPreview').src=URL.createObjectURL(f)}});
 document.querySelectorAll('[data-training-scroll]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.trainingScroll)?.scrollIntoView({behavior:'smooth',block:'start'})));
 $('trainingLibrarySearch').addEventListener('input',renderPublishedTrainingLibrary);
