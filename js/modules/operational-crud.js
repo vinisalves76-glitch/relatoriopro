@@ -1,6 +1,7 @@
 import { init125hMaintenanceModule } from "./maintenance-125h.js";
 import { initMechanicShiftReports, disposeMechanicShiftReports } from "./operational-shift-reports.js";
 import { initMechanicSchedule } from "./operational-mechanic-schedule.js";
+import { init125hChecklistModule } from "./operational-125h-checklist.js";
 
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
@@ -26,7 +27,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   const isMaster = !!masterAccess || profile.role === "super_admin";
   const isSupervisor = profile.role === "supervisor_area";
   const isMechanic = profile.role === "mecanico";
-  if (isMechanic) { await initMechanicShiftReports({supabase,profile,root}); return; }
+  if (isMechanic) { await initMechanicShiftReports({supabase,profile,root}); await init125hChecklistModule({supabase,profile,root,mode:"mechanic"}); return; }
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
   const fixedArea = isSupervisor ? profile.operationalAreaId : null;
@@ -128,6 +129,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
       <div class="go-table-wrap"><table class="go-table go-live-table"><thead><tr><th>TAG do equipamento</th><th>Equipamento</th><th>Horímetro</th><th>Status</th><th>Ações</th></tr></thead><tbody id="goLiveEquipmentRows"></tbody></table></div>
     </section>
     <section class="go-panel" data-live-panel="maintenance125" hidden><div id="goLive125h"></div></section>
+    <section class="go-panel" data-live-panel="checklist125h" hidden><div id="goLiveChecklist125h"></div></section>
     <section class="go-panel" data-live-panel="mechanicSchedule" hidden><div id="goLiveMechanicSchedule"></div></section>
     <section class="go-panel" data-live-panel="events" hidden>
       <div class="go-section-heading"><div><h2>Relatórios de final de turno</h2><p>Um relatório por equipamento e data, com identificação do responsável e participantes.</p></div><button class="primary" type="button" id="goLiveAddEvent">＋ Registrar relatório de final de turno</button></div>
@@ -462,4 +464,5 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   $("#goLiveEquipmentStatus").addEventListener("change",render);
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
+  await init125hChecklistModule({supabase,profile,root:$("#goLiveChecklist125h"),areaId:()=>state.areaId,mode:"manager"});
 }
