@@ -59,45 +59,19 @@ module.exports = async function handler(req, res) {
     if (profileError) throw profileError;
     if (!profile) return res.status(404).json({ error: "Perfil não encontrado. Atualize a lista de usuários." });
 
-    // Se já existe auditoria, o arquivamento foi concluído em uma tentativa anterior.
-    // Não execute a RPC novamente: isso evita duplicar auditorias e reprocessar o histórico.
-    const { data: previousArchive, error: auditLookupError } = await supabase
-      .from("user_deletion_audit")
-      .select("id")
-      .eq("deleted_user_id", targetUid)
-      .limit(1)
-      .maybeSingle();
-    if (auditLookupError) {
-      console.error("Falha ao verificar arquivamento anterior:", JSON.stringify(safeErrorDetails(auditLookupError)));
-      return res.status(500).json({
-        error: "Não foi possível verificar o histórico de arquivamento. A conta não foi excluída."
-      });
-    }
-
-    if (!previousArchive) {
-      const { error: archiveError } = await supabase.rpc("archive_user_business_data", {
-        p_target_uid: targetUid,
-        p_master_uid: MASTER_UID
-      });
-      if (archiveError) {
-        console.error("Falha ao arquivar dados do usuário:", JSON.stringify(safeErrorDetails(archiveError)));
-        return res.status(409).json({
-          error: "Não foi possível arquivar os registros históricos. A conta não foi excluída. Verifique os logs administrativos."
-        });
-      }
-    }
-
+    // Snapshot e auditoria operacional são gravados pelo gatilho BEFORE DELETE em profiles.
+    // Não transferimos relatórios, treinamentos ou compromissos para outro proprietário.
     const { error: deleteError } = await supabase.auth.admin.deleteUser(targetUid);
     if (deleteError) {
       console.error("Falha ao remover usuário do Auth:", JSON.stringify(safeErrorDetails(deleteError)));
       return res.status(502).json({
-        error: "Os registros foram preservados e o arquivamento foi verificado, mas o Supabase Auth não confirmou a exclusão. Consulte os logs administrativos antes de tentar novamente."
+        error: "O Supabase Auth não confirmou a exclusão. Consulte os logs administrativos antes de tentar novamente."
       });
     }
 
     return res.status(200).json({
       ok: true,
-      message: "Conta removida do Supabase Auth. Relatórios, treinamentos e compromissos foram preservados no histórico institucional."
+      message: "Acesso removido. A autoria e os registros históricos foram preservados, sem transferência para outro funcionário."
     });
   } catch (error) {
     console.error("Falha na exclusão administrativa:", JSON.stringify(safeErrorDetails(error)));
