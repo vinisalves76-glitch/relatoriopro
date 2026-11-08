@@ -78,6 +78,9 @@ export async function init125hChecklistModule({supabase,profile,root,areaId,mode
   async function openChecklist(id){
     const row=rows.find(x=>x.id===id);if(!row)return;
     current={...row,responses:row.responses||{},evidence:row.evidence||{}};
+    // Na DEMO, preenche o técnico com o mecânico fictício autenticado.
+    // Em produção, mantém o comportamento original e exige a identificação informada.
+    if(String(uid).startsWith('demo-')&&!current.technician_name?.trim())current.technician_name=profile.name||'Técnico de demonstração';
     if(current.horimeter===null||current.horimeter===undefined)current.horimeter=equip(current.equipment_id)?.current_horimeter??'';
     readOnly=current.status==='completed'||!mechanic;
     if(mechanic&&current.status==='assigned'){
