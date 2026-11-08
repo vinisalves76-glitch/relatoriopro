@@ -112,11 +112,12 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     state.loading=true;feedback("");
     try{
       const id=areaId();
+      const canReassignPending=["super_admin","supervisor_area"].includes(profile.role);
       const [controls,services,schedules,pending]=await Promise.all([
         supabase.from("operational_125h_control").select("*").eq("area_id",id),
         supabase.from("operational_125h_services").select("*").eq("area_id",id).order("performed_at",{ascending:false}).limit(100),
         supabase.from("operational_125h_schedules").select("*").eq("area_id",id).order("planned_for",{ascending:true}),
-        supabase.from("operational_125h_checklists").select("id,equipment_id,assigned_profile_id,assigned_for,status").eq("area_id",id).in("status",["assigned","in_progress"]).order("assigned_for",{ascending:true})
+        canReassignPending?supabase.from("operational_125h_checklists").select("id,equipment_id,assigned_profile_id,assigned_for,status").eq("area_id",id).in("status",["assigned","in_progress"]).order("assigned_for",{ascending:true}):Promise.resolve({data:[],error:null})
       ]);
       if(controls.error)throw controls.error;
       if(services.error)throw services.error;
