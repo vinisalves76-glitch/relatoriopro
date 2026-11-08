@@ -311,27 +311,61 @@ function showAccessError(message) {
   $("demoAccessDenied").hidden = false;
   $("demoAccessMessage").textContent = message;
 }
-async function openSupervisorDemo() {
-  $("demoSelection").hidden = true;
-  $("appShell").hidden = false;
-  const demoProfile = {
-    id:DEMO_UID, uid:DEMO_UID, name:"Supervisor de Área (DEMO)",
-    role:"supervisor_area", roleLabel:"Supervisor de Área — DEMONSTRAÇÃO",
-    active:true, operationalAreaId:AREA_ID, permissions:[]
-  };
-  try {
-    await initOperationalModule({ supabase:demoBackend, profile:demoProfile, isMaster:false });
-    const root = $("gestaoOperacional");
-    document.querySelectorAll(".operational-main-tab").forEach(button => {
-      button.addEventListener("click", () => {
-        if (root?.showOperationalSection) root.showOperationalSection(button.dataset.operationalSection);
-      });
-    });
-    if (root?.showOperationalSection) root.showOperationalSection("overview");
-  } catch (error) {
-    console.error("[RelatorioPro DEMO] Falha ao abrir Supervisor de Área:", error);
-    showAccessError(error.message || "Não foi possível abrir a demonstração do Supervisor de Área.");
-  }
+const DEMO_ROLE_CONFIG = {
+  supervisor_area:{label:"Supervisor de Área",tables:["operational_equipment","operational_shift_reports","operational_mechanic_assignments","operational_125h_checklists"]},
+  mecanico:{label:"Mecânico",tables:["operational_mechanic_assignments","operational_shift_reports","operational_125h_checklists","operational_equipment"]},
+  instrutor_tecnico:{label:"Instrutor Técnico",tables:["demo_training_records","demo_training_materials","demo_appointments","demo_reports"]},
+  consultor_tecnico:{label:"Consultor Técnico",tables:["demo_service_calls","demo_reports","operational_equipment","demo_appointments"]},
+  gerente:{label:"Gerente",tables:["demo_users","demo_reports","demo_appointments","demo_training_records","demo_approvals"]},
+  coordenador:{label:"Coordenador",tables:["demo_users","demo_reports","demo_appointments","demo_training_records","demo_approvals"]},
+  auxiliar_administrativo:{label:"Auxiliar Administrativo",tables:["demo_reports","demo_appointments","demo_users","demo_service_calls"]}
+};
+const DEMO_TABLE_LABELS={operational_equipment:"Equipamentos",operational_shift_reports:"Relatórios de turno",operational_mechanic_assignments:"Escala de mecânicos",operational_125h_checklists:"Checklists 125h",demo_training_records:"Treinamentos",demo_training_materials:"Materiais técnicos",demo_appointments:"Agenda",demo_reports:"Relatórios técnicos",demo_service_calls:"Atendimentos",demo_users:"Equipe",demo_approvals:"Aprovações"};
+function escapeDemo(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function statusDemo(value){return ({active:"Ativo",scheduled:"Programado",confirmed:"Confirmado",completed:"Concluído",review:"Em revisão",pending:"Pendente",published:"Publicado",open:"Aberto",in_progress:"Em andamento",assigned:"Atribuído",inactive:"Inativo"}[value]||String(value));}
+function ensureDemoCollections(){
+ const defaults={
+  demo_training_records:[{id:"demo-tr-001",title:"Inspeção diária de caminhões SKT110H",responsible:"Ana Paula Ribeiro (DEMO)",status:"published",date:dateOffset(-4),notes:"Treinamento fictício com checklist de inspeção."},{id:"demo-tr-002",title:"Sistema hidráulico — fundamentos",responsible:"Eduarda Lima (DEMO)",status:"pending",date:dateOffset(-1),notes:"Material em revisão para demonstração."}],
+  demo_training_materials:[{id:"demo-mat-001",title:"Guia de inspeção do trem de força",responsible:"Instrutor DEMO",status:"published",date:dateOffset(-8),notes:"Arquivo demonstrativo; não representa manual oficial."}],
+  demo_appointments:[{id:"demo-ap-001",title:"Treinamento de inspeção SKT110H",responsible:"Ana Paula Ribeiro (DEMO)",status:"scheduled",date:dateOffset(1),notes:"Agenda fictícia — Centro de Treinamento IRMEN."},{id:"demo-ap-002",title:"Acompanhamento técnico SY365H",responsible:"Bruno Martins (DEMO)",status:"confirmed",date:dateOffset(2),notes:"Cliente de demonstração."}],
+  demo_reports:[{id:"demo-rep-001",title:"Inspeção de rotina — SKT110H",responsible:"Carlos Henrique (DEMO)",status:"completed",date:dateOffset(-2),notes:"Relatório fictício de inspeção visual."},{id:"demo-rep-002",title:"Diagnóstico inicial — SY365H",responsible:"Bruno Martins (DEMO)",status:"review",date:dateOffset(-1),notes:"Registro de demonstração sem diagnóstico real."}],
+  demo_service_calls:[{id:"demo-call-001",title:"Atendimento técnico — SKT110H",responsible:"Bruno Martins (DEMO)",status:"in_progress",date:dateOffset(-1),notes:"Cliente fictício. Relato: avaliação de ruído anormal."}],
+  demo_users:[{id:"demo-user-001",title:"Carlos Henrique",responsible:"Mecânico",status:"active",date:dateOffset(-30),notes:"Área: ArcelorMittal Andradas (DEMO)."},{id:"demo-user-002",title:"Ana Paula Ribeiro",responsible:"Instrutora técnica",status:"active",date:dateOffset(-25),notes:"Área: Treinamento (DEMO)."}],
+  demo_approvals:[{id:"demo-apr-001",title:"Treinamento de inspeção SKT110H",responsible:"Ana Paula Ribeiro (DEMO)",status:"pending",date:dateOffset(-1),notes:"Aguardando aprovação fictícia."}]
+ };
+ for(const [table,rows] of Object.entries(defaults))if(!Array.isArray(store[table]))store[table]=clone(rows);
+ writeStore(store);
+}
+function openGenericRoleDemo(role){
+ ensureDemoCollections();
+ const config=DEMO_ROLE_CONFIG[role],root=$("gestaoOperacional");
+ let currentTable=config.tables[0];
+ root.innerHTML='<div class="demo-workspace"><div class="demo-workspace-head"><div><span class="demo-mode-tag">PERFIL SIMULADO</span><h1>'+config.label+'</h1><p>As ações são salvas somente neste navegador. Nenhuma gravação é enviada ao banco.</p></div><button class="light" id="demoWorkspaceBack">Trocar perfil</button></div><div class="demo-local-stats" id="demoLocalStats"></div><nav class="demo-local-tabs" id="demoLocalTabs">'+config.tables.map((table,i)=>'<button type="button" class="'+(i===0?"active":"")+'" data-demo-table="'+table+'">'+DEMO_TABLE_LABELS[table]+'</button>').join("")+'</nav><section id="demoLocalContent"></section></div>';
+ const content=$("demoLocalContent");
+ function renderStats(){$("demoLocalStats").innerHTML=config.tables.map(table=>'<div><span>'+DEMO_TABLE_LABELS[table]+'</span><strong>'+tableRows(table).length+'</strong></div>').join("");}
+ function renderTable(){
+  const rows=tableRows(currentTable);
+  content.innerHTML='<div class="demo-local-toolbar"><div><h2>'+DEMO_TABLE_LABELS[currentTable]+'</h2><p>Dados fictícios · armazenamento local</p></div><button class="primary" id="demoLocalAdd">＋ Novo registro</button></div><div class="demo-local-list">'+(rows.length?rows.map(row=>'<article class="demo-local-record"><div class="demo-local-record-top"><div><h3>'+escapeDemo(row.title||row.asset_code||"Registro")+'</h3><span class="demo-local-id">'+escapeDemo(row.id)+'</span></div><span class="demo-local-status">'+escapeDemo(statusDemo(row.status||"active"))+'</span></div><p><strong>Responsável:</strong> '+escapeDemo(row.responsible||row.responsible_name||"Equipe DEMO")+' · <strong>Data:</strong> '+escapeDemo(row.date||row.work_date||row.report_date||"—")+'</p><p>'+escapeDemo(row.notes||row.description||row.general_notes||row.model||"")+'</p><div class="demo-local-actions"><button class="light" data-demo-edit="'+escapeDemo(row.id)+'">Editar</button><button class="light" data-demo-status="'+escapeDemo(row.id)+'">Alterar status</button><button class="danger" data-demo-delete="'+escapeDemo(row.id)+'">Excluir</button></div></article>').join(""):'<div class="demo-local-empty">Nenhum registro. Clique em Novo registro para começar.</div>')+'</div>';
+  $("demoLocalAdd").onclick=()=>openEditor(null);
+ }
+ function openEditor(record){
+  const current=record||{};
+  content.innerHTML='<form class="demo-local-form" id="demoLocalForm"><h2>'+(record?"Editar registro":"Novo registro")+'</h2><p>Este formulário grava apenas no ambiente DEMO deste navegador.</p><label>Título / descrição<input name="title" required maxlength="120" value="'+escapeDemo(current.title||current.asset_code||"")+'"></label><div class="demo-local-form-grid"><label>Responsável<input name="responsible" value="'+escapeDemo(current.responsible||current.responsible_name||"")+'"></label><label>Data<input name="date" type="date" value="'+escapeDemo(current.date||current.work_date||dateOffset(0))+'"></label></div><div class="demo-local-form-grid"><label>Status<select name="status"><option value="active">Ativo</option><option value="scheduled">Programado</option><option value="confirmed">Confirmado</option><option value="in_progress">Em andamento</option><option value="pending">Pendente</option><option value="review">Em revisão</option><option value="completed">Concluído</option><option value="published">Publicado</option></select></label><label>Equipamento / TAG<input name="equipment" value="'+escapeDemo(current.asset_code||current.equipment||"")+'"></label></div><label>Observações<textarea name="notes" rows="4">'+escapeDemo(current.notes||current.description||current.general_notes||"")+'</textarea></label><div class="demo-local-actions"><button class="primary" type="submit">Salvar no ambiente DEMO</button><button class="light" id="demoLocalCancel" type="button">Cancelar</button></div></form>';
+  const form=$("demoLocalForm");form.elements.status.value=current.status||"active";
+  form.onsubmit=event=>{event.preventDefault();const data=Object.fromEntries(new FormData(form).entries());const payload={...current,title:data.title.trim(),responsible:data.responsible,date:data.date,status:data.status,notes:data.notes,updated_at:new Date().toISOString()};if(currentTable==="operational_equipment"){payload.asset_code=data.equipment||data.title;payload.model=current.model||"SKT110H";payload.area_id=AREA_ID;payload.brand="SANY";payload.current_horimeter=Number(current.current_horimeter||0);}if(currentTable==="operational_mechanic_assignments"){payload.work_date=data.date;payload.responsible_name=data.responsible;payload.area_id=AREA_ID;}if(currentTable==="operational_shift_reports"){payload.report_date=data.date;payload.work_performed=data.notes;payload.area_id=AREA_ID;payload.created_by=DEMO_UID;}if(currentTable==="operational_125h_checklists"){payload.assigned_for=data.date;payload.general_notes=data.notes;payload.area_id=AREA_ID;payload.created_by=DEMO_UID;}if(currentTable==="demo_users")payload.role=data.responsible;const rows=tableRows(currentTable);if(record){const index=rows.findIndex(row=>row.id===record.id);if(index>=0)rows[index]=payload;}else rows.unshift({...payload,id:makeId("demo-record"),created_at:new Date().toISOString()});writeStore(store);renderStats();renderTable();};
+  $("demoLocalCancel").onclick=renderTable;
+ }
+ $("demoLocalTabs").onclick=event=>{const button=event.target.closest("[data-demo-table]");if(!button)return;currentTable=button.dataset.demoTable;$("demoLocalTabs").querySelectorAll("button").forEach(item=>item.classList.toggle("active",item===button));renderTable();};
+ content.onclick=event=>{const edit=event.target.closest("[data-demo-edit]"),remove=event.target.closest("[data-demo-delete]"),status=event.target.closest("[data-demo-status]");if(edit){const row=tableRows(currentTable).find(item=>item.id===edit.dataset.demoEdit);if(row)openEditor(row);return;}if(remove){if(!confirm("Excluir este registro fictício?"))return;store[currentTable]=tableRows(currentTable).filter(row=>row.id!==remove.dataset.demoDelete);writeStore(store);renderStats();renderTable();return;}if(status){const row=tableRows(currentTable).find(item=>item.id===status.dataset.demoStatus);if(row){row.status=row.status==="completed"?"in_progress":"completed";writeStore(store);renderStats();renderTable();}}};
+ $("demoWorkspaceBack").onclick=()=>{$("appShell").hidden=true;$("demoSelection").hidden=false;};
+ renderStats();renderTable();
+}
+async function openRoleDemo(role){
+ $("demoSelection").hidden=true;$("appShell").hidden=false;
+ if(role!=="supervisor_area"){openGenericRoleDemo(role);return;}
+ const demoProfile={id:DEMO_UID,uid:DEMO_UID,name:"Supervisor de Área (DEMO)",role:"supervisor_area",roleLabel:"Supervisor de Área — DEMONSTRAÇÃO",active:true,operationalAreaId:AREA_ID,permissions:[]};
+ try{await initOperationalModule({supabase:demoBackend,profile:demoProfile,isMaster:false});const root=$("gestaoOperacional");document.querySelectorAll(".operational-main-tab").forEach(button=>button.addEventListener("click",()=>{if(root?.showOperationalSection)root.showOperationalSection(button.dataset.operationalSection);}));if(root?.showOperationalSection)root.showOperationalSection("overview");}
+ catch(error){console.error("[RelatorioPro DEMO] Falha ao abrir Supervisor:",error);showAccessError(error.message||"Não foi possível abrir a demonstração.");}
 }
 async function startDemo() {
   try {
@@ -339,9 +373,6 @@ async function startDemo() {
     if (sessionError) throw sessionError;
     const user = session?.user;
     if (!user || user.id !== MASTER_UID) throw new Error("A Central DEMO está disponível somente no login ADMIN MASTER.");
-    const { data:profile, error:profileError } = await authClient.from("profiles").select("id,role,active").eq("id", MASTER_UID).maybeSingle();
-    if (profileError) throw profileError;
-    if (!profile || profile.role !== "super_admin" || profile.active === false) throw new Error("Não foi possível validar as permissões do ADMIN MASTER.");
     $("demoLoading").hidden = true;
     $("demoSelection").hidden = false;
   } catch (error) {
@@ -349,8 +380,8 @@ async function startDemo() {
     showAccessError(error.message || "Não foi possível validar o acesso à demonstração.");
   }
 }
-$("demoOpenSupervisor").addEventListener("click", openSupervisorDemo);
-$("demoProfiles").addEventListener("click", () => window.location.reload());
+document.querySelectorAll("[data-demo-role]").forEach(button=>button.addEventListener("click",()=>openRoleDemo(button.dataset.demoRole)));
+$("demoProfiles").addEventListener("click",()=>{$("appShell").hidden=true;$("demoSelection").hidden=false;});
 
 $("demoReset").addEventListener("click", () => {
   if (!confirm("Restaurar os dados fictícios iniciais? As alterações feitas neste ambiente DEMO serão descartadas.")) return;
