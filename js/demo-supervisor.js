@@ -65,6 +65,7 @@ function makeSeed() {
       { id:"demo-shift-002", area_id:AREA_ID, equipment_id:"demo-eq-003", report_date:dateOffset(-3), horimeter:2475, created_by:DEMO_UID, created_by_name:"Supervisor de Área (DEMO)", other_mechanics:["Marcos Vinícius (DEMO)"], work_performed:"Acompanhamento de manutenção preventiva.", anomalies:"Registro fictício para treinamento.", actions_taken:"Acompanhamento da atividade.", pending_items:"Conferência após liberação.", final_condition:"maintenance", final_condition_notes:"Permanece em manutenção — dado fictício." }
     ],
     operational_mechanic_assignments: [
+      { id:"demo-assign-today", area_id:AREA_ID, equipment_id:"demo-eq-001", mechanic_id:"demo-mech-001", work_date:dateOffset(0), status:"scheduled", notes:"Escala fictícia para simulação do fluxo completo.", created_by:DEMO_UID },
       { id:"demo-assign-001", area_id:AREA_ID, equipment_id:"demo-eq-001", mechanic_id:"demo-mech-001", work_date:dateOffset(1), status:"scheduled", notes:"Demonstração de escala.", created_by:DEMO_UID },
       { id:"demo-assign-002", area_id:AREA_ID, equipment_id:"demo-eq-001", mechanic_id:"demo-mech-002", work_date:dateOffset(1), status:"scheduled", notes:"Demonstração de escala.", created_by:DEMO_UID },
       { id:"demo-assign-003", area_id:AREA_ID, equipment_id:"demo-eq-002", mechanic_id:"demo-mech-003", work_date:dateOffset(2), status:"scheduled", notes:"Demonstração de escala.", created_by:DEMO_UID },
@@ -83,7 +84,11 @@ function makeSeed() {
       { id:"demo-check-002", area_id:AREA_ID, equipment_id:"demo-eq-004", assigned_profile_id:"demo-mech-002", assigned_for:dateOffset(5), status:"in_progress", created_by:DEMO_UID, general_notes:"Checklist de demonstração — não representa inspeção real.", created_at:dateOffset(-2,true) }
     ],
     operational_work_order_activities: [],
-    operational_work_orders: []
+    operational_work_orders: [],
+    trainings: [
+      { id:"demo-manual-skt110h", title:"Manual de Operação e Manutenção — SKT110H", category:"Manual técnico", description:"Documento demonstrativo local para navegação da biblioteca técnica.", status:"published", version:1, updated_at:dateOffset(-15), legacy_data:{docType:"technical_manual",equipment:"SKT110H",system:"Geral",category:"Manual de operação e manutenção",fileName:"Manual-SKT110H-DEMO.pdf",path:"demo/manual-skt110h.pdf",language:"Português"} },
+      { id:"demo-pop-inspecao", title:"Inspeção diária do caminhão SKT110H", category:"POP — Inspeção", description:"Procedimento fictício para testar a consulta de POPs no perfil Mecânico.", status:"published", version:1, updated_at:dateOffset(-5), legacy_data:{docType:"pop",equipment:"SKT110H",system:"Inspeção",category:"POP — Inspeção",code:"POP-DEMO-001",procedure:"Realizar a inspeção conforme o procedimento aprovado da empresa. Este conteúdo é fictício e serve apenas para testar a interface.",steps:[{title:"Preparar o equipamento",description:"Estacionar em local seguro, aplicar freio e seguir o procedimento de bloqueio aplicável."},{title:"Inspeção visual",description:"Verificar vazamentos, danos aparentes e condições gerais."},{title:"Registrar resultados",description:"Documentar as observações e comunicar qualquer anormalidade."}]} }
+    ]
   };
 }
 
@@ -288,7 +293,9 @@ const demoBackend = {
         },
         async createSignedUrl(path) {
           const file = demoFiles.get(bucket + "/" + path);
-          return file ? { data:{ signedUrl:URL.createObjectURL(file) }, error:null } : { data:null, error:{ message:"Arquivo não encontrado nesta sessão de demonstração." } };
+          if(file)return { data:{ signedUrl:URL.createObjectURL(file) }, error:null };
+          if(String(path).startsWith("demo/"))return { data:{ signedUrl:"data:text/plain;charset=utf-8,"+encodeURIComponent("ARQUIVO FICTÍCIO DA DEMONSTRAÇÃO IRMEN\\n\\nEste documento é apenas um exemplo local para testar a navegação. Não representa manual oficial SANY.") }, error:null };
+          return { data:null, error:{ message:"Arquivo não encontrado nesta sessão de demonstração." } };
         },
         async remove(paths) {
           (paths || []).forEach(path => demoFiles.delete(bucket + "/" + path));
@@ -359,11 +366,25 @@ function openGenericRoleDemo(role){
 }
 async function openRoleDemo(role){
  $("demoSelection").hidden=true;$("appShell").hidden=false;
+ const isOperationalRole=role==="supervisor_area"||role==="mecanico";
  document.querySelectorAll(".operational-main-tab").forEach(button=>button.hidden=role!=="supervisor_area");
- if(role!=="supervisor_area"){openGenericRoleDemo(role);return;}
- const demoProfile={id:DEMO_UID,uid:DEMO_UID,name:"Supervisor de Área (DEMO)",role:"supervisor_area",roleLabel:"Supervisor de Área — DEMONSTRAÇÃO",active:true,operationalAreaId:AREA_ID,permissions:[]};
- try{await initOperationalModule({supabase:demoBackend,profile:demoProfile,isMaster:false});const root=$("gestaoOperacional");document.querySelectorAll(".operational-main-tab").forEach(button=>button.addEventListener("click",()=>{if(root?.showOperationalSection)root.showOperationalSection(button.dataset.operationalSection);}));if(root?.showOperationalSection)root.showOperationalSection("overview");}
- catch(error){console.error("[RelatorioPro DEMO] Falha ao abrir Supervisor:",error);showAccessError(error.message||"Não foi possível abrir a demonstração.");}
+ if(role!=="supervisor_area"&&role!=="mecanico"){openGenericRoleDemo(role);return;}
+ const demoMechanic=tableRows("profiles").find(item=>item.id==="demo-mech-001");
+ const demoProfile=role==="mecanico"
+  ?{id:demoMechanic.id,uid:demoMechanic.id,name:demoMechanic.name,role:"mecanico",roleLabel:"Mecânico — DEMONSTRAÇÃO",active:true,operationalAreaId:AREA_ID,permissions:[]}
+  :{id:DEMO_UID,uid:DEMO_UID,name:"Supervisor de Área (DEMO)",role:"supervisor_area",roleLabel:"Supervisor de Área — DEMONSTRAÇÃO",active:true,operationalAreaId:AREA_ID,permissions:[]};
+ try{
+  await initOperationalModule({supabase:demoBackend,profile:demoProfile,isMaster:false});
+  const root=$("gestaoOperacional");
+  document.querySelectorAll(".operational-main-tab").forEach(button=>button.addEventListener("click",()=>{if(root?.showOperationalSection)root.showOperationalSection(button.dataset.operationalSection);}));
+  if(role==="supervisor_area"&&root?.showOperationalSection)root.showOperationalSection("overview");
+  if(role==="mecanico"){
+   document.querySelectorAll(".operational-main-tab").forEach(button=>{button.hidden=true;button.style.display="none";});
+   document.querySelectorAll(".mechanic-main-tab").forEach(button=>button.hidden=false);
+   const overview=document.querySelector('.mechanic-main-tab[data-mechanic-section="overview"]');
+   overview?.click();
+  }
+ }catch(error){console.error("[RelatorioPro DEMO] Falha ao abrir "+role+":",error);showAccessError(error.message||"Não foi possível abrir a demonstração.");}
 }
 async function startDemo() {
   try {
