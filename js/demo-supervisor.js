@@ -333,6 +333,7 @@ function ensureDemoCollections(){
  writeStore(store);
 }
 function openGenericRoleDemo(role){
+ document.querySelectorAll(".operational-main-tab").forEach(button=>button.hidden=true);
  ensureDemoCollections();
  const config=DEMO_ROLE_CONFIG[role],root=$("gestaoOperacional");
  let currentTable=config.tables[0];
@@ -358,6 +359,7 @@ function openGenericRoleDemo(role){
 }
 async function openRoleDemo(role){
  $("demoSelection").hidden=true;$("appShell").hidden=false;
+ document.querySelectorAll(".operational-main-tab").forEach(button=>button.hidden=role!=="supervisor_area");
  if(role!=="supervisor_area"){openGenericRoleDemo(role);return;}
  const demoProfile={id:DEMO_UID,uid:DEMO_UID,name:"Supervisor de Área (DEMO)",role:"supervisor_area",roleLabel:"Supervisor de Área — DEMONSTRAÇÃO",active:true,operationalAreaId:AREA_ID,permissions:[]};
  try{await initOperationalModule({supabase:demoBackend,profile:demoProfile,isMaster:false});const root=$("gestaoOperacional");document.querySelectorAll(".operational-main-tab").forEach(button=>button.addEventListener("click",()=>{if(root?.showOperationalSection)root.showOperationalSection(button.dataset.operationalSection);}));if(root?.showOperationalSection)root.showOperationalSection("overview");}
