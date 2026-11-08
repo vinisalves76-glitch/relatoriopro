@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const authorization = req.headers.authorization || "";
-    const match = authorization.match(/^Bearer\\s+(.+)$/i);
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
     if (!match) return res.status(401).json({ error: "Sessão administrativa não informada." });
 
     const supabase = clients();
