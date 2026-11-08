@@ -1,5 +1,5 @@
 import { init125hMaintenanceModule } from "./maintenance-125h.js";
-import { initMechanicShiftReports } from "./operational-shift-reports.js";
+import { initMechanicShiftReports, disposeMechanicShiftReports } from "./operational-shift-reports.js";
 import { initMechanicSchedule } from "./operational-mechanic-schedule.js";
 
 const AREA_DEFAULT = "arcelormittal-andradas";
@@ -16,6 +16,9 @@ const localDateTime = value => value ? new Date(new Date(value).getTime()-new Da
 export async function initOperationalModule({supabase, profile, isMaster: masterAccess = false}) {
   const root = document.getElementById("gestaoOperacional");
   if (!root || !supabase || !profile || profile.active === false) return;
+  // Ao trocar de perfil, encerra listeners globais e remove a navegação exclusiva do Mecânico.
+  disposeMechanicShiftReports();
+  document.querySelectorAll(".mechanic-main-tab,.mechanic-nav-caption,.mechanic-connection").forEach(el=>el.remove());
   const liveRoot = () => document.getElementById("gestaoOperacional") || root;
   // Todos os seletores do módulo devem ficar limitados ao contêiner da Gestão Operacional.
   // document.querySelector podia perder os elementos quando a navegação substituía a página.
