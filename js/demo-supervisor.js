@@ -306,8 +306,27 @@ const demoBackend = {
 
 function showAccessError(message) {
   $("demoLoading").hidden = true;
+  $("demoSelection").hidden = true;
+  $("appShell").hidden = true;
   $("demoAccessDenied").hidden = false;
   $("demoAccessMessage").textContent = message;
+}
+async function openSupervisorDemo() {
+  $("demoSelection").hidden = true;
+  $("appShell").hidden = false;
+  const demoProfile = {
+    id:DEMO_UID, uid:DEMO_UID, name:"Supervisor de Área (DEMO)",
+    role:"supervisor_area", roleLabel:"Supervisor de Área — DEMONSTRAÇÃO",
+    active:true, operationalAreaId:AREA_ID, permissions:[]
+  };
+  try {
+    await initOperationalModule({ supabase:demoBackend, profile:demoProfile, isMaster:false });
+    const root = $("gestaoOperacional");
+    if (root?.showOperationalSection) root.showOperationalSection("overview");
+  } catch (error) {
+    console.error("[RelatorioPro DEMO] Falha ao abrir Supervisor de Área:", error);
+    showAccessError(error.message || "Não foi possível abrir a demonstração do Supervisor de Área.");
+  }
 }
 async function startDemo() {
   try {
@@ -319,20 +338,14 @@ async function startDemo() {
     if (profileError) throw profileError;
     if (!profile || profile.role !== "super_admin" || profile.active === false) throw new Error("Não foi possível validar as permissões do ADMIN MASTER.");
     $("demoLoading").hidden = true;
-    $("appShell").hidden = false;
-    const demoProfile = {
-      id:DEMO_UID, uid:DEMO_UID, name:"Supervisor de Área (DEMO)",
-      role:"supervisor_area", roleLabel:"Supervisor de Área — DEMONSTRAÇÃO",
-      active:true, operationalAreaId:AREA_ID, permissions:[]
-    };
-    await initOperationalModule({ supabase:demoBackend, profile:demoProfile, isMaster:false });
-    const root = $("gestaoOperacional");
-    if (root?.showOperationalSection) root.showOperationalSection("overview");
+    $("demoSelection").hidden = false;
   } catch (error) {
-    console.error("[RelatorioPro DEMO] Falha ao iniciar:", error);
+    console.error("[RelatorioPro DEMO] Falha ao validar acesso:", error);
     showAccessError(error.message || "Não foi possível validar o acesso à demonstração.");
   }
 }
+$("demoOpenSupervisor").addEventListener("click", openSupervisorDemo);
+$("demoProfiles").addEventListener("click", () => window.location.reload());
 
 $("demoReset").addEventListener("click", () => {
   if (!confirm("Restaurar os dados fictícios iniciais? As alterações feitas neste ambiente DEMO serão descartadas.")) return;
