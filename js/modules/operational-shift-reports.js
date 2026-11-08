@@ -4,6 +4,10 @@ const EQUIPMENT_STORE = "equipmentCache";
 const SCHEDULE_STORE = "scheduleCache";
 const AREA_LABELS = {"arcelormittal-andradas":"ArcelorMittal Andradas"};
 let activeController=null;
+
+export function disposeMechanicShiftReports(){
+  if(activeController){activeController.abort();activeController=null;}
+}
 const esc = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const localDate = () => {const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 const statusText = status => ({pending:"Aguardando sincronização",syncing:"Sincronizando",synced:"Sincronizado",error:"Erro no envio",conflict:"Conflito: já existe relatório para esta TAG/data"})[status]||status;
