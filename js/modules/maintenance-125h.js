@@ -145,30 +145,49 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     });
   }
 
-  function scheduleForm(id){
+  async function scheduleForm(id){
     const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e||!c)return;
     const next=Number(c.last_service_horimeter||0)+125;
     const existing=state.schedules.find(s=>s.equipment_id===id&&["scheduled","in_progress"].includes(s.status));
-    modal("Agendar inspeção de 125 horas · "+e.asset_code,
-      '<div class="full"><p>Programe a inspeção antes do limite de '+num125(next)+' h.</p></div>'+
+    let mechanics=[];
+    try{
+      const result=await supabase.rpc("list_operational_area_mechanics",{area_key:areaId()});
+      if(result.error)throw result.error;
+      mechanics=result.data||[];
+    }catch(error){feedback("Não foi possível carregar os mecânicos da área: "+(error.message||"erro desconhecido"),true);return;}
+    if(!mechanics.length){feedback("Não há mecânicos ativos cadastrados nesta área para atribuir a inspeção.",true);return;}
+    const checklistResult=await supabase.from("operational_125h_checklists").select("id,assigned_profile_id,status,assigned_for").eq("area_id",areaId()).eq("equipment_id",id).in("status",["assigned","in_progress"]).order("created_at",{ascending:false}).limit(1);
+    if(checklistResult.error){feedback("Não foi possível verificar a atribuição atual do checklist. Confirme se a migration 018 está aplicada: "+checklistResult.error.message,true);return;}
+    const activeChecklist=checklistResult.data?.[0]||null;
+    const selectedMechanic=activeChecklist?.assigned_profile_id||mechanics[0]?.id||"";
+    modal((existing?"Reprogramar":"Agendar")+" inspeção de 125 horas · "+e.asset_code,
+      '<div class="full"><p>Programe a inspeção antes do limite de '+num125(next)+' h. A confirmação também disponibiliza o checklist na área do mecânico selecionado.</p></div>'+
       '<div><label>Data planejada</label><input name="planned_for" type="date" min="'+new Date().toISOString().slice(0,10)+'" value="'+(existing?.planned_for||new Date().toISOString().slice(0,10))+'" required></div>'+
       '<div><label>Horímetro previsto (h)</label><input name="planned_horimeter" type="number" min="'+Number(e.current_horimeter||0)+'" max="'+next+'" step="0.1" value="'+(existing?.planned_horimeter??next)+'" required></div>'+
-      '<div><label>Responsável</label><input name="responsible_name" value="'+esc125(existing?.responsible_name||"")+'" required></div>'+
-      '<div class="full"><label>Observações</label><textarea name="notes" rows="3">'+esc125(existing?.notes||"")+'</textarea></div>',"Salvar agendamento");
+      '<div class="full"><label>Mecânico responsável *</label><select name="assigned_profile_id" required '+(activeChecklist?'disabled':'')+'>'+mechanics.map(m=>'<option value="'+esc125(m.id)+'" '+(m.id===selectedMechanic?'selected':'')+'>'+esc125(m.name||m.email||"Mecânico")+'</option>').join("")+'</select>'+(activeChecklist?'<input type="hidden" name="assigned_profile_id" value="'+esc125(activeChecklist.assigned_profile_id)+'"><small>Já existe um checklist em andamento. A atribuição atual será preservada durante a reprogramação.</small>':'')+'</div>'+
+      '<div class="full"><label>Observações</label><textarea name="notes" rows="3">'+esc125(existing?.notes||"")+'</textarea></div>',"Confirmar programação");
     liveRoot().querySelector("#m125Form").addEventListener("submit",async ev=>{
       ev.preventDefault();const btn=ev.currentTarget.querySelector('[type="submit"]');btn.disabled=true;
       try{
         const d=Object.fromEntries(new FormData(ev.currentTarget).entries()),target=Number(d.planned_horimeter);
         if(d.planned_for<new Date().toISOString().slice(0,10))throw new Error("A data planejada não pode estar no passado.");
         if(!Number.isFinite(target)||target<Number(e.current_horimeter||0)||target>next)throw new Error("O horímetro planejado deve ficar entre a leitura atual e "+num125(next)+" h.");
-        const payload={area_id:areaId(),equipment_id:id,planned_for:d.planned_for,planned_horimeter:target,responsible_name:d.responsible_name.trim(),notes:d.notes||"",status:"scheduled",created_by:userId,updated_at:new Date().toISOString()};
+        const mechanic=mechanics.find(m=>m.id===d.assigned_profile_id)||mechanics.find(m=>m.id===activeChecklist?.assigned_profile_id);
+        if(!mechanic)throw new Error("Selecione um mecânico responsável válido.");
+        const payload={area_id:areaId(),equipment_id:id,planned_for:d.planned_for,planned_horimeter:target,responsible_name:(mechanic.name||mechanic.email||"Mecânico").trim(),notes:d.notes||"",status:"scheduled",created_by:userId,updated_at:new Date().toISOString()};
         const result=existing?await supabase.from("operational_125h_schedules").update(payload).eq("id",existing.id).eq("area_id",areaId()):await supabase.from("operational_125h_schedules").insert(payload);
         if(result.error)throw result.error;
-        liveRoot().querySelector("#m125Modal").innerHTML="";await load();feedback("Inspeção agendada com sucesso.");
-      }catch(error){feedback(error.message||"Falha ao agendar.",true);btn.disabled=false;}
+        if(!activeChecklist){
+          const assigned=await supabase.from("operational_125h_checklists").insert({
+            area_id:areaId(),equipment_id:id,assigned_profile_id:mechanic.id,assigned_for:d.planned_for,
+            status:"assigned",created_by:userId,general_notes:d.notes||"Inspeção preventiva de 125 horas"
+          });
+          if(assigned.error)throw new Error("A programação foi salva, mas não foi possível criar a atribuição do checklist: "+assigned.error.message);
+        }
+        liveRoot().querySelector("#m125Modal").innerHTML="";await load();feedback("Inspeção programada e checklist disponibilizado para "+(mechanic.name||mechanic.email||"o mecânico")+".");
+      }catch(error){feedback(error.message||"Falha ao programar a inspeção.",true);btn.disabled=false;}
     });
   }
-
   function serviceForm(id){
     const e=equipment().find(x=>x.id===id),c=controlFor(id);if(!e||!c)return;
     modal("Registrar manutenção de 125 horas · "+e.asset_code,
