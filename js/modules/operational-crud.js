@@ -463,6 +463,13 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   $("#goLiveEquipmentStatus").addEventListener("change",render);
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
-  const checklistHost=document.createElement("div");checklistHost.id="goLiveChecklist125h";$("#goLive125h").append(checklistHost);
+  // O fluxo de atribuição do Checklist 125h passa a fazer parte da tela Agenda/Programar.
+  // Assim o supervisor programa e atribui o checklist no mesmo local, sem navegar para outra seção.
+  const checklistHost=document.createElement("div");
+  checklistHost.id="goLiveChecklist125h";
+  checklistHost.dataset.scheduleChecklist="true";
+  const scheduleRoot=$("#goLiveMechanicSchedule");
+  if(scheduleRoot) scheduleRoot.prepend(checklistHost);
+  else $("#goLive125h").append(checklistHost);
   await init125hChecklistModule({supabase,profile,root:checklistHost,areaId:()=>state.areaId,mode:"manager"});
 }
