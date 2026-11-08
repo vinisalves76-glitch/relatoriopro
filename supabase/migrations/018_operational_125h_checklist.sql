@@ -75,8 +75,11 @@ begin
       or new.created_by is distinct from old.created_by then
       raise exception 'A identificação e a atribuição do checklist não podem ser alteradas.';
     end if;
+    if old.status='completed' then
+      raise exception 'Checklist concluído é imutável; uma correção exige uma revisão formal.';
+    end if;
     if not public.has_operational_access(old.area_id) then
-      if old.assigned_profile_id<>auth.uid() or old.status='completed' then
+      if old.assigned_profile_id<>auth.uid() then
         raise exception 'Somente o mecânico atribuído pode editar um checklist ainda não concluído.';
       end if;
       if new.status not in ('in_progress','completed') then
@@ -97,7 +100,7 @@ begin
       end if;
     end loop;
     foreach v_item in array v_items loop
-      if new.responses->v_item->>'status' not in ('OK','NOK') then
+      if coalesce(new.responses->v_item->>'status','') not in ('OK','NOK') then
         raise exception 'Avalie todos os 15 itens antes de concluir: %.',v_item;
       end if;
       if nullif(new.evidence->>('item-'||array_position(v_items,v_item)),'') is null then

@@ -78,6 +78,7 @@ export async function init125hChecklistModule({supabase,profile,root,areaId,mode
   async function openChecklist(id){
     const row=rows.find(x=>x.id===id);if(!row)return;
     current={...row,responses:row.responses||{},evidence:row.evidence||{}};
+    if(current.horimeter===null||current.horimeter===undefined)current.horimeter=equip(current.equipment_id)?.current_horimeter??'';
     readOnly=current.status==='completed'||!mechanic;
     if(mechanic&&current.status==='assigned'){
       const u=await supabase.from('operational_125h_checklists').update({status:'in_progress'}).eq('id',id).eq('assigned_profile_id',uid);
@@ -166,7 +167,7 @@ export async function init125hChecklistModule({supabase,profile,root,areaId,mode
   }
   async function saveDraft(show){
     if(!current||readOnly)return false;
-    const payload={technician_name:current.technician_name||'',inspection_date:current.inspection_date||current.assigned_for,serial_number:current.serial_number||'',horimeter:current.horimeter===''?null:Number(current.horimeter),location:current.location||'',client:current.client||'',general_notes:current.general_notes||'',responses:current.responses||{},evidence:current.evidence||{},signature_path:current.signature_path||null,status:'in_progress',updated_at:new Date().toISOString()};
+    const payload={technician_name:current.technician_name||'',inspection_date:current.inspection_date||current.assigned_for,serial_number:current.serial_number||'',horimeter:current.horimeter===''||current.horimeter===null||current.horimeter===undefined?null:Number(current.horimeter),location:current.location||'',client:current.client||'',general_notes:current.general_notes||'',responses:current.responses||{},evidence:current.evidence||{},signature_path:current.signature_path||null,status:'in_progress',updated_at:new Date().toISOString()};
     const r=await supabase.from('operational_125h_checklists').update(payload).eq('id',current.id).eq('assigned_profile_id',uid);if(r.error){feedback(r.error.message,'error');return false;}
     Object.assign(current,payload);if(show)feedback('Andamento salvo no Supabase.','ok');return true;
   }
