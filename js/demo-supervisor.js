@@ -1,16 +1,11 @@
-import { createSupabaseAdapter } from "./core/supabase-adapter.js";
 import { initOperationalModule } from "./modules/operational-crud.js";
 
-const SUPABASE_URL = "https://vwvesygsudhbaqmayhsz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_IcydrqH9qr8WqVpVdfPwoA_sWz1ehMw";
 const MASTER_UID = "5c6800f9-426b-44b3-842d-ba6485cc017e";
 const AREA_ID = "arcelormittal-andradas";
 const STORE_KEY = "relatoriopro-demo-supervisor-v1";
 const DEMO_UID = "demo-supervisor-area";
 const $ = id => document.getElementById(id);
 
-const authAdapter = createSupabaseAdapter({ $, supabaseUrl: SUPABASE_URL, supabaseAnonKey: SUPABASE_ANON_KEY });
-const authClient = authAdapter.supabase;
 const demoFiles = new Map();
 
 function dateOffset(days, withTime = false) {
@@ -369,14 +364,23 @@ async function openRoleDemo(role){
 }
 async function startDemo() {
   try {
-    const { data:{ session }, error:sessionError } = await authClient.auth.getSession();
-    if (sessionError) throw sessionError;
-    const user = session?.user;
-    if (!user || user.id !== MASTER_UID) throw new Error("A Central DEMO está disponível somente no login ADMIN MASTER.");
+    // Lê somente a sessão persistida no navegador. Não inicializa cliente Supabase,
+    // não faz chamadas HTTP e não consulta tabelas, RPCs ou Storage.
+    const raw = localStorage.getItem("sb-vwvesygsudhbaqmayhsz-auth-token");
+    const stored = raw ? JSON.parse(raw) : null;
+    const session = stored?.currentSession || stored;
+    let userId = session?.user?.id || "";
+    if (!userId && session?.access_token) {
+      try {
+        const payload = session.access_token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");
+        userId = JSON.parse(atob(payload)).sub || "";
+      } catch (_) {}
+    }
+    if (userId !== MASTER_UID) throw new Error("A Central DEMO está disponível somente no login ADMIN MASTER. Entre no sistema principal com a conta master e abra a DEMO novamente.");
     $("demoLoading").hidden = true;
     $("demoSelection").hidden = false;
   } catch (error) {
-    console.error("[RelatorioPro DEMO] Falha ao validar acesso:", error);
+    console.error("[RelatorioPro DEMO] Falha ao validar acesso local:", error);
     showAccessError(error.message || "Não foi possível validar o acesso à demonstração.");
   }
 }
