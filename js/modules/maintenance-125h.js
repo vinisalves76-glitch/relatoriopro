@@ -145,11 +145,12 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
         state.mechanics=mechanics.data||[];
         state.pendingChecklists=state.pendingChecklists.map(x=>({...x,original_name:snapshotMap.get(x.assigned_profile_id)||mechanicMap.get(x.assigned_profile_id)||"Responsável original não identificado"}));
         state.offboardedIds=new Set((snapshots.data||[]).map(x=>x.profile_id));
-        const history=await supabase.from("operational_125h_reassignment_history").select("*").in("checklist_id",state.pendingChecklists.map(x=>x.id)).order("changed_at",{ascending:false});
+      }
+      if(canReassignPending){
+        const history=await supabase.from("operational_125h_reassignment_history").select("*").eq("area_id",id).order("changed_at",{ascending:false}).limit(100);
         if(history.error)throw history.error;
         state.reassignmentHistory=history.data||[];
-
-      }
+      }else state.reassignmentHistory=[];
       render();feedback("");
     }catch(error){feedback(error.message||"Não foi possível carregar o controle.",true);throw error;}
     finally{state.loading=false;}
