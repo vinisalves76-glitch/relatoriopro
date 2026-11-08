@@ -8,7 +8,9 @@ begin;
 alter table public.operational_125h_checklists
   add column if not exists assigned_profile_name_snapshot text not null default '',
   add column if not exists assigned_profile_email_snapshot text not null default '',
-  add column if not exists assigned_profile_role_snapshot text not null default '';
+  add column if not exists assigned_profile_role_snapshot text not null default '',
+  add column if not exists created_by_name_snapshot text not null default '',
+  add column if not exists completed_by_name_snapshot text not null default '';
 
 update public.operational_125h_checklists c
 set assigned_profile_name_snapshot = coalesce(nullif(c.assigned_profile_name_snapshot, ''), p.name, ''),
@@ -17,8 +19,30 @@ set assigned_profile_name_snapshot = coalesce(nullif(c.assigned_profile_name_sna
 from public.profiles p
 where p.id = c.assigned_profile_id;
 
+update public.operational_125h_checklists c
+set created_by_name_snapshot = coalesce(nullif(c.created_by_name_snapshot, ''), p.name, '')
+from public.profiles p where p.id = c.created_by;
+
+update public.operational_125h_checklists c
+set completed_by_name_snapshot = coalesce(nullif(c.completed_by_name_snapshot, ''), p.name, '')
+from public.profiles p where p.id = c.completed_by;
+
 alter table public.operational_125h_checklists
   alter column assigned_profile_id drop not null;
+
+alter table public.operational_125h_checklists
+  alter column created_by drop not null;
+alter table public.operational_125h_checklists
+  drop constraint if exists operational_125h_checklists_created_by_fkey;
+alter table public.operational_125h_checklists
+  add constraint operational_125h_checklists_created_by_fkey
+  foreign key (created_by) references auth.users(id) on delete set null;
+
+alter table public.operational_125h_checklists
+  drop constraint if exists operational_125h_checklists_completed_by_fkey;
+alter table public.operational_125h_checklists
+  add constraint operational_125h_checklists_completed_by_fkey
+  foreign key (completed_by) references auth.users(id) on delete set null;
 
 alter table public.operational_125h_checklists
   drop constraint if exists operational_125h_checklists_assigned_profile_id_fkey;
@@ -31,7 +55,9 @@ alter table public.operational_125h_checklists
 alter table public.operational_mechanic_assignments
   add column if not exists mechanic_name_snapshot text not null default '',
   add column if not exists mechanic_email_snapshot text not null default '',
-  add column if not exists mechanic_role_snapshot text not null default '';
+  add column if not exists mechanic_role_snapshot text not null default '',
+  add column if not exists created_by_name_snapshot text not null default '',
+  add column if not exists updated_by_name_snapshot text not null default '';
 
 update public.operational_mechanic_assignments a
 set mechanic_name_snapshot = coalesce(nullif(a.mechanic_name_snapshot, ''), p.name, ''),
@@ -40,8 +66,31 @@ set mechanic_name_snapshot = coalesce(nullif(a.mechanic_name_snapshot, ''), p.na
 from public.profiles p
 where p.id = a.mechanic_id;
 
+update public.operational_mechanic_assignments a
+set created_by_name_snapshot = coalesce(nullif(a.created_by_name_snapshot, ''), p.name, '')
+from public.profiles p where p.id = a.created_by;
+
+update public.operational_mechanic_assignments a
+set updated_by_name_snapshot = coalesce(nullif(a.updated_by_name_snapshot, ''), p.name, '')
+from public.profiles p where p.id = a.updated_by;
+
 alter table public.operational_mechanic_assignments
   alter column mechanic_id drop not null;
+
+alter table public.operational_mechanic_assignments
+  alter column created_by drop not null,
+  alter column updated_by drop not null;
+
+alter table public.operational_mechanic_assignments
+  drop constraint if exists operational_mechanic_assignments_created_by_fkey;
+alter table public.operational_mechanic_assignments
+  add constraint operational_mechanic_assignments_created_by_fkey
+  foreign key (created_by) references auth.users(id) on delete set null;
+alter table public.operational_mechanic_assignments
+  drop constraint if exists operational_mechanic_assignments_updated_by_fkey;
+alter table public.operational_mechanic_assignments
+  add constraint operational_mechanic_assignments_updated_by_fkey
+  foreign key (updated_by) references auth.users(id) on delete set null;
 
 alter table public.operational_mechanic_assignments
   drop constraint if exists operational_mechanic_assignments_mechanic_id_fkey;
@@ -80,10 +129,11 @@ declare
 begin
   -- A ação interna da FK ON DELETE SET NULL apenas desvincula o perfil;
   -- os snapshots já foram preenchidos e permanecem no registro.
-  if tg_op = 'UPDATE'
-    and new.assigned_profile_id is null
-    and old.assigned_profile_id is not null
-    and pg_trigger_depth() > 1 then
+  if tg_op = 'UPDATE' and pg_trigger_depth() > 1 and (
+    (old.assigned_profile_id is not null and new.assigned_profile_id is null)
+    or (old.created_by is not null and new.created_by is null)
+    or (old.completed_by is not null and new.completed_by is null)
+  ) then
     return new;
   end if;
 
@@ -205,10 +255,11 @@ declare
   mechanic_name text;
   mechanic_email text;
 begin
-  if tg_op = 'UPDATE'
-    and new.mechanic_id is null
-    and old.mechanic_id is not null
-    and pg_trigger_depth() > 1 then
+  if tg_op = 'UPDATE' and pg_trigger_depth() > 1 and (
+    (old.mechanic_id is not null and new.mechanic_id is null)
+    or (old.created_by is not null and new.created_by is null)
+    or (old.updated_by is not null and new.updated_by is null)
+  ) then
     return new;
   end if;
 
