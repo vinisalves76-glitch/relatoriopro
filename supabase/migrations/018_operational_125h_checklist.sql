@@ -64,6 +64,7 @@ begin
   end if;
 
   if tg_op='INSERT' then
+    if new.status='completed' then raise exception 'O checklist deve ser criado como atribuído e concluído pelo mecânico.'; end if;
     if auth.uid() is null or new.created_by<>auth.uid() or not public.has_operational_access(new.area_id) then
       raise exception 'Somente o supervisor da área ou administrador pode atribuir o checklist.';
     end if;
@@ -111,7 +112,7 @@ begin
         raise exception 'Descreva a não conformidade do item: %.',v_item;
       end if;
     end loop;
-    if old.status<>'completed' then
+    if tg_op='INSERT' or old.status<>'completed' then
       new.completed_by:=auth.uid();
       new.completed_at:=now();
     end if;

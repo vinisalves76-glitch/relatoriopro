@@ -200,6 +200,5 @@ export async function init125hChecklistModule({supabase,profile,root,areaId,mode
       win.document.open();win.document.write(html);win.document.close();
     }catch(e){win.close();feedback(e.message||'Falha ao preparar PDF.','error');}
   }
-  $('#tf125List').addEventListener('click',ev=>{const b=ev.target.closest('[data-pdf]');if(b)generatePdf(b.dataset.pdf);});
   await loadList();
 }
