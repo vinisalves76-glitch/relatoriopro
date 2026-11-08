@@ -161,6 +161,67 @@ before delete on public.profiles
 for each row
 execute function public.snapshot_operational_profile_before_delete();
 
+-- 5. Compatibilidade com a API de produção (migrations 007/008).
+--    A API atual chama esta RPC antes de auth.admin.deleteUser().
+--    A função agora registra snapshot/auditoria, mas NÃO transfere propriedade.
+create or replace function public.archive_user_business_data(
+  p_target_uid uuid,
+  p_master_uid uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $
+declare
+  v_profile public.profiles%rowtype;
+begin
+  if p_target_uid is null or p_master_uid is null
+     or p_target_uid = p_master_uid
+     or p_master_uid <> '5c6800f9-426b-44b3-842d-ba6485cc017e'::uuid then
+    raise exception 'Identificador inválido ou conta master protegida.';
+  end if;
+
+  select * into v_profile
+  from public.profiles
+  where id = p_target_uid
+  for update;
+
+  if not found then
+    raise exception 'Perfil não encontrado.';
+  end if;
+
+  if not exists (select 1 from auth.users where id = p_master_uid) then
+    raise exception 'Conta master não encontrada.';
+  end if;
+
+  insert into public.operational_user_snapshots
+    (profile_id, full_name, email, role, operational_area_id, offboarded_at)
+  values
+    (v_profile.id, coalesce(v_profile.name,''), coalesce(v_profile.email,''),
+     coalesce(v_profile.role,''), v_profile.operational_area_id, now())
+  on conflict (profile_id) do nothing;
+
+  if not exists (
+    select 1 from public.user_deletion_audit
+    where deleted_user_id = p_target_uid and archived_to = p_master_uid
+  ) then
+    insert into public.user_deletion_audit
+      (deleted_user_id,email,name,role,archived_to,deleted_at)
+    values
+      (p_target_uid,coalesce(v_profile.email,''),coalesce(v_profile.name,''),
+       coalesce(v_profile.role,''),p_master_uid,now());
+  end if;
+end;
+$;
+
+revoke all on function public.archive_user_business_data(uuid,uuid)
+  from public, anon, authenticated;
+grant execute on function public.archive_user_business_data(uuid,uuid)
+  to service_role;
+comment on function public.archive_user_business_data(uuid,uuid) is
+  'Registra snapshot e auditoria do desligamento; não transfere nem altera a propriedade dos registros históricos.';
+
 -- 5. Validação final: nenhuma FK de tabela pública de negócio pode continuar
 --    apontando para auth.users/profiles, exceto as três exceções documentadas.
 do $$
