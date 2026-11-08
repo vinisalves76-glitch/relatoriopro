@@ -383,4 +383,102 @@ $$;
 revoke all on function public.reassign_operational_125h_checklist(uuid,uuid) from public, anon;
 grant execute on function public.reassign_operational_125h_checklist(uuid,uuid) to authenticated, service_role;
 
+
+-- 6) Relatórios de turno: preservar o nome do autor e permitir desvincular a conta.
+alter table public.operational_shift_reports
+  add column if not exists created_by_email_snapshot text not null default '';
+
+update public.operational_shift_reports r
+set created_by_email_snapshot = coalesce(nullif(r.created_by_email_snapshot, ''), p.email, '')
+from public.profiles p
+where p.id = r.created_by;
+
+alter table public.operational_shift_reports
+  alter column created_by drop not null;
+
+alter table public.operational_shift_reports
+  drop constraint if exists operational_shift_reports_created_by_fkey;
+
+alter table public.operational_shift_reports
+  add constraint operational_shift_reports_created_by_fkey
+  foreign key (created_by) references auth.users(id) on delete set null;
+
+create or replace function public.validate_operational_shift_report()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+declare
+  equipment_area text;
+  profile_name text;
+  profile_area text;
+  profile_role text;
+  profile_active boolean;
+begin
+  -- Permite somente a desvinculação automática executada pela FK no desligamento.
+  if tg_op = 'UPDATE'
+    and old.created_by is not null
+    and new.created_by is null
+    and pg_trigger_depth() > 1 then
+    return new;
+  end if;
+
+  select e.area_id into equipment_area
+  from public.operational_equipment e
+  where e.id = new.equipment_id;
+
+  if equipment_area is null or equipment_area <> new.area_id then
+    raise exception 'O equipamento selecionado não pertence à área vinculada ao relatório.';
+  end if;
+
+  if tg_op = 'INSERT' then
+    if auth.uid() is null or new.created_by <> auth.uid() then
+      raise exception 'O usuário autenticado deve ser o responsável pelo registro.';
+    end if;
+
+    select p.name,p.operational_area_id,p.role,p.active
+      into profile_name,profile_area,profile_role,profile_active
+    from public.profiles p
+    where p.id = auth.uid();
+
+    if profile_active is distinct from true then
+      raise exception 'Perfil inativo não pode registrar relatório.';
+    end if;
+
+    if profile_role = 'super_admin' then
+      if not public.is_master() then
+        raise exception 'Acesso administrativo não autorizado.';
+      end if;
+    elsif profile_role = 'supervisor_area' then
+      if profile_area is distinct from new.area_id then
+        raise exception 'O supervisor só pode registrar relatório na própria área.';
+      end if;
+    elsif profile_role = 'mecanico' then
+      if profile_area is distinct from new.area_id then
+        raise exception 'O mecânico só pode registrar relatório na própria área.';
+      end if;
+      if not public.is_mechanic_assigned_to_equipment(
+        new.area_id,new.equipment_id,new.report_date,auth.uid()
+      ) then
+        raise exception 'Você não está escalado para este equipamento nesta data.';
+      end if;
+    else
+      raise exception 'Este perfil não pode registrar relatório de final de turno.';
+    end if;
+
+    new.created_by_name := coalesce(profile_name,'');
+  elsif new.area_id is distinct from old.area_id
+     or new.equipment_id is distinct from old.equipment_id
+     or new.report_date is distinct from old.report_date
+     or new.created_by is distinct from old.created_by
+     or new.idempotency_key is distinct from old.idempotency_key then
+    raise exception 'Não é permitido alterar a identificação do relatório de turno.';
+  end if;
+
+  new.updated_at := now();
+  return new;
+end;
+$;
+
 commit;
