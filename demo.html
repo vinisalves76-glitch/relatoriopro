@@ -33,6 +33,13 @@
 .demo-role-card button{margin-top:auto}
 .demo-role-disabled{background:#f8f9fa;opacity:.78}
 .demo-back-link{display:inline-block;margin-top:22px;color:#7a5b10;font-weight:700;text-decoration:none}
+.demo-workspace{max-width:1200px;margin:0 auto}.demo-workspace-head,.demo-local-toolbar,.demo-local-record-top{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.demo-workspace-head h1{margin:12px 0 5px}.demo-workspace-head p,.demo-local-toolbar p{color:#647181;font-size:13px}
+.demo-local-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:20px 0}.demo-local-stats>div{padding:14px;background:#fff;border:1px solid #e1e6eb;border-radius:10px}.demo-local-stats span{display:block;color:#647181;font-size:12px}.demo-local-stats strong{display:block;font-size:25px;margin-top:5px}
+.demo-local-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0;border-bottom:1px solid #e1e6eb;padding-bottom:10px}.demo-local-tabs button{padding:9px 13px;border:1px solid #dce2e8;border-radius:8px;background:#fff;color:#394554;cursor:pointer}.demo-local-tabs button.active{background:#273444;color:#fff;border-color:#273444}
+.demo-local-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:15px}.demo-local-record,.demo-local-form{padding:16px;background:#fff;border:1px solid #e1e6eb;border-radius:12px}.demo-local-record h3{margin:0 0 5px;font-size:16px}.demo-local-record p{font-size:13px;color:#596675;line-height:1.5}.demo-local-id{font-size:10px;color:#8993a0}.demo-local-status{font-size:11px;font-weight:700;background:#f3f5f7;padding:5px 8px;border-radius:999px}.demo-local-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.demo-local-empty{padding:30px;text-align:center;color:#687483;background:#fff;border:1px dashed #cbd3dc;border-radius:12px}
+.demo-local-form{max-width:760px;display:grid;gap:12px}.demo-local-form label{display:grid;gap:6px;font-size:13px;font-weight:650}.demo-local-form input,.demo-local-form select,.demo-local-form textarea{width:100%;padding:10px;border:1px solid #ccd4dd;border-radius:8px;font:inherit}.demo-local-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:650px){.demo-workspace-head,.demo-local-toolbar{align-items:flex-start;flex-direction:column}.demo-local-form-grid{grid-template-columns:1fr}}
 #demoLoading{max-width:560px;margin:18vh auto;text-align:center;color:#586575}
 @media(max-width:720px){#appShell>header{align-items:flex-start;gap:12px;flex-direction:column}.demo-top-actions{width:100%}.demo-top-actions button{flex:1}}
 </style>
@@ -50,17 +57,15 @@
     <h1>Escolha o perfil que deseja testar</h1>
     <p>Selecione um perfil para abrir uma simulação do fluxo de trabalho. Nesta primeira etapa, o ambiente do Supervisor de Área está disponível.</p>
   </div>
-  <div class="demo-role-grid">
-    <article class="demo-role-card demo-role-available">
-      <div class="demo-role-icon">◉</div>
-      <div><span class="demo-role-state">DISPONÍVEL</span><h2>Supervisor de Área</h2><p>Gestão operacional, equipamentos, escala de mecânicos, relatórios e manutenção 125h.</p></div>
-      <button class="primary" id="demoOpenSupervisor" type="button">Entrar na demonstração →</button>
-    </article>
-    <article class="demo-role-card demo-role-disabled"><div class="demo-role-icon">⚙</div><div><span class="demo-role-state">PRÓXIMA ETAPA</span><h2>Mecânico</h2><p>Execução de atividades, relatórios de turno e checklists.</p></div><button class="light" type="button" disabled>Em desenvolvimento</button></article>
-    <article class="demo-role-card demo-role-disabled"><div class="demo-role-icon">▤</div><div><span class="demo-role-state">PRÓXIMA ETAPA</span><h2>Instrutor Técnico</h2><p>Treinamentos, materiais e acompanhamento de atividades.</p></div><button class="light" type="button" disabled>Em desenvolvimento</button></article>
-    <article class="demo-role-card demo-role-disabled"><div class="demo-role-icon">▣</div><div><span class="demo-role-state">PRÓXIMA ETAPA</span><h2>Consultor Técnico</h2><p>Fluxos de atendimento e registros técnicos.</p></div><button class="light" type="button" disabled>Em desenvolvimento</button></article>
-    <article class="demo-role-card demo-role-disabled"><div class="demo-role-icon">▥</div><div><span class="demo-role-state">PRÓXIMA ETAPA</span><h2>Gerência / Administração</h2><p>Painéis e recursos administrativos.</p></div><button class="light" type="button" disabled>Em desenvolvimento</button></article>
-  </div>
+<div class="demo-role-grid">
+<article class="demo-role-card demo-role-available"><div class="demo-role-icon">◉</div><div><span class="demo-role-state">AMBIENTE LOCAL</span><h2>Supervisor de Área</h2><p>Equipamentos, escala, relatórios e manutenção 125h.</p></div><button class="primary" data-demo-role="supervisor_area">Entrar na demonstração →</button></article>
+<article class="demo-role-card demo-role-available"><div class="demo-role-icon">⚙</div><div><span class="demo-role-state">AMBIENTE LOCAL</span><h2>Mecânico</h2><p>Agenda, relatórios de turno, checklists e equipamentos.</p></div><button class="primary" data-demo-role="mecanico">Entrar na demonstração →</button></article>
+<article class="demo-role-card demo-role-available"><div class="demo-role-icon">▤</div><div><span class="demo-role-state">AMBIENTE LOCAL</span><h2>Instrutor Técnico</h2><p>Treinamentos, materiais, agenda e relatórios.</p></div><button class="primary" data-demo-role="instrutor_tecnico">Entrar na demonstração →</button></article>
+<article class="demo-role-card demo-role-available"><div class="demo-role-icon">▣</div><div><span class="demo-role-state">AMBIENTE LOCAL</span><h2>Consultor Técnico</h2><p>Atendimentos, relatórios, equipamentos e agenda.</p></div><button class="primary" data-demo-role="consultor_tecnico">Entrar na demonstração →</button></article>
+<article class="demo-role-card demo-role-available"><div class="demo-role-icon">▥</div><div><span class="demo-role-state">AMBIENTE LOCAL</span><h2>Gerente</h2><p>Painel, equipe, relatórios, agenda e aprovações.</p></div><button class="primary" data-demo-role="gerente">Entrar na demonstração →</button></article>
+<article class="demo-role-card demo-role-available"><div class="demo-role-icon">▥</div><div><span class="demo-role-state">AMBIENTE LOCAL</span><h2>Coordenador</h2><p>Painel da equipe, relatórios, agenda e aprovações.</p></div><button class="primary" data-demo-role="coordenador">Entrar na demonstração →</button></article>
+<article class="demo-role-card demo-role-available"><div class="demo-role-icon">▧</div><div><span class="demo-role-state">AMBIENTE LOCAL</span><h2>Auxiliar Administrativo</h2><p>Relatórios, agenda e cadastros administrativos.</p></div><button class="primary" data-demo-role="auxiliar_administrativo">Entrar na demonstração →</button></article>
+</div>
   <a class="demo-back-link" href="/">← Voltar ao RelatorioPro</a>
 </section>
 <div id="appShell" hidden>
