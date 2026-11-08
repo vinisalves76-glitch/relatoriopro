@@ -322,6 +322,11 @@ async function openSupervisorDemo() {
   try {
     await initOperationalModule({ supabase:demoBackend, profile:demoProfile, isMaster:false });
     const root = $("gestaoOperacional");
+    document.querySelectorAll(".operational-main-tab").forEach(button => {
+      button.addEventListener("click", () => {
+        if (root?.showOperationalSection) root.showOperationalSection(button.dataset.operationalSection);
+      });
+    });
     if (root?.showOperationalSection) root.showOperationalSection("overview");
   } catch (error) {
     console.error("[RelatorioPro DEMO] Falha ao abrir Supervisor de Área:", error);
