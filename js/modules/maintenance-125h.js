@@ -5,7 +5,7 @@ const date125 = value => value ? (/^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? ne
 export async function init125hMaintenanceModule({supabase, profile, getAreaId, getEquipment, onRefresh}) {
   const root=document.getElementById("goLive125h");
   if(!root || !supabase || !profile) return;
-  const state={controls:[],services:[],schedules:[],loading:false};
+  const state={controls:[],services:[],schedules:[],pendingChecklists:[],offboardedIds:new Set(),mechanics:[],loading:false};
   const userId=profile.uid||profile.id;
   const areaId=()=>getAreaId();
   const equipment=()=>getEquipment()||[];
@@ -48,11 +48,11 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
     <div id="m125Feedback" role="status" aria-live="polite"></div>
     <div class="m125-grid" id="m125Summary"></div><div class="m125-card"><strong>Planejamento:</strong> agende a inspeção antes de o caminhão atingir o próximo limite de 125 horas. A data é um compromisso operacional; o horímetro continua sendo o limite técnico.</div><h3>Controle de prazo por caminhão</h3>
     <div class="m125-table-wrap"><table><thead><tr><th>Equipamento</th><th>Horímetro atual</th><th>Última manutenção</th><th>Próxima manutenção</th><th>Faltam</th><th>Agendamento</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="m125Rows"></tbody></table></div>
-    <div class="m125-card" style="margin-top:16px"><h3>Agenda programada</h3><div id="m125Agenda"></div></div><div class="m125-card" style="margin-top:16px"><h3>Histórico de manutenções de 125 horas</h3><div id="m125History"></div></div>
+    <div class="m125-card" style="margin-top:16px"><h3>Agenda programada</h3><div id="m125Agenda"></div></div><div class="m125-card" style="margin-top:16px"><h3>Histórico de manutenções de 125 horas</h3><div id="m125History"></div></div><div class="m125-card" style="margin-top:16px" id="m125PendingWrap"><h3>Checklists pendentes de funcionários desligados</h3><div id="m125Pending"></div></div>
     <div id="m125Modal"></div>`;
   const ensurePanelMarkup=()=>{
     const host=liveRoot();
-    if(!host.querySelector("#m125Summary")||!host.querySelector("#m125Rows")||!host.querySelector("#m125Agenda")||!host.querySelector("#m125History")||!host.querySelector("#m125Modal")) host.innerHTML=panelMarkup;
+    if(!host.querySelector("#m125Summary")||!host.querySelector("#m125Rows")||!host.querySelector("#m125Agenda")||!host.querySelector("#m125History")||!host.querySelector("#m125Pending")||!host.querySelector("#m125Modal")) host.innerHTML=panelMarkup;
     return host;
   };
   ensurePanelMarkup();
@@ -98,21 +98,46 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       const e=equipment().find(x=>x.id===s.equipment_id);
       return '<tr><td>'+esc125(date125(s.performed_at))+'</td><td>'+esc125(e?.asset_code||"Equipamento")+'</td><td>'+num125(s.service_horimeter)+' h</td><td>'+esc125(s.checklist||"—")+'</td><td>'+esc125(s.notes||"—")+'</td></tr>';
     }).join("")+'</tbody></table></div>':'<p class="m125-empty">Nenhuma manutenção de 125 horas registrada.</p>';
+    const canReassign=["super_admin","supervisor_area"].includes(profile.role);
+    liveRoot().querySelector("#m125PendingWrap").hidden=!canReassign;
+    liveRoot().querySelector("#m125Pending").innerHTML=canReassign?(state.pendingChecklists.length?'<div class="m125-table-wrap"><table><thead><tr><th>Equipamento</th><th>Responsável original</th><th>Data</th><th>Status</th><th>Ação</th></tr></thead><tbody>'+state.pendingChecklists.map(item=>{
+      const e=equipment().find(x=>x.id===item.equipment_id);
+      const name=item.original_name||"Responsável original não identificado";
+      return '<tr><td>'+esc125(e?.asset_code||"Equipamento")+'</td><td>'+esc125(name)+(state.offboardedIds.has(item.assigned_profile_id)?' <span class="m125-pill overdue">Funcionário desligado</span>':'')+'</td><td>'+date125(item.assigned_for)+'</td><td>'+esc125(item.status)+'</td><td>'+(item.status!=="completed"?'<button class="light" type="button" data-m125-reassign="'+item.id+'">Reatribuir</button>':'—')+'</td></tr>';
+    }).join("")+'</tbody></table></div>':'<p class="m125-empty">Não há checklists pendentes de funcionários desligados.</p>'):'';
+
   }
   async function load(){
     if(state.loading)return;
     state.loading=true;feedback("");
     try{
       const id=areaId();
-      const [controls,services,schedules]=await Promise.all([
+      const [controls,services,schedules,pending]=await Promise.all([
         supabase.from("operational_125h_control").select("*").eq("area_id",id),
         supabase.from("operational_125h_services").select("*").eq("area_id",id).order("performed_at",{ascending:false}).limit(100),
-        supabase.from("operational_125h_schedules").select("*").eq("area_id",id).order("planned_for",{ascending:true})
+        supabase.from("operational_125h_schedules").select("*").eq("area_id",id).order("planned_for",{ascending:true}),
+        supabase.from("operational_125h_checklists").select("id,equipment_id,assigned_profile_id,assigned_for,status").eq("area_id",id).in("status",["assigned","in_progress"]).order("assigned_for",{ascending:true})
       ]);
       if(controls.error)throw controls.error;
       if(services.error)throw services.error;
       if(schedules.error)throw schedules.error;
-      state.controls=controls.data||[];state.services=services.data||[];state.schedules=schedules.data||[];
+      if(pending.error)throw pending.error;
+      state.controls=controls.data||[];state.services=services.data||[];state.schedules=schedules.data||[];state.pendingChecklists=pending.data||[];
+      state.offboardedIds=new Set();
+      if(state.pendingChecklists.length){
+        const ids=[...new Set(state.pendingChecklists.map(x=>x.assigned_profile_id))];
+        const [snapshots,mechanics]=await Promise.all([
+          supabase.from("operational_user_snapshots").select("profile_id,full_name").in("profile_id",ids),
+          supabase.rpc("list_operational_area_mechanics",{area_key:id})
+        ]);
+        if(snapshots.error)throw snapshots.error;
+        if(mechanics.error)throw mechanics.error;
+        const snapshotMap=new Map((snapshots.data||[]).map(x=>[x.profile_id,x.full_name]));
+        const mechanicMap=new Map((mechanics.data||[]).map(x=>[x.id,x.name||x.email||"Mecânico"]));
+        state.mechanics=mechanics.data||[];
+        state.pendingChecklists=state.pendingChecklists.map(x=>({...x,original_name:snapshotMap.get(x.assigned_profile_id)||mechanicMap.get(x.assigned_profile_id)||"Responsável original não identificado"}));
+        state.offboardedIds=new Set((snapshots.data||[]).map(x=>x.profile_id));
+      }
       render();feedback("");
     }catch(error){feedback(error.message||"Não foi possível carregar o controle.",true);throw error;}
     finally{state.loading=false;}
@@ -248,6 +273,21 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   ensurePanelMarkup();
   liveRoot().addEventListener("click",async event=>{
     const b=event.target.closest("button");if(!b)return;
+    if(b.dataset.m125Reassign){
+      const item=state.pendingChecklists.find(x=>x.id===b.dataset.m125Reassign);if(!item)return;
+      if(!state.mechanics.length){feedback("Não há mecânicos ativos disponíveis nesta área.",true);return;}
+      modal("Reatribuir checklist pendente",'<div class="full"><p>Responsável original: <strong>'+esc125(item.original_name)+'</strong>. A autoria e o histórico original serão preservados.</p></div><div class="full"><label>Novo mecânico responsável *</label><select name="new_assignee_id" required>'+state.mechanics.map(m=>'<option value="'+esc125(m.id)+'">'+esc125(m.name||m.email||"Mecânico")+'</option>').join("")+'</select></div><div class="full"><label>Justificativa da reatribuição *</label><textarea name="reason" rows="3" minlength="8" required placeholder="Informe o motivo da alteração"></textarea></div>',"Confirmar reatribuição");
+      liveRoot().querySelector("#m125Form").addEventListener("submit",async ev=>{
+        ev.preventDefault();const form=ev.currentTarget,btn=form.querySelector('[type="submit"]');btn.disabled=true;
+        try{
+          const data=Object.fromEntries(new FormData(form).entries());
+          const result=await supabase.rpc("reassign_pending_125h_checklist",{p_checklist_id:item.id,p_new_assignee_id:data.new_assignee_id,p_reason:data.reason});
+          if(result.error)throw result.error;
+          liveRoot().querySelector("#m125Modal").innerHTML="";await load();feedback("Checklist reatribuído. A autoria original e a justificativa ficaram registradas.");
+        }catch(error){const slot=form.querySelector("#m125SubmitError");if(slot)slot.textContent=error.message||"Falha ao reatribuir checklist.";btn.disabled=false;}
+      });
+      return;
+    }
     if(b.dataset.m125Config){configureForm(b.dataset.m125Config);return;}
     if(b.dataset.m125Service){serviceForm(b.dataset.m125Service);return;}
     if(b.dataset.m125Schedule){scheduleForm(b.dataset.m125Schedule);return;}
