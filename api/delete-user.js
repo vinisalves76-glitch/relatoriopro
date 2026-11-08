@@ -15,6 +15,15 @@ function clients() {
   });
 }
 
+function safeErrorDetails(error) {
+  return {
+    name: error?.name || "Error",
+    code: error?.code || null,
+    status: error?.status || error?.statusCode || null,
+    message: typeof error?.message === "string" ? error.message.slice(0, 500) : "Mensagem indisponível"
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") {
@@ -24,7 +33,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const authorization = req.headers.authorization || "";
-    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    const match = authorization.match(/^Bearer\\s+(.+)$/i);
     if (!match) return res.status(401).json({ error: "Sessão administrativa não informada." });
 
     const supabase = clients();
@@ -50,22 +59,39 @@ module.exports = async function handler(req, res) {
     if (profileError) throw profileError;
     if (!profile) return res.status(404).json({ error: "Perfil não encontrado. Atualize a lista de usuários." });
 
-    const { error: archiveError } = await supabase.rpc("archive_user_business_data", {
-      p_target_uid: targetUid,
-      p_master_uid: MASTER_UID
-    });
-    if (archiveError) {
-      console.error("Falha ao arquivar dados do usuário:", archiveError.code || "database_error");
-      return res.status(409).json({
-        error: "Não foi possível arquivar os registros históricos. A conta não foi excluída. Verifique se a migração 007 foi aplicada no Supabase."
+    // Se já existe auditoria, o arquivamento foi concluído em uma tentativa anterior.
+    // Não execute a RPC novamente: isso evita duplicar auditorias e reprocessar o histórico.
+    const { data: previousArchive, error: auditLookupError } = await supabase
+      .from("user_deletion_audit")
+      .select("id")
+      .eq("deleted_user_id", targetUid)
+      .limit(1)
+      .maybeSingle();
+    if (auditLookupError) {
+      console.error("Falha ao verificar arquivamento anterior:", JSON.stringify(safeErrorDetails(auditLookupError)));
+      return res.status(500).json({
+        error: "Não foi possível verificar o histórico de arquivamento. A conta não foi excluída."
       });
+    }
+
+    if (!previousArchive) {
+      const { error: archiveError } = await supabase.rpc("archive_user_business_data", {
+        p_target_uid: targetUid,
+        p_master_uid: MASTER_UID
+      });
+      if (archiveError) {
+        console.error("Falha ao arquivar dados do usuário:", JSON.stringify(safeErrorDetails(archiveError)));
+        return res.status(409).json({
+          error: "Não foi possível arquivar os registros históricos. A conta não foi excluída. Verifique os logs administrativos."
+        });
+      }
     }
 
     const { error: deleteError } = await supabase.auth.admin.deleteUser(targetUid);
     if (deleteError) {
-      console.error("Falha ao remover usuário do Auth:", deleteError.code || "auth_admin_error");
+      console.error("Falha ao remover usuário do Auth:", JSON.stringify(safeErrorDetails(deleteError)));
       return res.status(502).json({
-        error: "Os registros foram preservados e arquivados, mas o Supabase Auth não confirmou a exclusão da conta. Não repita a operação antes de verificar o cadastro."
+        error: "Os registros foram preservados e o arquivamento foi verificado, mas o Supabase Auth não confirmou a exclusão. Consulte os logs administrativos antes de tentar novamente."
       });
     }
 
@@ -74,7 +100,7 @@ module.exports = async function handler(req, res) {
       message: "Conta removida do Supabase Auth. Relatórios, treinamentos e compromissos foram preservados no histórico institucional."
     });
   } catch (error) {
-    console.error("Falha na exclusão administrativa:", error.code || error.statusCode || "erro");
+    console.error("Falha na exclusão administrativa:", JSON.stringify(safeErrorDetails(error)));
     return res.status(error.statusCode || 500).json({
       error: error.statusCode === 503 ? error.message : "Falha interna ao processar a exclusão. Nenhuma confirmação de remoção foi emitida."
     });
