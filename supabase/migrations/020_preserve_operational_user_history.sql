@@ -408,7 +408,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $shift_report_validate$
 declare
   equipment_area text;
   profile_name text;
@@ -479,6 +479,6 @@ begin
   new.updated_at := now();
   return new;
 end;
-$;
+$shift_report_validate$;
 
 commit;
