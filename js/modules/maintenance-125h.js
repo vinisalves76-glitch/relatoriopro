@@ -119,7 +119,7 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
   }
   function modal(title,fields,submitLabel){
     ensurePanelMarkup();
-    liveRoot().querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>'+esc125(title)+'</h3><form id="m125Form"><div class="m125-form">'+fields+'</div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">'+esc125(submitLabel||"Salvar")+'</button></div></form></section></div>';
+    liveRoot().querySelector("#m125Modal").innerHTML='<div class="m125-modal"><section class="m125-dialog" role="dialog" aria-modal="true"><h3>'+esc125(title)+'</h3><form id="m125Form"><div id="m125SubmitError" class="full m125-error" role="alert" aria-live="assertive"></div><div class="m125-form">'+fields+'</div><div class="m125-foot"><button class="light" type="button" data-m125-close>Cancelar</button><button class="primary" type="submit">'+esc125(submitLabel||"Salvar")+'</button></div></form></section></div>';
     liveRoot().querySelector(".m125-modal").addEventListener("click",e=>{if(e.target.classList.contains("m125-modal")||e.target.closest("[data-m125-close]"))liveRoot().querySelector("#m125Modal").innerHTML="";});
   }
   function configureForm(id){
@@ -132,7 +132,19 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
       '<div><label>Intervalo (horas)</label><input value="125" disabled></div>'+
       '<div class="full"><small>Próxima manutenção calculada: referência + 125 horas. Esta configuração não cria um registro de serviço concluído.</small></div>',"Salvar controle");
     liveRoot().querySelector("#m125Form").addEventListener("submit",async ev=>{
-      ev.preventDefault();const btn=ev.currentTarget.querySelector('[type="submit"]');btn.disabled=true;
+      ev.preventDefault();
+      const form=ev.currentTarget;
+      if(form.dataset.submitting==="true")return;
+      form.dataset.submitting="true";
+      const btn=form.querySelector('[type="submit"]');
+      const originalLabel=btn.textContent;
+      const showSubmitError=message=>{
+        const slot=form.querySelector("#m125SubmitError");
+        if(slot)slot.textContent=message;
+        feedback(message,true);
+      };
+      btn.disabled=true;
+      btn.textContent="Salvando programação…";
       try{
         const value=Number(new FormData(ev.currentTarget).get("baseline"));
         if(!Number.isFinite(value)||value<0)throw new Error("Informe um horímetro de referência válido.");
@@ -193,8 +205,19 @@ export async function init125hMaintenanceModule({supabase, profile, getAreaId, g
           const updatedChecklist=await supabase.from("operational_125h_checklists").update({general_notes:checklistNotes||"Inspeção preventiva de 125 horas"}).eq("id",activeChecklist.id).eq("area_id",areaId());
           if(updatedChecklist.error)throw new Error("A agenda foi atualizada, mas não foi possível registrar a justificativa no checklist: "+updatedChecklist.error.message);
         }
-        liveRoot().querySelector("#m125Modal").innerHTML="";await load();feedback(overdue?"Inspeção registrada como ATRASADA. Justificativa salva na agenda e no checklist.":"Inspeção programada e checklist disponibilizado para "+(mechanic.name||mechanic.email||"o mecânico")+".");
-      }catch(error){feedback(error.message||"Falha ao programar a inspeção.",true);btn.disabled=false;}
+        liveRoot().querySelector("#m125Modal").innerHTML="";
+        await load();
+        feedback(overdue?"Inspeção registrada como ATRASADA. Justificativa salva na agenda e no checklist.":"Inspeção programada e checklist disponibilizado para "+(mechanic.name||mechanic.email||"o mecânico")+".");
+      }catch(error){
+        const message=error?.message||error?.details||error?.hint||"Falha ao programar a inspeção. Verifique a conexão e tente novamente.";
+        showSubmitError(message);
+      }finally{
+        if(form.isConnected){
+          form.dataset.submitting="false";
+          btn.disabled=false;
+          btn.textContent=originalLabel;
+        }
+      }
     });
   }
   function serviceForm(id){
