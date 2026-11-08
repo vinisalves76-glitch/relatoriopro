@@ -1,6 +1,7 @@
 import { init125hMaintenanceModule } from "./maintenance-125h.js";
 import { initMechanicShiftReports, disposeMechanicShiftReports } from "./operational-shift-reports.js";
 import { initMechanicSchedule } from "./operational-mechanic-schedule.js";
+import { init125hChecklistModule } from "./operational-125h-checklist.js";
 
 const AREA_DEFAULT = "arcelormittal-andradas";
 const AREA_LABEL = "ArcelorMittal Andradas";
@@ -26,7 +27,7 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   const isMaster = !!masterAccess || profile.role === "super_admin";
   const isSupervisor = profile.role === "supervisor_area";
   const isMechanic = profile.role === "mecanico";
-  if (isMechanic) { await initMechanicShiftReports({supabase,profile,root}); return; }
+  if (isMechanic) { await initMechanicShiftReports({supabase,profile,root}); await init125hChecklistModule({supabase,profile,root,mode:"mechanic"}); return; }
   if (!isMaster && !isSupervisor) return;
   if (isSupervisor && !profile.operationalAreaId) throw new Error("Supervisor sem área operacional vinculada.");
   const fixedArea = isSupervisor ? profile.operationalAreaId : null;
@@ -462,4 +463,13 @@ export async function initOperationalModule({supabase, profile, isMaster: master
   $("#goLiveEquipmentStatus").addEventListener("change",render);
   await loadData();
   await init125hMaintenanceModule({supabase,profile,getAreaId:()=>state.areaId,getEquipment:()=>state.equipment,onRefresh:loadData});
+  // O fluxo de atribuição do Checklist 125h passa a fazer parte da tela Agenda/Programar.
+  // Assim o supervisor programa e atribui o checklist no mesmo local, sem navegar para outra seção.
+  const checklistHost=document.createElement("div");
+  checklistHost.id="goLiveChecklist125h";
+  checklistHost.dataset.scheduleChecklist="true";
+  const scheduleRoot=$("#goLiveMechanicSchedule");
+  if(scheduleRoot) scheduleRoot.prepend(checklistHost);
+  else $("#goLive125h").append(checklistHost);
+  await init125hChecklistModule({supabase,profile,root:checklistHost,areaId:()=>state.areaId,mode:"manager"});
 }
