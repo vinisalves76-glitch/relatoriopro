@@ -78,7 +78,13 @@ async function loadTrainings(){
   
   mine.innerHTML=ownWithCovers.length?ownWithCovers.map(t=>trainingCard(t,'mine')).join(''):'<div class="training-empty">Você ainda não criou treinamentos.</div>';
   $('trainingPendingCount').textContent=trainingAdmin()?'0':'—';
-  if(trainingAdmin()){const ps=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=ps.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual');$('trainingPendingCount').textContent=pend.length;pending.innerHTML=pend.length?pend.map(t=>trainingCard(t,'pending')).join(''):'<div class="training-empty">Nenhum treinamento aguardando aprovação.</div>'}
+  if(trainingAdmin()){
+   const ps=await getDocs(query(collection(db,TRAININGS),where('status','==','pending')));
+   const pend=ps.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual');
+   const pendingWithCovers=await Promise.all(pend.map(attachTrainingCoverUrl));
+   $('trainingPendingCount').textContent=pend.length;
+   pending.innerHTML=pendingWithCovers.length?pendingWithCovers.map(t=>trainingCard(t,'pending')).join(''):'<div class="training-empty">Nenhum treinamento aguardando aprovação.</div>';
+  }
  }catch(e){pub.innerHTML='<p class="muted">Não foi possível carregar os treinamentos. Verifique as permissões do Supabase.</p>';mine.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>';if(trainingAdmin())pending.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>'}
 }
 async function trainingOpenMaterials(trainingId,mode='access'){
