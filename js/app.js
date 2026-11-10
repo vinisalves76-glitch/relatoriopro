@@ -55,10 +55,28 @@ async function loadTrainings(){
   const [publishedSnap,mineSnap]=await Promise.all([getDocs(query(collection(db,TRAININGS),where('status','==','published'))),getDocs(query(collection(db,TRAININGS),where('ownerUid','==',activeUser.uid)))]);
   await loadTechnicalManuals();
   const published=publishedSnap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual'),own=mineSnap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual');
-  publishedTrainingItems=await Promise.all(published.map(async t=>{if(t.coverPath){try{t.coverUrl=(await supabase.storage.from('training-attachments-private').createSignedUrl(t.coverPath,3600)).data?.signedUrl||''}catch(_){t.coverUrl=''}}return t}));populateTrainingFilters(publishedTrainingItems);renderPublishedTrainingLibrary();renderFavoriteTrainings();
+  // As capas ficam em bucket privado: cada lista precisa de URL assinada.
+  // Antes, somente a biblioteca pública recebia coverUrl; a lista "Meus treinamentos"
+  // usava os registros sem URL e perdia a imagem logo após salvar/recarregar.
+  const attachTrainingCoverUrl=async training=>{
+   if(!training.coverPath){training.coverUrl='';return training}
+   try{
+    const {data,error}=await supabase.storage.from('training-attachments-private').createSignedUrl(training.coverPath,3600);
+    if(error)throw error;
+    training.coverUrl=data?.signedUrl||'';
+    if(!training.coverUrl)throw new Error('O Storage não retornou uma URL assinada para a capa.');
+   }catch(error){
+    training.coverUrl='';
+    console.error('[RelatorioPro] Não foi possível carregar a capa do treinamento '+training.id+':',error);
+   }
+   return training;
+  };
+  publishedTrainingItems=await Promise.all(published.map(attachTrainingCoverUrl));
+  const ownWithCovers=await Promise.all(own.map(attachTrainingCoverUrl));
+  populateTrainingFilters(publishedTrainingItems);renderPublishedTrainingLibrary();renderFavoriteTrainings();
   $('trainingPublishedCount').textContent=published.length;$('trainingMineCount').textContent=own.length;
   
-  mine.innerHTML=own.length?own.map(t=>trainingCard(t,'mine')).join(''):'<div class="training-empty">Você ainda não criou treinamentos.</div>';
+  mine.innerHTML=ownWithCovers.length?ownWithCovers.map(t=>trainingCard(t,'mine')).join(''):'<div class="training-empty">Você ainda não criou treinamentos.</div>';
   $('trainingPendingCount').textContent=trainingAdmin()?'0':'—';
   if(trainingAdmin()){const ps=await getDocs(query(collection(db,TRAININGS),where('status','==','pending'))),pend=ps.docs.map(d=>({id:d.id,...d.data()})).filter(t=>t.docType!=='technical_manual');$('trainingPendingCount').textContent=pend.length;pending.innerHTML=pend.length?pend.map(t=>trainingCard(t,'pending')).join(''):'<div class="training-empty">Nenhum treinamento aguardando aprovação.</div>'}
  }catch(e){pub.innerHTML='<p class="muted">Não foi possível carregar os treinamentos. Verifique as permissões do Supabase.</p>';mine.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>';if(trainingAdmin())pending.innerHTML='<p class="muted">'+trainingEscape(e.message)+'</p>'}
