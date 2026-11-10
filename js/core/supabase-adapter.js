@@ -81,7 +81,7 @@ function mapRow(table,row) {
 }
 function mapWrite(ref,data) {
   const d={...data}, table=ref.table, legacy={};
-  for (const k of ["uid","id","createdAt","updatedAt","updatedAtServer","ownerUid","ownerName","roleLabel","mustChangePassword","passwordChangedAt","reviewComment","approvedBy","approvedAt","assigneeUid","assigneeName","updatedBy","attachments","size","contentType","order","conflictOverride","conflictReason","conflictAt","conflictBy"]) {
+  for (const k of ["uid","id","createdAt","updatedAt","updatedAtServer","ownerUid","ownerName","roleLabel","mustChangePassword","passwordChangedAt","reviewComment","approvedBy","approvedAt","assigneeUid","assigneeName","updatedBy","attachments","coverPath","size","contentType","order","conflictOverride","conflictReason","conflictAt","conflictBy"]) {
     if (Object.prototype.hasOwnProperty.call(d,k)) { if (!["id","ownerUid","createdAt","updatedAt","roleLabel","mustChangePassword","reviewComment","approvedBy","approvedAt","assigneeName","updatedBy","attachments","size","contentType","order"].includes(k)) legacy[k]=d[k]; delete d[k]; }
   }
   if (table === "profiles") {
