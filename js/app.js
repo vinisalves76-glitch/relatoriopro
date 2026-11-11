@@ -307,7 +307,7 @@ function refreshAgendaModeUI(){
  $('agendaDemoBanner').hidden=!agendaDemoMode;
  $('agendaAdminPanel').hidden=!isSystemAdmin()||agendaDemoMode;
  $('agendaAddNew').hidden=!isSystemAdmin()||agendaDemoMode;
- $('agendaModeSwitch').hidden=!isMaster();
+ $('agendaModeSwitch').hidden=!isSystemAdmin();
  $('agendaModeDemo').className=agendaDemoMode?'dark':'light';
  $('agendaModeOfficial').className=agendaDemoMode?'light':'dark';
  $('agendaPersonFilterWrap').hidden=!isSystemAdmin();
@@ -460,8 +460,8 @@ $('agendaToday').addEventListener('click',()=>{const n=new Date();$('agendaMonth
 $('agendaPrevMonth').addEventListener('click',()=>{const p=$('agendaMonth').value.split('-').map(Number),d=new Date(p[0],p[1]-2,1);$('agendaMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderAgenda()});
 $('agendaNextMonth').addEventListener('click',()=>{const p=$('agendaMonth').value.split('-').map(Number),d=new Date(p[0],p[1],1);$('agendaMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderAgenda()});
 $('agendaReload').addEventListener('click',loadAgenda);
-$('agendaModeDemo').addEventListener('click',()=>{if(!isMaster())return;agendaDemoMode=true;$('agendaMonth').value='2026-11';$('agendaPersonFilter').value='';$('agendaSearch').value='';$('agendaCategoryFilter').value='';loadAgenda()});
-$('agendaModeOfficial').addEventListener('click',()=>{if(!isMaster())return;agendaDemoMode=false;$('agendaMonth').value=agendaLocalISO(new Date()).slice(0,7);$('agendaPersonFilter').value='';$('agendaSearch').value='';loadAgenda()});
+$('agendaModeDemo').addEventListener('click',()=>{if(!isSystemAdmin())return;agendaDemoMode=true;$('agendaMonth').value='2026-11';$('agendaPersonFilter').value='';$('agendaSearch').value='';$('agendaCategoryFilter').value='';loadAgenda()});
+$('agendaModeOfficial').addEventListener('click',()=>{if(!isSystemAdmin())return;agendaDemoMode=false;$('agendaMonth').value=agendaLocalISO(new Date()).slice(0,7);$('agendaPersonFilter').value='';$('agendaSearch').value='';loadAgenda()});
 function setAgendaView(view){agendaView=view;[['month','agendaViewMonth'],['calendar','agendaViewCalendar'],['list','agendaViewList']].forEach(([v,id])=>$(id).classList.toggle('active',v===view));renderAgenda()}
 $('agendaViewMonth').addEventListener('click',()=>setAgendaView('month'));
 $('agendaViewCalendar').addEventListener('click',()=>setAgendaView('calendar'));
