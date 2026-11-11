@@ -7,15 +7,19 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/Logo%20Irmen.webp">
-<title>RelatorioPro | IRMEN SANY</title>
+<title>IRMEN ONE | Plataforma Integrada</title>
 <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
 <div class="auth-gate" id="authGate">
   <section class="auth-card" aria-labelledby="authTitle">
-    <div class="auth-brand"><img class="auth-irmen-logo" src="./Logo%20Irmen.webp" alt="Logo IRMEN"></div>
-    <h1 id="authTitle">RelatorioPro</h1>
-    <p>Tecnologia e praticidade para um serviço mais eficiente.</p>
+    <div class="auth-brand">
+      <img class="auth-irmen-logo" src="./Logo%20Irmen.webp" alt="IRMEN">
+      <div class="auth-one-wordmark"><span>IRMEN</span><strong>ONE</strong><small>PLATAFORMA INTEGRADA</small></div>
+    </div>
+    <div class="auth-welcome-kicker"><span></span> AMBIENTE CORPORATIVO</div>
+    <h1 id="authTitle">Tudo conectado.<br><em>Um só lugar.</em></h1>
+    <p>Acesse as soluções, informações e ferramentas da IRMEN em uma experiência única.</p>
     <form id="authForm">
       <label for="authEmail">E-mail corporativo</label><input id="authEmail" type="email" autocomplete="username" required placeholder="nome@empresa.com">
       <label for="authPassword">Senha</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Mínimo de 6 caracteres">
@@ -25,8 +29,8 @@
     <button class="light pwa-install-button" type="button" data-pwa-install hidden>Instalar aplicativo</button>
     <div class="auth-sany-logo"><img src="./Logo%20Sany.png" alt="Logo SANY"></div>
   </section>
-  <aside class="auth-video-panel" aria-label="Vídeo institucional IRMEN SANY">
-    <video autoplay muted loop playsinline preload="metadata" aria-label="Vídeo institucional com máquinas pesadas">
+  <aside class="auth-video-panel" aria-label="Apresentação institucional IRMEN ONE">
+    <div class="auth-video-overlay-brand"><span>TECNOLOGIA</span><i></i><span>CONHECIMENTO</span><i></i><span>OPERAÇÃO</span></div><video autoplay muted loop playsinline preload="metadata" aria-label="Vídeo institucional com máquinas pesadas">
       <source src="./Video%20login.mp4" type="video/mp4">
       Seu navegador não conseguiu reproduzir o vídeo.
     </video>
