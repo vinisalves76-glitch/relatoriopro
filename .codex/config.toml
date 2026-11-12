@@ -1,0 +1,9 @@
+# Project-scoped MCP servers. Codex loads this file only for trusted projects.
+# No project credentials or personal tokens belong here.
+
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
