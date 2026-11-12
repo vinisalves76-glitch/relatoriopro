@@ -1,43 +1,40 @@
 # Relatório Pro
 
-Sistema de gestão operacional e relatórios da operação ArcelorMittal.
+Sistema de gestão operacional e relatórios da Irmen para a operação ArcelorMittal Andradas.
 
-## Estrutura de branches
+## Branches e publicação
+- main: produção; somente recebe versões validadas e explicitamente autorizadas.
+- develop: desenvolvimento e homologação.
+- feature/*, fix/*, chore/*: trabalho isolado criado a partir de develop.
+- backup/*: snapshots de recuperação; não usar para desenvolvimento.
 
-- `main`: versão oficial de produção. Só recebe alterações após validação e autorização de publicação.
-- `develop`: branch principal de desenvolvimento e homologação. Novas alterações partem daqui.
-- `feature/<assunto>`: trabalho isolado para uma funcionalidade; integrar em `develop` após validação.
-- `fix/<assunto>`: correções isoladas; integrar em `develop` após validação.
-- `backup/<identificador>`: snapshots de segurança; não usar para desenvolvimento.
+Fluxo: branch de trabalho → testes locais → PR para develop → preview/homologação → autorização explícita → promoção para main. Não publicar em produção sem autorização.
 
-## Fluxo de trabalho
+## Regras essenciais
+- Foco atual: estabilizar a operação ArcelorMittal Andradas; não implementar multi-clientes nesta fase.
+- Preservar o ciclo de inspeção/manutenção **125h**.
+- Supabase é o backend vigente; Firebase é legado.
+- Não versionar segredos nem executar operações destrutivas sem autorização e plano de recuperação.
 
-1. Desenvolver em `develop` ou em uma branch `feature/*`/`fix/*` criada a partir de `develop`.
-2. Testar localmente antes de integrar.
-3. Integrar em `develop` e validar a preview.
-4. Promover `develop` para `main` somente com autorização explícita. A atualização de `main` pode disparar deploy de produção na Vercel.
+## Guia para engenharia assistida por IA
 
-## Regras operacionais
+**Antes de qualquer alteração, leia [AGENTS.md](./AGENTS.md).** Ele define as regras obrigatórias para Codex e demais agentes.
 
-- O foco atual é a operação ArcelorMittal; não introduzir multi-clientes nesta fase.
-- Preservar os ciclos e nomenclaturas operacionais definidos. A preventiva permanece identificada como `125h`.
-- Supabase é a linha atual de backend; arquivos Firebase podem existir apenas como legado documentado até a remoção planejada.
-- Não colocar chaves, senhas ou segredos no repositório.
+### Estrutura de IA
+- [AGENTS.md](./AGENTS.md) — instruções gerais e limites de atuação.
+- [docs/AI_ENGINEERING.md](./docs/AI_ENGINEERING.md) — arquitetura de trabalho com IA, Skills, subagentes e MCP.
+- [.agents/skills/](./.agents/skills/) — Skills reutilizáveis do projeto.
+- [.codex/agents/](./.codex/agents/) — definições dos subagentes especializados do Codex.
+- [.codex/MCP_SETUP.md](./.codex/MCP_SETUP.md) — configuração segura de servidores MCP.
+- [.codex/config.toml](./.codex/config.toml) — MCPs de documentação sem credenciais.
 
-
-## Contexto para desenvolvimento e IAs
-
-Antes de alterar o sistema, leia [AGENTS.md](./AGENTS.md). Ele contém as regras centrais que devem ser respeitadas por qualquer IA ou pessoa que trabalhe no repositório.
-
-Documentação complementar:
-
-- [Contexto e objetivo do projeto](./docs/PROJECT_CONTEXT.md)
+### Documentação do produto
+- [Contexto do projeto](./docs/PROJECT_CONTEXT.md)
 - [Arquitetura atual](./docs/ARCHITECTURE.md)
 - [Banco de dados e Storage](./docs/DATABASE.md)
-- [Regras operacionais e de negócio](./docs/BUSINESS_RULES.md)
-- [Desenvolvimento e validação local](./docs/DEVELOPMENT.md)
-- [Política de branches e publicação](./docs/BRANCHING.md)
+- [Regras operacionais](./docs/BUSINESS_RULES.md)
+- [Desenvolvimento e validação](./docs/DEVELOPMENT.md)
+- [Política de branches](./docs/BRANCHING.md)
 - [Histórico de decisões](./docs/CHANGELOG.md)
-- [Instruções do GitHub Copilot](./.github/copilot-instructions.md)
 
-Esses documentos são contexto para desenvolvimento; não são a biblioteca de manuais e anexos técnicos cadastrados pelos usuários no sistema.
+A documentação de engenharia não é a biblioteca de manuais e anexos técnicos cadastrados pelos usuários no sistema.
